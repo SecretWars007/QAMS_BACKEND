@@ -1,0 +1,12 @@
+C:\diplomado\QAMS\src\QAMS.Domain\bin\Debug\net10.0\QAMS.Domain.deps.json
+C:\diplomado\QAMS\src\QAMS.Domain\bin\Debug\net10.0\QAMS.Domain.dll
+C:\diplomado\QAMS\src\QAMS.Domain\bin\Debug\net10.0\QAMS.Domain.pdb
+C:\diplomado\QAMS\src\QAMS.Domain\obj\Debug\net10.0\QAMS.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\diplomado\QAMS\src\QAMS.Domain\obj\Debug\net10.0\QAMS.Domain.AssemblyInfoInputs.cache
+C:\diplomado\QAMS\src\QAMS.Domain\obj\Debug\net10.0\QAMS.Domain.AssemblyInfo.cs
+C:\diplomado\QAMS\src\QAMS.Domain\obj\Debug\net10.0\QAMS.Domain.csproj.CoreCompileInputs.cache
+C:\diplomado\QAMS\src\QAMS.Domain\obj\Debug\net10.0\QAMS.Domain.sourcelink.json
+C:\diplomado\QAMS\src\QAMS.Domain\obj\Debug\net10.0\QAMS.Domain.dll
+C:\diplomado\QAMS\src\QAMS.Domain\obj\Debug\net10.0\refint\QAMS.Domain.dll
+C:\diplomado\QAMS\src\QAMS.Domain\obj\Debug\net10.0\QAMS.Domain.pdb
+C:\diplomado\QAMS\src\QAMS.Domain\obj\Debug\net10.0\ref\QAMS.Domain.dll

@@ -1,0 +1,16 @@
+C:\diplomado\QAMS\src\QAMS.Application\bin\Debug\net10.0\QAMS.Application.deps.json
+C:\diplomado\QAMS\src\QAMS.Application\bin\Debug\net10.0\QAMS.Application.dll
+C:\diplomado\QAMS\src\QAMS.Application\bin\Debug\net10.0\QAMS.Application.pdb
+C:\diplomado\QAMS\src\QAMS.Application\bin\Debug\net10.0\QAMS.Domain.dll
+C:\diplomado\QAMS\src\QAMS.Application\bin\Debug\net10.0\QAMS.Domain.pdb
+C:\diplomado\QAMS\src\QAMS.Application\obj\Debug\net10.0\QAMS.Application.csproj.AssemblyReference.cache
+C:\diplomado\QAMS\src\QAMS.Application\obj\Debug\net10.0\QAMS.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\diplomado\QAMS\src\QAMS.Application\obj\Debug\net10.0\QAMS.Application.AssemblyInfoInputs.cache
+C:\diplomado\QAMS\src\QAMS.Application\obj\Debug\net10.0\QAMS.Application.AssemblyInfo.cs
+C:\diplomado\QAMS\src\QAMS.Application\obj\Debug\net10.0\QAMS.Application.csproj.CoreCompileInputs.cache
+C:\diplomado\QAMS\src\QAMS.Application\obj\Debug\net10.0\QAMS.Application.sourcelink.json
+C:\diplomado\QAMS\src\QAMS.Application\obj\Debug\net10.0\QAMS.App.147EFD58.Up2Date
+C:\diplomado\QAMS\src\QAMS.Application\obj\Debug\net10.0\QAMS.Application.dll
+C:\diplomado\QAMS\src\QAMS.Application\obj\Debug\net10.0\refint\QAMS.Application.dll
+C:\diplomado\QAMS\src\QAMS.Application\obj\Debug\net10.0\QAMS.Application.pdb
+C:\diplomado\QAMS\src\QAMS.Application\obj\Debug\net10.0\ref\QAMS.Application.dll

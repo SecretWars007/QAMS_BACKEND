@@ -1,0 +1,7 @@
+2026-02-07 16:59:44.970 -04:00 [INF] QAMS API iniciada en Development.
+2026-02-07 16:59:45.014 -04:00 [INF] User profile is available. Using 'C:\Users\HP VICTUS\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-02-07 16:59:45.084 -04:00 [WRN] The WebRootPath was not found: C:\diplomado\QAMS\src\QAMS.Api\wwwroot. Static files may be unavailable.
+2026-02-07 16:59:45.203 -04:00 [INF] Now listening on: http://localhost:5009
+2026-02-07 16:59:45.206 -04:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-02-07 16:59:45.207 -04:00 [INF] Hosting environment: Development
+2026-02-07 16:59:45.208 -04:00 [INF] Content root path: C:\diplomado\QAMS\src\QAMS.Api

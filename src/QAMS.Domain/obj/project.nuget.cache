@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "PF6I65/Kjfw=",
+  "success": true,
+  "projectFilePath": "C:\\diplomado\\QAMS\\src\\QAMS.Domain\\QAMS.Domain.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\HP VICTUS\\.nuget\\packages\\microsoft.netcore.app.ref\\9.0.11\\microsoft.netcore.app.ref.9.0.11.nupkg.sha512",
+    "C:\\Users\\HP VICTUS\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\9.0.11\\microsoft.windowsdesktop.app.ref.9.0.11.nupkg.sha512",
+    "C:\\Users\\HP VICTUS\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\9.0.11\\microsoft.aspnetcore.app.ref.9.0.11.nupkg.sha512"
+  ],
+  "logs": []
+}
