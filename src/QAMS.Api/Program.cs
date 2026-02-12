@@ -8,6 +8,8 @@ using QAMS.Application.Interfaces;
 using QAMS.Application.Services;
 using QAMS.Infrastructure;
 using QAMS.Infrastructure.Security;
+using QAMS.Infrastructure.Persistence.Configurations;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -134,7 +136,64 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-if (app.Environment.IsDevelopment())
+// Apply EF migrations (or create DB) and seed catalogs at startup
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var db = services.GetRequiredService<QamsDbContext>();
+        // Try apply migrations; if none or fails, fall back to EnsureCreated
+        try
+        {
+            db.Database.Migrate();
+            Log.Information("Database migrations applied.");
+        }
+        catch (Exception migEx)
+        {
+            Log.Warning(migEx, "Migrations failed, attempting EnsureCreated().");
+            db.Database.EnsureCreated();
+        }
+
+        var catalogService = services.GetRequiredService<ICatalogService>();
+
+        // Seed helper
+        async Task SeedIfEmpty(string name, List<string> codes)
+        {
+            var existing = await catalogService.GetAllByCatalogNameAsync(name);
+            if (existing == null || existing.Count == 0)
+            {
+                int order = 1;
+                foreach (var code in codes)
+                {
+                    await catalogService.CreateAsync(name, new QAMS.Application.DTOs.Catalogs.CreateCatalogItemDto
+                    {
+                        Code = code,
+                        Name = code,
+                        Description = null,
+                        SortOrder = order++,
+                        IsActive = true
+                    });
+                }
+                Log.Information("Seeded catalog {Catalog} with {Count} items.", name, codes.Count);
+            }
+        }
+
+        // Seed known catalogs
+        SeedIfEmpty("executionstatus", new List<string>{"PENDING","IN_PROGRESS","PASSED","FAILED","BLOCKED","SKIPPED"}).GetAwaiter().GetResult();
+        SeedIfEmpty("evidencetype", new List<string>{"IMAGE","VIDEO","DOCUMENT","LOG_FILE"}).GetAwaiter().GetResult();
+        SeedIfEmpty("stepresultstatus", new List<string>{"NOT_EXECUTED","PASSED","FAILED","BLOCKED"}).GetAwaiter().GetResult();
+        SeedIfEmpty("taskpriority", new List<string>{"LOW","MEDIUM","HIGH","CRITICAL"}).GetAwaiter().GetResult();
+        SeedIfEmpty("testcasepriority", new List<string>{"LOW","MEDIUM","HIGH","CRITICAL"}).GetAwaiter().GetResult();
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Error applying migrations or seeding data.");
+        throw;
+    }
+}
+
+if (app.Environment.IsDevelopment() || string.Equals(app.Environment.EnvironmentName, "Docker", StringComparison.OrdinalIgnoreCase))
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>

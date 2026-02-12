@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("QAMS.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7e492620ceaceae6d0179aea0a560d5fc5e38590")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fe83dcf1723088719b1876a58dfec865e5aaeeb1")]
 [assembly: System.Reflection.AssemblyProductAttribute("QAMS.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("QAMS.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
