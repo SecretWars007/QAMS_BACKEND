@@ -9,6 +9,10 @@ namespace QAMS.Domain.Entities
         public Project Project { get; set; } = null!;
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
+
+        public int StatusId { get; set; }
+        public QAMS.Domain.Entities.Catalogs.TestSuiteStatus Status { get; set; } = null!;
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<TestCase> TestCases { get; set; } = new List<TestCase>();

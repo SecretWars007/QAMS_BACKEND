@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using QAMS.Domain.Entities;
@@ -11,6 +12,10 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.ToTable("user_roles");
             builder.HasKey(ur => new { ur.UserId, ur.RoleId });
 
+            builder.Property(ur => ur.UserId).HasColumnName("user_id");
+            builder.Property(ur => ur.RoleId).HasColumnName("role_id");
+            builder.Property(ur => ur.AssignedAt).HasColumnName("assigned_at").IsRequired();
+
             builder.HasOne(ur => ur.User)
                 .WithMany(u => u.UserRoles)
                 .HasForeignKey(ur => ur.UserId)
@@ -21,7 +26,14 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 .HasForeignKey(ur => ur.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(ur => ur.AssignedAt).IsRequired();
+            builder.HasData(
+                new UserRole
+                {
+                    UserId = UserConfiguration.AdminUserId,
+                    RoleId = QAMS.Domain.Constants.SystemRoles.AdminRoleId,
+                    AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
         }
     }
 }

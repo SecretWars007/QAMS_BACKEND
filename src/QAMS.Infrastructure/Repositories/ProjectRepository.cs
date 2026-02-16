@@ -33,5 +33,31 @@ namespace QAMS.Infrastructure.Repositories
                 .Include(p => p.KanbanBoards)
                 .FirstOrDefaultAsync(p => p.Id == projectId);
         }
+
+        public async Task<Project?> GetWithDetailsAsync(Guid projectId)
+        {
+            return await _dbSet
+                .Include(p => p.CreatedBy)
+                .Include(p => p.ProjectStatus)
+                .Include(p => p.ProjectTesters)
+                    .ThenInclude(pt => pt.User)
+                .Include(p => p.TestSuites)
+                .Include(p => p.KanbanBoards)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+        }
+
+        public async Task<List<Project>> FindWithDetailsAsync(System.Linq.Expressions.Expression<Func<Project, bool>> predicate)
+        {
+            return await _dbSet
+                .Include(p => p.CreatedBy)
+                .Include(p => p.ProjectStatus)
+                .Include(p => p.ProjectTesters)
+                    .ThenInclude(pt => pt.User)
+                .Include(p => p.TestSuites)
+                .Include(p => p.KanbanBoards)
+                .Where(predicate)
+                .AsNoTracking()
+                .ToListAsync();
+        }
     }
 }

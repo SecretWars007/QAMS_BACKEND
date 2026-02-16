@@ -9,5 +9,8 @@ namespace QAMS.Application.Interfaces
         Task<UserDto> CreateAsync(CreateUserDto dto);
         Task<UserDto> UpdateAsync(Guid id, UpdateUserDto dto);
         Task DeleteAsync(Guid id);
+        Task AssignRoleAsync(Guid userId, Guid roleId);
+        Task RemoveAllRolesAsync(Guid userId);
+        Task RemoveRoleAsync(Guid userId, Guid roleId);
     }
 }

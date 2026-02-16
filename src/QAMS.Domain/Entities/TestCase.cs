@@ -10,6 +10,11 @@ namespace QAMS.Domain.Entities
     public class TestCase
     {
         public Guid Id { get; set; }
+        
+        // Asociación con Proyecto
+        public Guid ProjectId { get; set; }
+        public Project Project { get; set; } = null!;
+        
         public Guid TestSuiteId { get; set; }
         public TestSuite TestSuite { get; set; } = null!;
         public string Title { get; set; } = string.Empty;
@@ -22,7 +27,23 @@ namespace QAMS.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 
+        // Auditoría: Quién creó el test case
+        public Guid? CreatedByUserId { get; set; }
+        public User? CreatedBy { get; set; }
+
+        // Estimación y fechas
+        public decimal EstimatedTimeHours { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+
+        // Tipo de prueba
+        public int TestTypeId { get; set; }
+        public TestType TestType { get; set; } = null!;
+
         public ICollection<TestStep> TestSteps { get; set; } = new List<TestStep>();
         public ICollection<TestExecution> TestExecutions { get; set; } = new List<TestExecution>();
+        
+        // Certificadores asignados al test case
+        public ICollection<TestCaseCertifier> Certifiers { get; set; } = new List<TestCaseCertifier>();
     }
 }

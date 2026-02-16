@@ -21,6 +21,7 @@ namespace QAMS.Infrastructure.Repositories
         {
             return await _dbSet
                 .Where(ts => ts.ProjectId == projectId)
+                .Include(ts => ts.Status)
                 .Include(ts => ts.TestCases)
                 .ThenInclude(tc => tc.Priority)
                 .OrderBy(ts => ts.Name)

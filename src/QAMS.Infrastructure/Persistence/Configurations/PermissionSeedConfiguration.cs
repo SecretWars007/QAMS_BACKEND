@@ -1,4 +1,5 @@
-// src/QAMS.Infrastructure/Persistence/Configurations/PermissionSeedConfiguration.cs
+using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using QAMS.Domain.Entities;
@@ -13,6 +14,14 @@ namespace QAMS.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<Permission> builder)
         {
+            builder.ToTable("permissions");
+            builder.HasKey(p => p.Id);
+            builder.Property(p => p.Id).HasColumnName("id");
+            builder.Property(p => p.Code).HasColumnName("code").HasMaxLength(100).IsRequired();
+            builder.Property(p => p.Description).HasColumnName("description").HasMaxLength(500);
+            builder.Property(p => p.Module).HasColumnName("module").HasMaxLength(100);
+            builder.Property(p => p.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+
             var permissions = new List<Permission>
             {
                 // USUARIOS
@@ -20,6 +29,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 P("USERS_CREATE", "Crear usuarios", "Users"),
                 P("USERS_UPDATE", "Actualizar usuarios", "Users"),
                 P("USERS_DELETE", "Eliminar usuarios", "Users"),
+                P("USERS_ASSIGN_ROLES", "Asignar roles a usuarios", "Users"),
                 // ROLES
                 P("ROLES_VIEW", "Ver roles", "Roles"),
                 P("ROLES_CREATE", "Crear roles", "Roles"),
@@ -57,7 +67,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         }
 
         /// <summary>Helper para crear Permission con Guid determinístico basado en código.</summary>
-        private static Permission P(string code, string desc, string module)
+        public static Permission P(string code, string desc, string module)
         {
             // Generar GUID determinístico basado en el código para consistencia
             var guidBytes = new byte[16];
@@ -73,5 +83,17 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             };
         }
+
+        public static readonly string[] AllPermissionCodes = new[]
+        {
+            "USERS_VIEW", "USERS_CREATE", "USERS_UPDATE", "USERS_DELETE", "USERS_ASSIGN_ROLES",
+            "ROLES_VIEW", "ROLES_CREATE", "ROLES_UPDATE", "ROLES_DELETE", "ROLES_ASSIGN_PERMISSIONS",
+            "CATALOGS_VIEW", "CATALOGS_MANAGE",
+            "PROJECTS_VIEW", "PROJECTS_CREATE", "PROJECTS_UPDATE", "PROJECTS_DELETE",
+            "TEST_CASES_VIEW", "TEST_CASES_CREATE", "TEST_CASES_UPDATE", "TEST_CASES_DELETE",
+            "EXECUTIONS_VIEW", "EXECUTIONS_CREATE", "EXECUTIONS_UPDATE", "EXECUTIONS_UPLOAD_EVIDENCE",
+            "KANBAN_VIEW", "KANBAN_CREATE", "KANBAN_UPDATE", "KANBAN_DELETE",
+            "DASHBOARD_VIEW"
+        };
     }
 }

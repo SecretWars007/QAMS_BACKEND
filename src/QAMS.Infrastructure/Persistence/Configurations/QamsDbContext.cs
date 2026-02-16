@@ -66,6 +66,16 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         /// </summary>
         public DbSet<TestCasePriority> TestCasePriorities => Set<TestCasePriority>();
 
+        /// <summary>
+        /// Tabla catálogo de tipos de prueba.
+        /// Valores seed: FUNCTIONAL_MANUAL, FUNCTIONAL_AUTOMATED, NON_FUNCTIONAL, REGRESSION, SMOKE.
+        /// Tabla PostgreSQL: test_types
+        /// </summary>
+        public DbSet<TestType> TestTypes => Set<TestType>();
+
+        /// <summary>Catálogo de estados de TestSuite.</summary>
+        public DbSet<TestSuiteStatus> TestSuiteStatuses => Set<TestSuiteStatus>();
+
         // =======================================================================
         // TABLAS DE SEGURIDAD (Sistema RBAC Dinámico)
         // Permite administrar usuarios, roles y permisos desde la UI.
@@ -98,6 +108,11 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         /// Tabla PostgreSQL: user_roles
         /// </summary>
         public DbSet<UserRole> UserRoles => Set<UserRole>();
+        
+        /// <summary>Testers asignados a proyectos.</summary>
+        public DbSet<ProjectTester> ProjectTesters => Set<ProjectTester>();
+
+        public DbSet<QAMS.Domain.Entities.Catalogs.ProjectStatus> ProjectStatuses => Set<QAMS.Domain.Entities.Catalogs.ProjectStatus>();
 
         /// <summary>
         /// Tabla puente para la relación muchos-a-muchos entre Role y Permission.
@@ -235,12 +250,6 @@ namespace QAMS.Infrastructure.Persistence.Configurations
 
             // Escanear y aplicar TODAS las clases que implementan
             // IEntityTypeConfiguration<T> en el assembly actual (Infrastructure).
-            // Esto detecta automáticamente:
-            // - Las 5 configuraciones de catálogos con seed data
-            // - Las 6 configuraciones de seguridad (RBAC)
-            // - Las 7 configuraciones de negocio (QA)
-            // - Las 3 configuraciones de Kanban
-            // Total: 21 configuraciones aplicadas automáticamente
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(QamsDbContext).Assembly);
         }
     }

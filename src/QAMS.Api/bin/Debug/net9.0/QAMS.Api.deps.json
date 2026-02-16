@@ -724,6 +724,7 @@
           "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.11",
           "Microsoft.EntityFrameworkCore": "8.0.11",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "8.0.11",
+          "QAMS.Application": "1.0.0",
           "QAMS.Domain": "1.0.0"
         },
         "runtime": {

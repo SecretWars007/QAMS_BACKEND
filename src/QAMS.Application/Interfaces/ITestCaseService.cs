@@ -7,6 +7,8 @@ namespace QAMS.Application.Interfaces
     {
         Task<TestCaseDto> GetByIdAsync(Guid id);
         Task<List<TestCaseDto>> GetBySuiteAsync(Guid suiteId);
+        Task<List<TestCaseDto>> GetByProjectIdAsync(Guid projectId);
+        Task<List<TestCaseDto>> GetByProjectAndSuiteAsync(Guid projectId, Guid suiteId);
         Task<TestCaseDto> CreateAsync(CreateTestCaseDto dto);
         Task<TestCaseDto> UpdateAsync(Guid id, CreateTestCaseDto dto);
         Task DeleteAsync(Guid id);

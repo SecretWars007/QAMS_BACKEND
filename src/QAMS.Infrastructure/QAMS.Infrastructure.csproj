@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\QAMS.Domain\QAMS.Domain.csproj" />
+    <ProjectReference Include="..\QAMS.Application\QAMS.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

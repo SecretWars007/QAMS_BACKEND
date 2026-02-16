@@ -16,3 +16,5 @@ C:\diplomado\QAMS\src\QAMS.Infrastructure\obj\Debug\net9.0\refint\QAMS.Infrastru
 C:\diplomado\QAMS\src\QAMS.Infrastructure\obj\Debug\net9.0\QAMS.Infrastructure.pdb
 C:\diplomado\QAMS\src\QAMS.Infrastructure\obj\Debug\net9.0\QAMS.Infrastructure.genruntimeconfig.cache
 C:\diplomado\QAMS\src\QAMS.Infrastructure\obj\Debug\net9.0\ref\QAMS.Infrastructure.dll
+C:\diplomado\QAMS\src\QAMS.Infrastructure\bin\Debug\net9.0\QAMS.Application.dll
+C:\diplomado\QAMS\src\QAMS.Infrastructure\bin\Debug\net9.0\QAMS.Application.pdb

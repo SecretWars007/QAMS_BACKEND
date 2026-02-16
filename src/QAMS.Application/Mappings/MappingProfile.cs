@@ -1,0 +1,95 @@
+// src/QAMS.Application/Mappings/MappingProfile.cs
+using AutoMapper;
+using QAMS.Application.DTOs.Auth;
+using QAMS.Application.DTOs.Catalogs;
+using QAMS.Application.DTOs.Dashboard;
+using QAMS.Application.DTOs.Kanban;
+using QAMS.Application.DTOs.Projects;
+using QAMS.Application.DTOs.Roles;
+using QAMS.Application.DTOs.TestCases;
+using QAMS.Application.DTOs.TestExecutions;
+using QAMS.Application.DTOs.Users;
+using QAMS.Domain.Entities;
+using QAMS.Domain.Entities.Catalogs;
+using QAMS.Application.DTOs.TestSuites;
+
+namespace QAMS.Application.Mappings
+{
+    public class MappingProfile : Profile
+    {
+        public MappingProfile()
+        {
+            // ================================================================
+            // SEGURIDAD (RBAC)
+            // ================================================================
+            CreateMap<Permission, PermissionDto>();
+            
+            CreateMap<Role, RoleDto>()
+                .ForMember(d => d.Permissions, o => o.MapFrom(s => s.RolePermissions.Select(rp => rp.Permission)));
+            
+            CreateMap<User, UserDto>()
+                .ForMember(d => d.Roles, o => o.MapFrom(s => s.UserRoles.Select(ur => ur.Role.Name)));
+
+            // ================================================================
+            // CATÁLOGOS (CatalogBase -> CatalogItemDto)
+            // ================================================================
+            CreateMap<ExecutionStatus, CatalogItemDto>();
+            CreateMap<EvidenceType, CatalogItemDto>();
+            CreateMap<StepResultStatus, CatalogItemDto>();
+            CreateMap<TaskPriority, CatalogItemDto>();
+            CreateMap<TestCasePriority, CatalogItemDto>();
+
+            // ================================================================
+            // NEGOCIO (QA)
+            // ================================================================
+            CreateMap<Project, ProjectDto>()
+                .ForMember(d => d.TestSuiteCount, o => o.MapFrom(s => s.TestSuites.Count))
+                .ForMember(d => d.KanbanBoardCount, o => o.MapFrom(s => s.KanbanBoards.Count))
+                .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty))
+                .ForMember(d => d.ProjectStatusName, o => o.MapFrom(s => s.ProjectStatus != null ? s.ProjectStatus.Name : string.Empty))
+                .ForMember(d => d.TesterNames, o => o.MapFrom(s => s.ProjectTesters.Select(pt => pt.User.FullName)));
+            
+            CreateMap<TestCase, TestCaseDto>()
+                .ForMember(d => d.PriorityName, o => o.MapFrom(s => s.Priority != null ? s.Priority.Name : string.Empty))
+                .ForMember(d => d.PriorityCode, o => o.MapFrom(s => s.Priority != null ? s.Priority.Code : string.Empty))
+                .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty))
+                .ForMember(d => d.TestTypeName, o => o.MapFrom(s => s.TestType != null ? s.TestType.Name : string.Empty))
+                .ForMember(d => d.CertifierNames, o => o.MapFrom(s => s.Certifiers.Select(c => c.User.FullName)))
+                .ForMember(d => d.Steps, o => o.MapFrom(s => s.TestSteps));
+
+            
+            CreateMap<TestSuite, TestSuiteDto>()
+                .ForMember(d => d.TestCaseCount, o => o.MapFrom(s => s.TestCases.Count))
+                .ForMember(d => d.StatusName, o => o.MapFrom(s => s.Status.Name));
+
+            CreateMap<TestStep, TestStepDto>();
+            
+            CreateMap<TestExecution, TestExecutionDto>()
+                .ForMember(d => d.TestCaseTitle, o => o.MapFrom(s => s.TestCase != null ? s.TestCase.Title : string.Empty))
+                .ForMember(d => d.TesterName, o => o.MapFrom(s => s.Tester != null ? s.Tester.FullName : string.Empty))
+                .ForMember(d => d.StatusName, o => o.MapFrom(s => s.Status != null ? s.Status.Name : string.Empty))
+                .ForMember(d => d.StatusCode, o => o.MapFrom(s => s.Status != null ? s.Status.Code : string.Empty))
+                .ForMember(d => d.StepResults, o => o.MapFrom(s => s.StepResults));
+                
+            CreateMap<ExecutionStepResult, StepResultDto>()
+                .ForMember(d => d.StatusName, o => o.MapFrom(s => s.Status != null ? s.Status.Name : string.Empty))
+                .ForMember(d => d.StepOrder, o => o.MapFrom(s => s.TestStep != null ? s.TestStep.StepOrder : 0))
+                .ForMember(d => d.Action, o => o.MapFrom(s => s.TestStep != null ? s.TestStep.Action : string.Empty));
+
+            CreateMap<Evidence, EvidenceDto>()
+                .ForMember(d => d.FileTypeName, o => o.MapFrom(s => s.FileType != null ? s.FileType.Name : string.Empty))
+                .ForMember(d => d.FileUrl, o => o.Ignore()); // Campo no mapeable directamente
+
+            // ================================================================
+            // KANBAN
+            // ================================================================
+            CreateMap<KanbanBoard, KanbanBoardDto>();
+            CreateMap<KanbanColumn, KanbanColumnDto>();
+
+            CreateMap<KanbanTask, KanbanTaskDto>()
+                .ForMember(d => d.AssigneeName, o => o.MapFrom(s => s.Assignee != null ? s.Assignee.FullName : string.Empty))
+                .ForMember(d => d.PriorityName, o => o.MapFrom(s => s.Priority != null ? s.Priority.Name : string.Empty))
+                .ForMember(d => d.PriorityCode, o => o.MapFrom(s => s.Priority != null ? s.Priority.Code : string.Empty));
+        }
+    }
+}

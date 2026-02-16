@@ -20,5 +20,17 @@ namespace QAMS.Domain.Entities
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
         public ICollection<TestExecution> TestExecutions { get; set; } = new List<TestExecution>();
         public ICollection<KanbanTask> AssignedTasks { get; set; } = new List<KanbanTask>();
+        
+        // Proyectos a los que está asignado el usuario
+        public ICollection<ProjectTester> ProjectAssignments { get; set; } = new List<ProjectTester>();
+
+        // Proyectos creados por el usuario
+        public ICollection<Project> CreatedProjects { get; set; } = new List<Project>();
+
+        // Test cases creados por el usuario
+        public ICollection<TestCase> CreatedTestCases { get; set; } = new List<TestCase>();
+
+        // Test cases que el usuario está certificando
+        public ICollection<TestCaseCertifier> CertifyingTestCases { get; set; } = new List<TestCaseCertifier>();
     }
 }

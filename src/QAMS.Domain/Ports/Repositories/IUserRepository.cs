@@ -8,6 +8,10 @@ namespace QAMS.Domain.Ports.Repositories
         Task<User?> GetByUsernameAsync(string username);
         Task<User?> GetByEmailAsync(string email);
         Task<User?> GetWithRolesAsync(Guid userId);
+        Task<List<User>> GetAllWithRolesAsync();
         Task<User?> GetWithRolesAndPermissionsAsync(string username);
+        Task AssignRoleAsync(Guid userId, Guid roleId);
+        Task RemoveAllRolesAsync(Guid userId);
+        Task RemoveRoleAsync(Guid userId, Guid roleId);
     }
 }

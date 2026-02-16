@@ -23,6 +23,7 @@ namespace QAMS.Infrastructure.Repositories
             return await _dbSet
                 .Include(tc => tc.TestSteps.OrderBy(s => s.StepOrder))
                 .Include(tc => tc.Priority)
+                .Include(tc => tc.Certifiers).ThenInclude(c => c.User)
                 .FirstOrDefaultAsync(tc => tc.Id == testCaseId);
         }
 
@@ -35,6 +36,41 @@ namespace QAMS.Infrastructure.Repositories
                 .Where(tc => tc.TestSuiteId == suiteId)
                 .Include(tc => tc.TestSteps.OrderBy(s => s.StepOrder))
                 .Include(tc => tc.Priority)
+                .Include(tc => tc.Certifiers).ThenInclude(c => c.User)
+                .OrderBy(tc => tc.Title)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Obtiene todos los casos de un proyecto con relaciones cargadas.
+        /// </summary>
+        public async Task<List<TestCase>> GetByProjectIdAsync(Guid projectId)
+        {
+            return await _dbSet
+                .Where(tc => tc.ProjectId == projectId)
+                .Include(tc => tc.TestSteps.OrderBy(s => s.StepOrder))
+                .Include(tc => tc.Priority)
+                .Include(tc => tc.CreatedBy)
+                .Include(tc => tc.TestType)
+                .Include(tc => tc.Certifiers).ThenInclude(c => c.User)
+                .OrderBy(tc => tc.Title)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Obtiene todos los casos de un proyecto y una suite específicos.
+        /// </summary>
+        public async Task<List<TestCase>> GetByProjectAndSuiteAsync(Guid projectId, Guid suiteId)
+        {
+            return await _dbSet
+                .Where(tc => tc.ProjectId == projectId && tc.TestSuiteId == suiteId)
+                .Include(tc => tc.TestSteps.OrderBy(s => s.StepOrder))
+                .Include(tc => tc.Priority)
+                .Include(tc => tc.CreatedBy)
+                .Include(tc => tc.TestType)
+                .Include(tc => tc.Certifiers).ThenInclude(c => c.User)
                 .OrderBy(tc => tc.Title)
                 .AsNoTracking()
                 .ToListAsync();

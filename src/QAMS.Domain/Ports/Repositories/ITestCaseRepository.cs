@@ -7,5 +7,7 @@ namespace QAMS.Domain.Ports.Repositories
     {
         Task<TestCase?> GetWithStepsAsync(Guid testCaseId);
         Task<IReadOnlyList<TestCase>> GetBySuiteWithStepsAsync(Guid suiteId);
+        Task<List<TestCase>> GetByProjectIdAsync(Guid projectId);
+        Task<List<TestCase>> GetByProjectAndSuiteAsync(Guid projectId, Guid suiteId);
     }
 }

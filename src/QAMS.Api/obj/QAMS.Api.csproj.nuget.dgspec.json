@@ -329,6 +329,9 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
+              "C:\\diplomado\\QAMS\\src\\QAMS.Application\\QAMS.Application.csproj": {
+                "projectPath": "C:\\diplomado\\QAMS\\src\\QAMS.Application\\QAMS.Application.csproj"
+              },
               "C:\\diplomado\\QAMS\\src\\QAMS.Domain\\QAMS.Domain.csproj": {
                 "projectPath": "C:\\diplomado\\QAMS\\src\\QAMS.Domain\\QAMS.Domain.csproj"
               }

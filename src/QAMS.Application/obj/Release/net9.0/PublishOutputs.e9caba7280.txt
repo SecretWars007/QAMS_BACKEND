@@ -1,0 +1,13 @@
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\QAMS.Application.dll
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\QAMS.Application.deps.json
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\QAMS.Application.pdb
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\AutoMapper.dll
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\FluentValidation.dll
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\FluentValidation.DependencyInjectionExtensions.dll
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\Microsoft.Extensions.Logging.Abstractions.dll
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\Microsoft.Extensions.Options.dll
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\Microsoft.Extensions.Primitives.dll
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\QAMS.Domain.dll
+C:\diplomado\QAMS\src\QAMS.Application\bin\Release\net9.0\publish\QAMS.Domain.pdb

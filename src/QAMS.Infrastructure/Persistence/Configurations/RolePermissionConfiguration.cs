@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using QAMS.Domain.Entities;
@@ -11,6 +13,10 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.ToTable("role_permissions");
             builder.HasKey(rp => new { rp.RoleId, rp.PermissionId });
 
+            builder.Property(rp => rp.RoleId).HasColumnName("role_id");
+            builder.Property(rp => rp.PermissionId).HasColumnName("permission_id");
+            builder.Property(rp => rp.AssignedAt).HasColumnName("assigned_at").IsRequired();
+
             builder.HasOne(rp => rp.Role)
                 .WithMany(r => r.RolePermissions)
                 .HasForeignKey(rp => rp.RoleId)
@@ -21,7 +27,30 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 .HasForeignKey(rp => rp.PermissionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(rp => rp.AssignedAt).IsRequired();
+            var rolePermissions = PermissionSeedConfiguration.AllPermissionCodes
+                .Select(code => new RolePermission
+                {
+                    RoleId = QAMS.Domain.Constants.SystemRoles.AdminRoleId,
+                    PermissionId = PermissionSeedConfiguration.P(code, "", "").Id,
+                    AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                }).ToList();
+
+            var testerPermissions = new[]
+            {
+                "PROJECTS_VIEW", "TEST_CASES_VIEW",
+                "EXECUTIONS_VIEW", "EXECUTIONS_CREATE", "EXECUTIONS_UPDATE", "EXECUTIONS_UPLOAD_EVIDENCE",
+                "KANBAN_VIEW", "KANBAN_UPDATE",
+                "DASHBOARD_VIEW", "CATALOGS_VIEW"
+            }.Select(code => new RolePermission
+            {
+                RoleId = QAMS.Domain.Constants.SystemRoles.TesterRoleId,
+                PermissionId = PermissionSeedConfiguration.P(code, "", "").Id,
+                AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            });
+
+            rolePermissions.AddRange(testerPermissions);
+
+            builder.HasData(rolePermissions.ToArray());
         }
     }
 }

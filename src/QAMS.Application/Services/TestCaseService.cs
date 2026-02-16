@@ -14,6 +14,8 @@ namespace QAMS.Application.Services
     {
         private readonly ITestCaseRepository _testCaseRepo;
         private readonly ICatalogRepository<TestCasePriority> _priorityRepo;
+        private readonly ICatalogRepository<TestType> _testTypeRepo;
+        private readonly ICurrentUserService _currentUserService;
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
         private readonly ILogger<TestCaseService> _logger;
@@ -21,6 +23,8 @@ namespace QAMS.Application.Services
         public TestCaseService(
             ITestCaseRepository testCaseRepo,
             ICatalogRepository<TestCasePriority> priorityRepo,
+            ICatalogRepository<TestType> testTypeRepo,
+            ICurrentUserService currentUserService,
             IUnitOfWork uow,
             IMapper mapper,
             ILogger<TestCaseService> logger
@@ -28,6 +32,8 @@ namespace QAMS.Application.Services
         {
             _testCaseRepo = testCaseRepo;
             _priorityRepo = priorityRepo;
+            _testTypeRepo = testTypeRepo;
+            _currentUserService = currentUserService;
             _uow = uow;
             _mapper = mapper;
             _logger = logger;
@@ -49,6 +55,20 @@ namespace QAMS.Application.Services
             return _mapper.Map<List<TestCaseDto>>(cases);
         }
 
+        public async Task<List<TestCaseDto>> GetByProjectIdAsync(Guid projectId)
+        {
+            _logger.LogInformation("Obteniendo casos del proyecto {ProjectId}.", projectId);
+            var cases = await _testCaseRepo.GetByProjectIdAsync(projectId);
+            return _mapper.Map<List<TestCaseDto>>(cases);
+        }
+
+        public async Task<List<TestCaseDto>> GetByProjectAndSuiteAsync(Guid projectId, Guid suiteId)
+        {
+            _logger.LogInformation("Obteniendo casos del proyecto {ProjectId} y suite {SuiteId}.", projectId, suiteId);
+            var cases = await _testCaseRepo.GetByProjectAndSuiteAsync(projectId, suiteId);
+            return _mapper.Map<List<TestCaseDto>>(cases);
+        }
+
         public async Task<TestCaseDto> CreateAsync(CreateTestCaseDto dto)
         {
             _logger.LogInformation("Creando caso de prueba '{Title}'.", dto.Title);
@@ -61,12 +81,18 @@ namespace QAMS.Application.Services
             var testCase = new TestCase
             {
                 Id = Guid.NewGuid(),
+                ProjectId = dto.ProjectId,
                 TestSuiteId = dto.TestSuiteId,
                 Title = dto.Title,
                 Description = dto.Description,
                 Preconditions = dto.Preconditions,
                 ExpectedResult = dto.ExpectedResult,
                 PriorityId = dto.PriorityId,
+                EstimatedTimeHours = dto.EstimatedTimeHours,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                TestTypeId = dto.TestTypeId > 0 ? dto.TestTypeId : 1, // Default: Funcional Manual
+                CreatedByUserId = _currentUserService.UserId,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
             };
@@ -82,6 +108,19 @@ namespace QAMS.Application.Services
                         StepOrder = stepDto.StepOrder,
                         Action = stepDto.Action,
                         ExpectedResult = stepDto.ExpectedResult,
+                    }
+                );
+            }
+
+            // Agregar certificadores
+            foreach (var certifierId in dto.CertifierUserIds)
+            {
+                testCase.Certifiers.Add(
+                    new TestCaseCertifier
+                    {
+                        TestCaseId = testCase.Id,
+                        UserId = certifierId,
+                        AssignedAt = DateTime.UtcNow
                     }
                 );
             }
@@ -116,6 +155,10 @@ namespace QAMS.Application.Services
             testCase.Preconditions = dto.Preconditions;
             testCase.ExpectedResult = dto.ExpectedResult;
             testCase.PriorityId = dto.PriorityId;
+            testCase.EstimatedTimeHours = dto.EstimatedTimeHours;
+            testCase.StartDate = dto.StartDate;
+            testCase.EndDate = dto.EndDate;
+            testCase.TestTypeId = dto.TestTypeId;
             testCase.UpdatedAt = DateTime.UtcNow;
 
             // Reemplazar pasos: limpiar y re-crear
@@ -130,6 +173,20 @@ namespace QAMS.Application.Services
                         StepOrder = stepDto.StepOrder,
                         Action = stepDto.Action,
                         ExpectedResult = stepDto.ExpectedResult,
+                    }
+                );
+            }
+
+            // Reemplazar certificadores
+            testCase.Certifiers.Clear();
+            foreach (var certifierId in dto.CertifierUserIds)
+            {
+                testCase.Certifiers.Add(
+                    new TestCaseCertifier
+                    {
+                        TestCaseId = testCase.Id,
+                        UserId = certifierId,
+                        AssignedAt = DateTime.UtcNow
                     }
                 );
             }

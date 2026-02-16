@@ -41,5 +41,10 @@ namespace QAMS.Api.Controllers
         [HasPermission("PROJECTS_DELETE")]
         public async Task<IActionResult> Delete(Guid id)
         { await _projectService.DeleteAsync(id); return NoContent(); }
+
+        [HttpGet("{id:guid}/testcases")]
+        [HasPermission("PROJECTS_VIEW")]
+        public async Task<IActionResult> GetTestCasesByProject(Guid id, [FromServices] ITestCaseService testCaseService)
+            => Ok(await testCaseService.GetByProjectIdAsync(id));
     }
 }

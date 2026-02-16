@@ -10,6 +10,10 @@ using QAMS.Infrastructure;
 using QAMS.Infrastructure.Security;
 using QAMS.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
+using QAMS.Application.DTOs.Users;
+using QAMS.Application.DTOs.Roles;
+using QAMS.Application.Mappings;
+using QAMS.Domain.Entities;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -23,6 +27,8 @@ builder.Host.UseSerilog();
 
 // Infrastructure (DbContext, Repos, PasswordHasher, JWT, FileStorage)
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 // JWT
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
@@ -59,12 +65,13 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITestCaseService, TestCaseService>();
+builder.Services.AddScoped<ITestSuiteService, TestSuiteService>();
 builder.Services.AddScoped<ITestExecutionService, TestExecutionService>();
 builder.Services.AddScoped<IKanbanService, KanbanService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
-// AutoMapper
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+// AutoMapper - Escaneo explícito de la capa de Application
+builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
 // FluentValidation
 // builder.Services.AddValidatorsFromAssemblyContaining<MappingProfile>();
@@ -90,17 +97,15 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 
-    c.AddSecurityDefinition(
-        "Bearer",
-        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-        {
-            Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-            Name = "Authorization",
-            In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-            Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-            Scheme = "Bearer",
-        }
-    );
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme."
+    });
 
     c.AddSecurityRequirement(
         new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
@@ -148,52 +153,41 @@ using (var scope = app.Services.CreateScope())
         {
             db.Database.Migrate();
             Log.Information("Database migrations applied.");
+
+            // Si no hay migrations aplicadas (proyecto usa EnsureCreated en dev), crear esquema
+            var applied = db.Database.GetAppliedMigrations();
+            if (applied == null || !applied.Any())
+            {
+                Log.Information("No applied migrations found; calling EnsureCreated() to create schema.");
+                db.Database.EnsureCreated();
+            }
         }
         catch (Exception migEx)
         {
             Log.Warning(migEx, "Migrations failed, attempting EnsureCreated().");
-            db.Database.EnsureCreated();
-        }
-
-        var catalogService = services.GetRequiredService<ICatalogService>();
-
-        // Seed helper
-        async Task SeedIfEmpty(string name, List<string> codes)
-        {
-            var existing = await catalogService.GetAllByCatalogNameAsync(name);
-            if (existing == null || existing.Count == 0)
+            try
             {
-                int order = 1;
-                foreach (var code in codes)
-                {
-                    await catalogService.CreateAsync(name, new QAMS.Application.DTOs.Catalogs.CreateCatalogItemDto
-                    {
-                        Code = code,
-                        Name = code,
-                        Description = null,
-                        SortOrder = order++,
-                        IsActive = true
-                    });
-                }
-                Log.Information("Seeded catalog {Catalog} with {Count} items.", name, codes.Count);
+                db.Database.EnsureCreated();
+            }
+            catch (Exception ensureEx)
+            {
+                Log.Error(ensureEx, "EnsureCreated also failed.");
+                throw;
             }
         }
 
-        // Seed known catalogs
-        SeedIfEmpty("executionstatus", new List<string>{"PENDING","IN_PROGRESS","PASSED","FAILED","BLOCKED","SKIPPED"}).GetAwaiter().GetResult();
-        SeedIfEmpty("evidencetype", new List<string>{"IMAGE","VIDEO","DOCUMENT","LOG_FILE"}).GetAwaiter().GetResult();
-        SeedIfEmpty("stepresultstatus", new List<string>{"NOT_EXECUTED","PASSED","FAILED","BLOCKED"}).GetAwaiter().GetResult();
-        SeedIfEmpty("taskpriority", new List<string>{"LOW","MEDIUM","HIGH","CRITICAL"}).GetAwaiter().GetResult();
-        SeedIfEmpty("testcasepriority", new List<string>{"LOW","MEDIUM","HIGH","CRITICAL"}).GetAwaiter().GetResult();
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "Error applying migrations or seeding data.");
-        throw;
+        // Registrar el error pero NO detener el arranque de la API.
+        // Esto permite que Swagger y endpoints que no dependan de la BD funcionen
+        // mientras se corrige la conexión a la base de datos en desarrollo.
+        Log.Error(ex, "Error applying migrations. Continuing without DB initialization.");
     }
 }
 
-if (app.Environment.IsDevelopment() || string.Equals(app.Environment.EnvironmentName, "Docker", StringComparison.OrdinalIgnoreCase))
+// Habilitar Swagger en todos los entornos que NO sean Production (facilita pruebas locales y en Docker)
+if (!app.Environment.IsProduction())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
