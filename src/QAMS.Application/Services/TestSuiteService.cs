@@ -44,7 +44,9 @@ namespace QAMS.Application.Services
             await _testSuiteRepo.AddAsync(suite);
             await _uow.SaveChangesAsync();
 
-            return _mapper.Map<TestSuiteDto>(suite);
+            // Recargar para incluir el Status para el mapeo
+            var createdSuite = await _testSuiteRepo.GetByIdAsync(suite.Id);
+            return _mapper.Map<TestSuiteDto>(createdSuite);
         }
 
         public async Task<TestSuiteDto> GetByIdAsync(Guid id)
@@ -82,7 +84,9 @@ namespace QAMS.Application.Services
             _testSuiteRepo.Update(suite);
             await _uow.SaveChangesAsync();
 
-            return _mapper.Map<TestSuiteDto>(suite);
+            // Recargar para incluir el Status para el mapeo
+            var updatedSuite = await _testSuiteRepo.GetByIdAsync(suite.Id);
+            return _mapper.Map<TestSuiteDto>(updatedSuite);
         }
     }
 }

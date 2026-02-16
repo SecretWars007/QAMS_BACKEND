@@ -14,6 +14,13 @@ namespace QAMS.Infrastructure.Repositories
         public TestSuiteRepository(QamsDbContext context)
             : base(context) { }
 
+        public override async Task<TestSuite?> GetByIdAsync(Guid id)
+        {
+            return await _dbSet
+                .Include(ts => ts.Status)
+                .FirstOrDefaultAsync(ts => ts.Id == id);
+        }
+
         /// <summary>
         /// Obtiene suites de un proyecto con sus casos de prueba incluidos.
         /// </summary>
