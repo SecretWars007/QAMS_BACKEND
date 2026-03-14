@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("QAMS.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6b66d62e37eeb1c2763e2d7fc7566c74acedaa30")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f0815a8ab1be685388c59ccb791e490cecabe508")]
 [assembly: System.Reflection.AssemblyProductAttribute("QAMS.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("QAMS.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

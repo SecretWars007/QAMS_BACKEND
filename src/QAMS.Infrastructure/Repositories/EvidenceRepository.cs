@@ -25,5 +25,15 @@ namespace QAMS.Infrastructure.Repositories
                 .AsNoTracking()
                 .ToListAsync();
         }
+
+        public async Task<IReadOnlyList<Evidence>> GetByStepResultsAsync(List<Guid> stepResultIds)
+        {
+            return await _dbSet
+                .Where(e => e.ExecutionStepResultId.HasValue && stepResultIds.Contains(e.ExecutionStepResultId.Value))
+                .Include(e => e.FileType)
+                .OrderByDescending(e => e.UploadedAt)
+                .AsNoTracking()
+                .ToListAsync();
+        }
     }
 }

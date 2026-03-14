@@ -1,3 +1,0 @@
-C:\diplomado\QAMS\src\QAMS.Domain\bin\Release\net9.0\publish\QAMS.Domain.dll
-C:\diplomado\QAMS\src\QAMS.Domain\bin\Release\net9.0\publish\QAMS.Domain.deps.json
-C:\diplomado\QAMS\src\QAMS.Domain\bin\Release\net9.0\publish\QAMS.Domain.pdb

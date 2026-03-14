@@ -8,6 +8,7 @@ namespace QAMS.Application.Interfaces
         Task<List<KanbanBoardDto>> GetBoardsByProjectAsync(Guid projectId);
         Task<KanbanBoardDto> CreateBoardAsync(Guid projectId, string name);
         Task<KanbanTaskDto> CreateTaskAsync(CreateKanbanTaskDto dto);
+        Task<KanbanTaskDto> UpdateTaskAsync(Guid taskId, UpdateKanbanTaskDto dto);
         Task<KanbanTaskDto> MoveTaskAsync(Guid taskId, MoveTaskDto dto);
         Task DeleteTaskAsync(Guid taskId);
     }

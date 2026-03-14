@@ -14,7 +14,12 @@ namespace QAMS.Api.Controllers
     public class TestExecutionsController : ControllerBase
     {
         private readonly ITestExecutionService _service;
-        public TestExecutionsController(ITestExecutionService service) { _service = service; }
+        private readonly ILogger<TestExecutionsController> _logger;
+        public TestExecutionsController(ITestExecutionService service, ILogger<TestExecutionsController> logger) 
+        { 
+            _service = service; 
+            _logger = logger;
+        }
 
         private Guid GetUserId() =>
             Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
@@ -42,11 +47,29 @@ namespace QAMS.Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = exec.Id }, exec);
         }
 
+        [HttpPost("complete")]
+        [HasPermission("EXECUTIONS_CREATE")]
+        public async Task<IActionResult> CreateComplete([FromBody] CreateCompleteExecutionDto dto)
+        {
+            var exec = await _service.CreateCompleteAsync(GetUserId(), dto);
+            return CreatedAtAction(nameof(GetById), new { id = exec.Id }, exec);
+        }
+
         [HttpPut("{executionId:guid}/step-result")]
         [HasPermission("EXECUTIONS_UPDATE")]
         public async Task<IActionResult> UpdateStepResult(
             Guid executionId, [FromBody] UpdateStepResultDto dto)
             => Ok(await _service.UpdateStepResultAsync(executionId, dto));
+
+        [HttpPut("{id:guid}")]
+        [HasPermission("EXECUTIONS_UPDATE")]
+        public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateExecutionStatusDto dto)
+            => Ok(await _service.UpdateStatusAsync(id, dto.StatusId));
+
+        [HttpPut("{id:guid}/full-update")]
+        [HasPermission("EXECUTIONS_UPDATE")]
+        public async Task<IActionResult> FullUpdate(Guid id, [FromBody] UpdateCompleteExecutionDto dto)
+            => Ok(await _service.UpdateCompleteAsync(id, dto));
 
         [HttpPut("{executionId:guid}/complete/{statusId:int}")]
         [HasPermission("EXECUTIONS_UPDATE")]
@@ -60,21 +83,61 @@ namespace QAMS.Api.Controllers
         [HttpPost("{executionId:guid}/evidence")]
         [HasPermission("EXECUTIONS_UPLOAD_EVIDENCE")]
         public async Task<IActionResult> UploadEvidence(
-            Guid executionId, IFormFile file, [FromForm] string? description)
+            Guid executionId, [FromForm] QAMS.Api.Models.TestExecutions.UploadEvidenceRequest request)
         {
-            if (file == null || file.Length == 0)
+            if (request.File == null || request.File.Length == 0)
                 return BadRequest(new { error = "El archivo es obligatorio." });
 
             // Validar tamaño máximo (50 MB)
-            if (file.Length > 50 * 1024 * 1024)
+            if (request.File.Length > 50 * 1024 * 1024)
                 return BadRequest(new { error = "El archivo excede el tamaño máximo de 50 MB." });
 
-            using var stream = file.OpenReadStream();
+            using var stream = request.File.OpenReadStream();
             var evidence = await _service.UploadEvidenceAsync(
-                executionId, stream, file.FileName,
-                file.ContentType, description);
+                executionId, stream, request.File.FileName,
+                request.File.ContentType, request.Description, request.StepResultId);
 
             return Created("", evidence);
+        }
+
+        [HttpPost("observation")]
+        [HasPermission("EXECUTIONS_UPDATE")]
+        public async Task<IActionResult> PostObservation([FromForm] QAMS.Api.Models.TestExecutions.ObservationRequest request)
+        {
+            Stream? fileStream = null;
+            if (request.File != null && request.File.Length > 0)
+            {
+                // Validar tamaño máximo (50 MB)
+                if (request.File.Length > 50 * 1024 * 1024)
+                    return BadRequest(new { error = "El archivo excede el tamaño máximo de 50 MB." });
+                
+                fileStream = request.File.OpenReadStream();
+            }
+
+            var dto = new CreateObservationDto
+            {
+                ExecutionStepResultId = request.ExecutionStepResultId,
+                Observation = request.Observation
+            };
+
+            var obs = await _service.AddObservationAsync(
+                GetUserId(), 
+                dto, 
+                fileStream, 
+                request.File?.FileName, 
+                request.File?.ContentType);
+
+            if (fileStream != null) await fileStream.DisposeAsync();
+
+            return Created("", obs);
+        }
+
+        [HttpPost("observation/{observationId:guid}/response")]
+        [HasPermission("EXECUTIONS_UPDATE")]
+        public async Task<IActionResult> PostResponse(Guid observationId, [FromBody] ResponseObservationDto dto)
+        {
+            var obs = await _service.AddResponseToObservationAsync(GetUserId(), observationId, dto);
+            return Ok(obs);
         }
     }
 }

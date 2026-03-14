@@ -78,7 +78,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "IMAGE",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(7371),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 71, DateTimeKind.Utc).AddTicks(2525),
                             IsActive = true,
                             Name = "Imagen",
                             SortOrder = 1
@@ -87,7 +87,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "VIDEO",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(7377),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 71, DateTimeKind.Utc).AddTicks(2532),
                             IsActive = true,
                             Name = "Video",
                             SortOrder = 2
@@ -96,7 +96,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "DOCUMENT",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(7378),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 71, DateTimeKind.Utc).AddTicks(2536),
                             IsActive = true,
                             Name = "Documento",
                             SortOrder = 3
@@ -105,7 +105,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "LOG_FILE",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(7380),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 71, DateTimeKind.Utc).AddTicks(2539),
                             IsActive = true,
                             Name = "Archivo de Log",
                             SortOrder = 4
@@ -168,7 +168,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "PENDING",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 431, DateTimeKind.Utc).AddTicks(992),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 72, DateTimeKind.Utc).AddTicks(3419),
                             Description = "Ejecución creada pero no iniciada.",
                             IsActive = true,
                             Name = "Pendiente",
@@ -178,7 +178,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "IN_PROGRESS",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 431, DateTimeKind.Utc).AddTicks(994),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 72, DateTimeKind.Utc).AddTicks(3427),
                             Description = "Ejecución en curso.",
                             IsActive = true,
                             Name = "En Progreso",
@@ -188,7 +188,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "PASSED",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 431, DateTimeKind.Utc).AddTicks(996),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 72, DateTimeKind.Utc).AddTicks(3431),
                             Description = "Todos los pasos exitosos.",
                             IsActive = true,
                             Name = "Aprobado",
@@ -198,7 +198,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "FAILED",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 431, DateTimeKind.Utc).AddTicks(997),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 72, DateTimeKind.Utc).AddTicks(3434),
                             Description = "Al menos un paso falló.",
                             IsActive = true,
                             Name = "Fallido",
@@ -208,7 +208,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 5,
                             Code = "BLOCKED",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 431, DateTimeKind.Utc).AddTicks(999),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 72, DateTimeKind.Utc).AddTicks(3436),
                             Description = "Impedimento externo.",
                             IsActive = true,
                             Name = "Bloqueado",
@@ -218,7 +218,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 6,
                             Code = "SKIPPED",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 431, DateTimeKind.Utc).AddTicks(1000),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 72, DateTimeKind.Utc).AddTicks(3439),
                             Description = "Omitido intencionalmente.",
                             IsActive = true,
                             Name = "Omitido",
@@ -263,7 +263,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "PENDIENTE",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 429, DateTimeKind.Utc).AddTicks(5419),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 67, DateTimeKind.Utc).AddTicks(6320),
                             Description = "Proyecto registrado pero no iniciado",
                             IsActive = true,
                             Name = "Pendiente",
@@ -273,7 +273,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "EN_PROCESO",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 429, DateTimeKind.Utc).AddTicks(5422),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 67, DateTimeKind.Utc).AddTicks(6325),
                             Description = "Proyecto en ejecución activa",
                             IsActive = true,
                             Name = "En Proceso",
@@ -283,7 +283,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "DETENIDO",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 429, DateTimeKind.Utc).AddTicks(5425),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 67, DateTimeKind.Utc).AddTicks(6333),
                             Description = "Proyecto pausado o cancelado temporalmente",
                             IsActive = true,
                             Name = "Detenido",
@@ -293,11 +293,21 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "CERTIFICADO",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 429, DateTimeKind.Utc).AddTicks(5427),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 67, DateTimeKind.Utc).AddTicks(6335),
                             Description = "Proyecto completado y validado",
                             IsActive = true,
                             Name = "Certificado",
                             SortOrder = 4
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Code = "DEVOLUCION",
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 67, DateTimeKind.Utc).AddTicks(6337),
+                            Description = "Proyecto devuelto por falta de aprobación o errores graves",
+                            IsActive = true,
+                            Name = "Devolución",
+                            SortOrder = 5
                         });
                 });
 
@@ -357,7 +367,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "NOT_EXECUTED",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 436, DateTimeKind.Utc).AddTicks(7205),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 86, DateTimeKind.Utc).AddTicks(6208),
                             IsActive = true,
                             Name = "No Ejecutado",
                             SortOrder = 1
@@ -366,7 +376,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "PASSED",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 436, DateTimeKind.Utc).AddTicks(7210),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 86, DateTimeKind.Utc).AddTicks(6212),
                             IsActive = true,
                             Name = "Aprobado",
                             SortOrder = 2
@@ -375,7 +385,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "FAILED",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 436, DateTimeKind.Utc).AddTicks(7212),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 86, DateTimeKind.Utc).AddTicks(6214),
                             IsActive = true,
                             Name = "Fallido",
                             SortOrder = 3
@@ -384,7 +394,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "BLOCKED",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 436, DateTimeKind.Utc).AddTicks(7213),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 86, DateTimeKind.Utc).AddTicks(6215),
                             IsActive = true,
                             Name = "Bloqueado",
                             SortOrder = 4
@@ -447,7 +457,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "LOW",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 437, DateTimeKind.Utc).AddTicks(1542),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 86, DateTimeKind.Utc).AddTicks(9794),
                             IsActive = true,
                             Name = "Baja",
                             SortOrder = 1
@@ -456,7 +466,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "MEDIUM",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 437, DateTimeKind.Utc).AddTicks(1545),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 86, DateTimeKind.Utc).AddTicks(9798),
                             IsActive = true,
                             Name = "Media",
                             SortOrder = 2
@@ -465,7 +475,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "HIGH",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 437, DateTimeKind.Utc).AddTicks(1547),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 86, DateTimeKind.Utc).AddTicks(9799),
                             IsActive = true,
                             Name = "Alta",
                             SortOrder = 3
@@ -474,7 +484,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "CRITICAL",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 437, DateTimeKind.Utc).AddTicks(1548),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 86, DateTimeKind.Utc).AddTicks(9800),
                             IsActive = true,
                             Name = "Crítica",
                             SortOrder = 4
@@ -537,7 +547,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "LOW",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 439, DateTimeKind.Utc).AddTicks(7957),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 91, DateTimeKind.Utc).AddTicks(9076),
                             IsActive = true,
                             Name = "Baja",
                             SortOrder = 1
@@ -546,7 +556,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "MEDIUM",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 439, DateTimeKind.Utc).AddTicks(7967),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 91, DateTimeKind.Utc).AddTicks(9083),
                             IsActive = true,
                             Name = "Media",
                             SortOrder = 2
@@ -555,7 +565,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "HIGH",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 439, DateTimeKind.Utc).AddTicks(7971),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 91, DateTimeKind.Utc).AddTicks(9085),
                             IsActive = true,
                             Name = "Alta",
                             SortOrder = 3
@@ -564,7 +574,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "CRITICAL",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 439, DateTimeKind.Utc).AddTicks(7975),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 91, DateTimeKind.Utc).AddTicks(9086),
                             IsActive = true,
                             Name = "Crítica",
                             SortOrder = 4
@@ -613,7 +623,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "PENDIENTE",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(1264),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 67, DateTimeKind.Utc).AddTicks(8424),
                             Description = "Suite pendiente de ejecución",
                             IsActive = true,
                             Name = "PENDIENTE",
@@ -623,7 +633,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "EN_PROCESO",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(1267),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 67, DateTimeKind.Utc).AddTicks(8425),
                             Description = "Suite en ejecución activa",
                             IsActive = true,
                             Name = "EN PROCESO",
@@ -633,7 +643,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "COMPLETADO",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(1269),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 67, DateTimeKind.Utc).AddTicks(8426),
                             Description = "Todos los casos de la suite ejecutados",
                             IsActive = true,
                             Name = "COMPLETADO",
@@ -643,7 +653,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "DETENIDO",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(1270),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 67, DateTimeKind.Utc).AddTicks(8427),
                             Description = "Ejecución de la suite pausada",
                             IsActive = true,
                             Name = "DETENIDO",
@@ -688,7 +698,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "FUNCTIONAL_MANUAL",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(4153),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 68, DateTimeKind.Utc).AddTicks(305),
                             Description = "Prueba funcional ejecutada manualmente",
                             IsActive = true,
                             Name = "Funcional Manual",
@@ -698,7 +708,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "FUNCTIONAL_AUTOMATED",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(4155),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 68, DateTimeKind.Utc).AddTicks(308),
                             Description = "Prueba funcional automatizada",
                             IsActive = true,
                             Name = "Funcional Automatizada",
@@ -708,7 +718,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "NON_FUNCTIONAL",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(4158),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 68, DateTimeKind.Utc).AddTicks(309),
                             Description = "Prueba de rendimiento, seguridad, usabilidad, etc.",
                             IsActive = true,
                             Name = "No Funcional",
@@ -718,7 +728,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "REGRESSION",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(4159),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 68, DateTimeKind.Utc).AddTicks(353),
                             Description = "Prueba para verificar que cambios no rompieron funcionalidad existente",
                             IsActive = true,
                             Name = "Regresión",
@@ -728,7 +738,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 5,
                             Code = "SMOKE",
-                            CreatedAt = new DateTime(2026, 2, 16, 22, 55, 54, 430, DateTimeKind.Utc).AddTicks(4161),
+                            CreatedAt = new DateTime(2026, 3, 14, 23, 23, 6, 68, DateTimeKind.Utc).AddTicks(354),
                             Description = "Prueba rápida de funcionalidad crítica",
                             IsActive = true,
                             Name = "Smoke Test",
@@ -740,77 +750,212 @@ namespace QAMS.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("ContentType")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("content_type");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<int?>("EvidenceTypeId")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ExecutionStepResultId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("execution_step_result_id");
 
                     b.Property<string>("FileName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("file_name");
 
                     b.Property<string>("FilePath")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("file_path");
 
                     b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("file_size");
 
                     b.Property<int>("FileTypeId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("file_type_id");
 
                     b.Property<Guid>("TestExecutionId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("test_execution_id");
 
                     b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("uploaded_at")
+                        .HasDefaultValueSql("NOW()");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EvidenceTypeId");
+
+                    b.HasIndex("ExecutionStepResultId");
 
                     b.HasIndex("FileTypeId");
 
                     b.HasIndex("TestExecutionId");
 
-                    b.ToTable("Evidences");
+                    b.ToTable("evidences", (string)null);
+                });
+
+            modelBuilder.Entity("QAMS.Domain.Entities.ExecutionStepObservation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ExecutionStepResultId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("FilePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<long?>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("FileTypeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Observation")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RespondedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Response")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ExecutionStepResultId");
+
+                    b.HasIndex("FileTypeId");
+
+                    b.HasIndex("RespondedByUserId");
+
+                    b.ToTable("execution_step_observations", (string)null);
+                });
+
+            modelBuilder.Entity("QAMS.Domain.Entities.ExecutionStepObservationResponse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ExecutionStepObservationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Response")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ExecutionStepObservationId");
+
+                    b.ToTable("execution_step_observation_responses", (string)null);
                 });
 
             modelBuilder.Entity("QAMS.Domain.Entities.ExecutionStepResult", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("ActualResult")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("actual_result");
 
                     b.Property<DateTime>("EvaluatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("evaluated_at")
+                        .HasDefaultValueSql("NOW()");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
 
                     b.Property<int>("StatusId")
+                        .HasColumnType("integer")
+                        .HasColumnName("status_id");
+
+                    b.Property<int?>("StepResultStatusId")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TestExecutionId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("test_execution_id");
 
                     b.Property<Guid>("TestStepId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("test_step_id");
+
+                    b.Property<Guid?>("TestStepId1")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("StatusId");
 
-                    b.HasIndex("TestExecutionId");
+                    b.HasIndex("StepResultStatusId");
 
                     b.HasIndex("TestStepId");
 
-                    b.ToTable("ExecutionStepResults");
+                    b.HasIndex("TestStepId1");
+
+                    b.HasIndex("TestExecutionId", "TestStepId")
+                        .IsUnique();
+
+                    b.ToTable("execution_step_results", (string)null);
                 });
 
             modelBuilder.Entity("QAMS.Domain.Entities.KanbanBoard", b =>
@@ -1204,9 +1349,21 @@ namespace QAMS.Infrastructure.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("description");
 
+                    b.Property<int>("DevolucionesCounter")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("devoluciones_counter");
+
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("end_date");
+
+                    b.Property<decimal>("ExecutedHours")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(10,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("executed_hours");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -1232,6 +1389,12 @@ namespace QAMS.Infrastructure.Migrations
                         .HasDefaultValue(1)
                         .HasColumnName("project_status_id");
 
+                    b.Property<decimal>("RemainingHours")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(10,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("remaining_hours");
+
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("start_date");
@@ -1239,6 +1402,12 @@ namespace QAMS.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
+
+                    b.Property<decimal>("WorkHoursPerDay")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric")
+                        .HasDefaultValue(7m)
+                        .HasColumnName("work_hours_per_day");
 
                     b.HasKey("Id");
 
@@ -1250,6 +1419,104 @@ namespace QAMS.Infrastructure.Migrations
                     b.HasIndex("ProjectStatusId");
 
                     b.ToTable("projects", (string)null);
+                });
+
+            modelBuilder.Entity("QAMS.Domain.Entities.ProjectDevolution", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("DevolutionDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ObservationsCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ResponseDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResponseNotes")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("project_devolutions", (string)null);
+                });
+
+            modelBuilder.Entity("QAMS.Domain.Entities.ProjectObservation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Observation")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("project_observations", (string)null);
+                });
+
+            modelBuilder.Entity("QAMS.Domain.Entities.ProjectObservationResponse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProjectObservationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Response")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ProjectObservationId");
+
+                    b.ToTable("project_observation_responses", (string)null);
                 });
 
             modelBuilder.Entity("QAMS.Domain.Entities.ProjectTester", b =>
@@ -1714,6 +1981,10 @@ namespace QAMS.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<decimal?>("ActualTimeHours")
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("actual_time_hours");
+
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("completed_at");
@@ -1756,27 +2027,39 @@ namespace QAMS.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("Action")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("action");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
 
                     b.Property<string>("ExpectedResult")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("expected_result");
 
                     b.Property<int>("StepOrder")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("step_order");
 
                     b.Property<Guid>("TestCaseId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("test_case_id");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TestCaseId");
+                    b.HasIndex("CreatedByUserId");
 
-                    b.ToTable("TestSteps");
+                    b.HasIndex("TestCaseId", "StepOrder")
+                        .IsUnique();
+
+                    b.ToTable("test_steps", (string)null);
                 });
 
             modelBuilder.Entity("QAMS.Domain.Entities.TestSuite", b =>
@@ -1858,6 +2141,12 @@ namespace QAMS.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("password_hash");
 
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpiryTime")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("RefreshToken")
                         .HasColumnType("text")
                         .HasColumnName("refresh_token");
@@ -1930,10 +2219,19 @@ namespace QAMS.Infrastructure.Migrations
 
             modelBuilder.Entity("QAMS.Domain.Entities.Evidence", b =>
                 {
-                    b.HasOne("QAMS.Domain.Entities.Catalogs.EvidenceType", "FileType")
+                    b.HasOne("QAMS.Domain.Entities.Catalogs.EvidenceType", null)
                         .WithMany("Evidences")
+                        .HasForeignKey("EvidenceTypeId");
+
+                    b.HasOne("QAMS.Domain.Entities.ExecutionStepResult", "ExecutionStepResult")
+                        .WithMany("Evidences")
+                        .HasForeignKey("ExecutionStepResultId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("QAMS.Domain.Entities.Catalogs.EvidenceType", "FileType")
+                        .WithMany()
                         .HasForeignKey("FileTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("QAMS.Domain.Entities.TestExecution", "TestExecution")
@@ -1942,18 +2240,76 @@ namespace QAMS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("ExecutionStepResult");
+
                     b.Navigation("FileType");
 
                     b.Navigation("TestExecution");
                 });
 
+            modelBuilder.Entity("QAMS.Domain.Entities.ExecutionStepObservation", b =>
+                {
+                    b.HasOne("QAMS.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QAMS.Domain.Entities.ExecutionStepResult", "ExecutionStepResult")
+                        .WithMany("Observations")
+                        .HasForeignKey("ExecutionStepResultId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("QAMS.Domain.Entities.Catalogs.EvidenceType", "FileType")
+                        .WithMany()
+                        .HasForeignKey("FileTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("QAMS.Domain.Entities.User", "RespondedBy")
+                        .WithMany()
+                        .HasForeignKey("RespondedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ExecutionStepResult");
+
+                    b.Navigation("FileType");
+
+                    b.Navigation("RespondedBy");
+                });
+
+            modelBuilder.Entity("QAMS.Domain.Entities.ExecutionStepObservationResponse", b =>
+                {
+                    b.HasOne("QAMS.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QAMS.Domain.Entities.ExecutionStepObservation", "ExecutionStepObservation")
+                        .WithMany("Responses")
+                        .HasForeignKey("ExecutionStepObservationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ExecutionStepObservation");
+                });
+
             modelBuilder.Entity("QAMS.Domain.Entities.ExecutionStepResult", b =>
                 {
                     b.HasOne("QAMS.Domain.Entities.Catalogs.StepResultStatus", "Status")
-                        .WithMany("ExecutionStepResults")
+                        .WithMany()
                         .HasForeignKey("StatusId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("QAMS.Domain.Entities.Catalogs.StepResultStatus", null)
+                        .WithMany("ExecutionStepResults")
+                        .HasForeignKey("StepResultStatusId");
 
                     b.HasOne("QAMS.Domain.Entities.TestExecution", "TestExecution")
                         .WithMany("StepResults")
@@ -1962,10 +2318,14 @@ namespace QAMS.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("QAMS.Domain.Entities.TestStep", "TestStep")
-                        .WithMany("StepResults")
+                        .WithMany()
                         .HasForeignKey("TestStepId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("QAMS.Domain.Entities.TestStep", null)
+                        .WithMany("StepResults")
+                        .HasForeignKey("TestStepId1");
 
                     b.Navigation("Status");
 
@@ -2043,6 +2403,63 @@ namespace QAMS.Infrastructure.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("ProjectStatus");
+                });
+
+            modelBuilder.Entity("QAMS.Domain.Entities.ProjectDevolution", b =>
+                {
+                    b.HasOne("QAMS.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QAMS.Domain.Entities.Project", "Project")
+                        .WithMany("HistoricDevolutions")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("QAMS.Domain.Entities.ProjectObservation", b =>
+                {
+                    b.HasOne("QAMS.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QAMS.Domain.Entities.Project", "Project")
+                        .WithMany("Observations")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("QAMS.Domain.Entities.ProjectObservationResponse", b =>
+                {
+                    b.HasOne("QAMS.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QAMS.Domain.Entities.ProjectObservation", "ProjectObservation")
+                        .WithMany("Responses")
+                        .HasForeignKey("ProjectObservationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("ProjectObservation");
                 });
 
             modelBuilder.Entity("QAMS.Domain.Entities.ProjectTester", b =>
@@ -2173,11 +2590,18 @@ namespace QAMS.Infrastructure.Migrations
 
             modelBuilder.Entity("QAMS.Domain.Entities.TestStep", b =>
                 {
+                    b.HasOne("QAMS.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("QAMS.Domain.Entities.TestCase", "TestCase")
                         .WithMany("TestSteps")
                         .HasForeignKey("TestCaseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CreatedBy");
 
                     b.Navigation("TestCase");
                 });
@@ -2260,6 +2684,18 @@ namespace QAMS.Infrastructure.Migrations
                     b.Navigation("TestCases");
                 });
 
+            modelBuilder.Entity("QAMS.Domain.Entities.ExecutionStepObservation", b =>
+                {
+                    b.Navigation("Responses");
+                });
+
+            modelBuilder.Entity("QAMS.Domain.Entities.ExecutionStepResult", b =>
+                {
+                    b.Navigation("Evidences");
+
+                    b.Navigation("Observations");
+                });
+
             modelBuilder.Entity("QAMS.Domain.Entities.KanbanBoard", b =>
                 {
                     b.Navigation("Columns");
@@ -2277,13 +2713,22 @@ namespace QAMS.Infrastructure.Migrations
 
             modelBuilder.Entity("QAMS.Domain.Entities.Project", b =>
                 {
+                    b.Navigation("HistoricDevolutions");
+
                     b.Navigation("KanbanBoards");
+
+                    b.Navigation("Observations");
 
                     b.Navigation("ProjectTesters");
 
                     b.Navigation("TestCases");
 
                     b.Navigation("TestSuites");
+                });
+
+            modelBuilder.Entity("QAMS.Domain.Entities.ProjectObservation", b =>
+                {
+                    b.Navigation("Responses");
                 });
 
             modelBuilder.Entity("QAMS.Domain.Entities.Role", b =>

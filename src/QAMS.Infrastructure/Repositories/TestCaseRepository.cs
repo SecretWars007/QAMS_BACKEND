@@ -21,6 +21,8 @@ namespace QAMS.Infrastructure.Repositories
         public async Task<TestCase?> GetWithStepsAsync(Guid testCaseId)
         {
             return await _dbSet
+                .Include(tc => tc.Project)
+                .Include(tc => tc.TestSuite)
                 .Include(tc => tc.TestSteps.OrderBy(s => s.StepOrder))
                 .Include(tc => tc.Priority)
                 .Include(tc => tc.Certifiers).ThenInclude(c => c.User)
@@ -34,6 +36,8 @@ namespace QAMS.Infrastructure.Repositories
         {
             return await _dbSet
                 .Where(tc => tc.TestSuiteId == suiteId)
+                .Include(tc => tc.Project)
+                .Include(tc => tc.TestSuite)
                 .Include(tc => tc.TestSteps.OrderBy(s => s.StepOrder))
                 .Include(tc => tc.Priority)
                 .Include(tc => tc.Certifiers).ThenInclude(c => c.User)
@@ -49,6 +53,8 @@ namespace QAMS.Infrastructure.Repositories
         {
             return await _dbSet
                 .Where(tc => tc.ProjectId == projectId)
+                .Include(tc => tc.Project)
+                .Include(tc => tc.TestSuite)
                 .Include(tc => tc.TestSteps.OrderBy(s => s.StepOrder))
                 .Include(tc => tc.Priority)
                 .Include(tc => tc.CreatedBy)
@@ -66,6 +72,8 @@ namespace QAMS.Infrastructure.Repositories
         {
             return await _dbSet
                 .Where(tc => tc.ProjectId == projectId && tc.TestSuiteId == suiteId)
+                .Include(tc => tc.Project)
+                .Include(tc => tc.TestSuite)
                 .Include(tc => tc.TestSteps.OrderBy(s => s.StepOrder))
                 .Include(tc => tc.Priority)
                 .Include(tc => tc.CreatedBy)

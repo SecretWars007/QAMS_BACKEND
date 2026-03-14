@@ -12,6 +12,8 @@ namespace QAMS.Domain.Entities
         public Guid Id { get; set; }
         public Guid TestExecutionId { get; set; }
         public TestExecution TestExecution { get; set; } = null!;
+        public Guid? ExecutionStepResultId { get; set; }
+        public ExecutionStepResult? ExecutionStepResult { get; set; }
         public int FileTypeId { get; set; }
         public EvidenceType FileType { get; set; } = null!;
         public string FileName { get; set; } = string.Empty;

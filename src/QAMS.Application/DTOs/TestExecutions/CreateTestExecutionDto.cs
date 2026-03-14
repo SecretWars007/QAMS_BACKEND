@@ -10,5 +10,16 @@ namespace QAMS.Application.DTOs.TestExecutions
 
         [StringLength(2000, ErrorMessage = "Las notas no pueden exceder los 2000 caracteres.")]
         public string? Notes { get; set; }
+
+        /// <summary>
+        /// Opcional: Horas reales invertidas en esta ejecución.
+        /// </summary>
+        [Range(0, 999, ErrorMessage = "Las horas reales deben estar entre 0 y 999.")]
+        public decimal? ActualTimeHours { get; set; }
+
+        /// <summary>
+        /// Opcional: Resultados de pasos iniciales.
+        /// </summary>
+        public List<StepResultInput>? StepResults { get; set; }
     }
 }

@@ -6,5 +6,6 @@ namespace QAMS.Domain.Ports.Repositories
     public interface IEvidenceRepository : IGenericRepository<Evidence>
     {
         Task<IReadOnlyList<Evidence>> GetByExecutionAsync(Guid executionId);
+        Task<IReadOnlyList<Evidence>> GetByStepResultsAsync(List<Guid> stepResultIds);
     }
 }

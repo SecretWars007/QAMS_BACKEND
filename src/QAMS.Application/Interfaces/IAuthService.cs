@@ -9,5 +9,15 @@ namespace QAMS.Application.Interfaces
         Task<LoginResponseDto> RegisterAsync(RegisterRequestDto request);
         Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto request);
         Task RevokeRefreshTokenAsync(Guid userId);
+
+        /// <summary>Envía (o genera) un token de restablecimiento para el email indicado.</summary>
+        Task<string> ForgotPasswordAsync(ForgotPasswordRequestDto request);
+
+        /// <summary>Restablece la contraseña usando el token generado.</summary>
+        Task ResetPasswordAsync(ResetPasswordRequestDto request);
+
+        /// <summary>Cambia la contraseña de un usuario autenticado.</summary>
+        Task ChangePasswordAsync(Guid userId, ChangePasswordRequestDto request);
     }
 }
+

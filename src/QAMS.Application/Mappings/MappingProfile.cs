@@ -47,14 +47,22 @@ namespace QAMS.Application.Mappings
                 .ForMember(d => d.KanbanBoardCount, o => o.MapFrom(s => s.KanbanBoards.Count))
                 .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty))
                 .ForMember(d => d.ProjectStatusName, o => o.MapFrom(s => s.ProjectStatus != null ? s.ProjectStatus.Name : string.Empty))
-                .ForMember(d => d.TesterNames, o => o.MapFrom(s => s.ProjectTesters.Select(pt => pt.User.FullName)));
+                .ForMember(d => d.TesterNames, o => o.MapFrom(s => s.ProjectTesters.Where(pt => pt.User != null).Select(pt => pt.User.FullName)))
+                .ForMember(d => d.DevolucionesCounter, o => o.MapFrom(s => s.DevolucionesCounter))
+                .ForMember(d => d.HistoricDevolutions, o => o.MapFrom(s => s.HistoricDevolutions));
+
+            CreateMap<ProjectDevolution, ProjectDevolutionDto>()
+                .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty));
             
             CreateMap<TestCase, TestCaseDto>()
                 .ForMember(d => d.PriorityName, o => o.MapFrom(s => s.Priority != null ? s.Priority.Name : string.Empty))
                 .ForMember(d => d.PriorityCode, o => o.MapFrom(s => s.Priority != null ? s.Priority.Code : string.Empty))
                 .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty))
                 .ForMember(d => d.TestTypeName, o => o.MapFrom(s => s.TestType != null ? s.TestType.Name : string.Empty))
+                .ForMember(d => d.ProjectName, o => o.MapFrom(s => s.Project != null ? s.Project.Name : string.Empty))
+                .ForMember(d => d.TestSuiteName, o => o.MapFrom(s => s.TestSuite != null ? s.TestSuite.Name : string.Empty))
                 .ForMember(d => d.CertifierNames, o => o.MapFrom(s => s.Certifiers.Select(c => c.User.FullName)))
+                .ForMember(d => d.CertifierUserIds, o => o.MapFrom(s => s.Certifiers.Select(c => c.UserId)))
                 .ForMember(d => d.Steps, o => o.MapFrom(s => s.TestSteps));
 
             
@@ -69,14 +77,20 @@ namespace QAMS.Application.Mappings
                 .ForMember(d => d.TesterName, o => o.MapFrom(s => s.Tester != null ? s.Tester.FullName : string.Empty))
                 .ForMember(d => d.StatusName, o => o.MapFrom(s => s.Status != null ? s.Status.Name : string.Empty))
                 .ForMember(d => d.StatusCode, o => o.MapFrom(s => s.Status != null ? s.Status.Code : string.Empty))
-                .ForMember(d => d.StepResults, o => o.MapFrom(s => s.StepResults));
+                .ForMember(d => d.StepResults, o => o.MapFrom(s => s.StepResults.OrderBy(sr => sr.TestStep.StepOrder)));
                 
             CreateMap<ExecutionStepResult, StepResultDto>()
                 .ForMember(d => d.StatusName, o => o.MapFrom(s => s.Status != null ? s.Status.Name : string.Empty))
                 .ForMember(d => d.StepOrder, o => o.MapFrom(s => s.TestStep != null ? s.TestStep.StepOrder : 0))
-                .ForMember(d => d.Action, o => o.MapFrom(s => s.TestStep != null ? s.TestStep.Action : string.Empty));
+                .ForMember(d => d.Action, o => o.MapFrom(s => s.TestStep != null ? s.TestStep.Action : string.Empty))
+                .ForMember(d => d.Evidences, o => o.MapFrom(s => s.Evidences));
+                
+            CreateMap<ExecutionStepObservation, ObservationDto>()
+                .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty))
+                .ForMember(d => d.RespondedByUserName, o => o.MapFrom(s => s.RespondedBy != null ? s.RespondedBy.FullName : string.Empty));
 
             CreateMap<Evidence, EvidenceDto>()
+                .ForMember(d => d.ExecutionStepResultId, o => o.MapFrom(s => s.ExecutionStepResultId))
                 .ForMember(d => d.FileTypeName, o => o.MapFrom(s => s.FileType != null ? s.FileType.Name : string.Empty))
                 .ForMember(d => d.FileUrl, o => o.Ignore()); // Campo no mapeable directamente
 

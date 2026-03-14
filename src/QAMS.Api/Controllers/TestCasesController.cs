@@ -35,6 +35,11 @@ namespace QAMS.Api.Controllers
         public async Task<IActionResult> GetByProjectAndSuite(Guid projectId, Guid suiteId)
             => Ok(await _service.GetByProjectAndSuiteAsync(projectId, suiteId));
 
+        [HttpGet("{id:guid}/steps")]
+        [HasPermission("TEST_CASES_VIEW")]
+        public async Task<IActionResult> GetSteps(Guid id)
+            => Ok(await _service.GetStepsAsync(id));
+
         [HttpPost]
         [HasPermission("TEST_CASES_CREATE")]
         public async Task<IActionResult> Create([FromBody] CreateTestCaseDto dto)

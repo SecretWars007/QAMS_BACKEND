@@ -60,5 +60,56 @@ namespace QAMS.Api.Controllers
             await _authService.RevokeRefreshTokenAsync(userId);
             return NoContent();
         }
+
+        /// <summary>
+        /// POST api/auth/forgot-password
+        /// Recibe el correo electrónico registrado y genera un token temporal de restablecimiento.
+        /// En producción el token se envía por email; en desarrollo se incluye en la respuesta.
+        /// </summary>
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
+        {
+            _logger.LogInformation("POST /api/auth/forgot-password - Email: {Email}", request.Email);
+            var token = await _authService.ForgotPasswordAsync(request);
+
+            // Si el email no existe devolvemos la misma respuesta neutra (no revelar que no existe)
+            if (string.IsNullOrEmpty(token))
+                return Ok(new { message = "Si el correo existe en el sistema, recibirás instrucciones para restablecer tu contraseña." });
+
+            // TODO: en producción NO incluir el token en la respuesta; enviar por email
+            return Ok(new
+            {
+                message = "Token de restablecimiento generado. Úsalo en el endpoint /reset-password dentro de los próximos 15 minutos.",
+                resetToken = token   // Solo para desarrollo – eliminar en producción
+            });
+        }
+
+        /// <summary>
+        /// POST api/auth/reset-password
+        /// Restablece la contraseña usando el token temporal obtenido en forgot-password.
+        /// </summary>
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
+        {
+            _logger.LogInformation("POST /api/auth/reset-password - Email: {Email}", request.Email);
+            await _authService.ResetPasswordAsync(request);
+            return Ok(new { message = "Contraseña restablecida exitosamente. Ya puedes iniciar sesión con tu nueva contraseña." });
+        }
+
+        /// <summary>
+        /// POST api/auth/change-password
+        /// Permite a un usuario autenticado cambiar su contraseña proporcionando la actual y la nueva.
+        /// </summary>
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
+        {
+            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            _logger.LogInformation("POST /api/auth/change-password - UserId: {UserId}", userId);
+            await _authService.ChangePasswordAsync(userId, request);
+            return Ok(new { message = "Contraseña actualizada exitosamente." });
+        }
     }
 }

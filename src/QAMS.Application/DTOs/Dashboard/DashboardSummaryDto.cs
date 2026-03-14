@@ -5,6 +5,7 @@ namespace QAMS.Application.DTOs.Dashboard
     {
         public int TotalProjects { get; set; }
         public int TotalTestCases { get; set; }
+        public int PendingTestCases { get; set; }
         public int TotalExecutions { get; set; }
         public int PassedExecutions { get; set; }
         public int FailedExecutions { get; set; }

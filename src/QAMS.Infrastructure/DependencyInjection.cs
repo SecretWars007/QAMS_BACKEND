@@ -8,6 +8,7 @@ using QAMS.Infrastructure.FileStorage;
 using QAMS.Infrastructure.Persistence.Configurations;
 using QAMS.Infrastructure.Repositories;
 using QAMS.Infrastructure.Security;
+using QAMS.Application.Interfaces;
 
 namespace QAMS.Infrastructure
 {
@@ -39,6 +40,7 @@ namespace QAMS.Infrastructure
             services.AddScoped<ITestCaseRepository, TestCaseRepository>();
             services.AddScoped<ITestExecutionRepository, TestExecutionRepository>();
             services.AddScoped<IEvidenceRepository, EvidenceRepository>();
+            services.AddScoped<IObservationRepository, ObservationRepository>();
             services.AddScoped<IKanbanBoardRepository, KanbanBoardRepository>();
 
             // Unit of Work
@@ -48,6 +50,7 @@ namespace QAMS.Infrastructure
             services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
+            services.AddScoped<IReportService, Services.PdfReportService>();
 
             return services;
         }

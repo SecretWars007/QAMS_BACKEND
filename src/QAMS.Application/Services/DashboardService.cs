@@ -37,101 +37,329 @@ namespace QAMS.Application.Services
         }
 
         /// <summary>
-        /// Genera un resumen completo del sistema o de un proyecto específico.
-        /// Incluye: totales, tasa de aprobación, conteos por estado y progreso Kanban.
+        /// Genera un resumen de métricas para un usuario específico.
+        /// Filtra proyectos, ejecuciones y tareas donde el usuario participa.
         /// </summary>
-        public async Task<DashboardSummaryDto> GetSummaryAsync(Guid? projectId = null)
+        public async Task<DashboardSummaryDto> GetSummaryAsync(Guid userId)
         {
-            _logger.LogInformation(
-                "Generando dashboard. ProjectId: {ProjectId}.",
-                projectId?.ToString() ?? "TODOS"
-            );
+            _logger.LogInformation("Generando dashboard para el usuario: {UserId}.", userId);
 
             var summary = new DashboardSummaryDto();
 
-            // Conteos globales
-            summary.TotalProjects = await _projectRepo.CountAsync(p => p.IsActive);
-            summary.TotalTestCases = await _testCaseRepo.CountAsync(tc => tc.IsActive);
-            summary.TotalExecutions = await _execRepo.CountAsync(_ => true);
+            try
+            {
+                // 1. Proyectos donde el usuario es tester (si no es tester, muestra todos los activos)
+                var userProjects = await _projectRepo.FindWithDetailsAsync(p =>
+                    p.IsActive && p.ProjectTesters.Any(pt => pt.UserId == userId));
 
-            // Obtener estados del catálogo
-            var allStatuses = await _statusRepo.GetAllActiveAsync();
-            var passedStatus = allStatuses.FirstOrDefault(s => s.Code == "PASSED");
-            var failedStatus = allStatuses.FirstOrDefault(s => s.Code == "FAILED");
-            var pendingStatus = allStatuses.FirstOrDefault(s => s.Code == "PENDING");
+                // Si el usuario no está como tester en ningún proyecto, traer todos los proyectos activos
+                if (!userProjects.Any())
+                {
+                    userProjects = await _projectRepo.FindWithDetailsAsync(p => p.IsActive);
+                }
 
-            if (passedStatus != null)
-                summary.PassedExecutions = await _execRepo.CountAsync(e =>
-                    e.StatusId == passedStatus.Id
-                );
+                summary.TotalProjects = userProjects.Count;
+                var allTestCases = userProjects.SelectMany(p => p.TestCases ?? new List<QAMS.Domain.Entities.TestCase>()).ToList();
+                summary.TotalTestCases = allTestCases.Count;
 
-            if (failedStatus != null)
-                summary.FailedExecutions = await _execRepo.CountAsync(e =>
-                    e.StatusId == failedStatus.Id
-                );
+                // Casos de prueba pendientes: No tienen ninguna ejecución exitosa (PASSED, ID=3)
+                var allTestCaseIds = allTestCases.Select(tc => tc.Id).ToList();
+                var passedTestCaseIds = (await _execRepo.FindAsync(e => 
+                    allTestCaseIds.Contains(e.TestCaseId) && e.StatusId == 3))
+                    .Select(e => e.TestCaseId)
+                    .Distinct()
+                    .ToList();
 
-            if (pendingStatus != null)
-                summary.PendingExecutions = await _execRepo.CountAsync(e =>
-                    e.StatusId == pendingStatus.Id
-                );
+                summary.PendingTestCases = summary.TotalTestCases - passedTestCaseIds.Count;
 
-            // Calcular tasa de aprobación
-            summary.PassRate =
-                summary.TotalExecutions > 0
-                    ? Math.Round(
-                        (double)summary.PassedExecutions / summary.TotalExecutions * 100,
-                        2
-                    )
+                // 3. Métricas de Ejecución (Globales para los proyectos del usuario)
+                var allExecutionsForProjects = await _execRepo.FindAsync(e => allTestCaseIds.Contains(e.TestCaseId));
+                summary.TotalExecutions = allExecutionsForProjects.Count;
+
+                var allStatuses = await _statusRepo.GetAllActiveAsync();
+                var passedStatus = allStatuses.FirstOrDefault(s => s.Code == "PASSED");
+                var failedStatus = allStatuses.FirstOrDefault(s => s.Code == "FAILED");
+                var pendingStatus = allStatuses.FirstOrDefault(s => s.Code == "PENDING");
+
+                if (passedStatus != null)
+                    summary.PassedExecutions = allExecutionsForProjects.Count(e => e.StatusId == passedStatus.Id);
+
+                if (failedStatus != null)
+                    summary.FailedExecutions = allExecutionsForProjects.Count(e => e.StatusId == failedStatus.Id);
+
+                if (pendingStatus != null)
+                    summary.PendingExecutions = allExecutionsForProjects.Count(e => e.StatusId == pendingStatus.Id);
+
+                // Tasa de Aprobación: Basada en Casos de Prueba (Cuántos tienen al menos una ejecución exitosa)
+                summary.PassRate = summary.TotalTestCases > 0
+                    ? Math.Round((double)passedTestCaseIds.Count / summary.TotalTestCases * 100, 2)
                     : 0;
 
-            // Ejecuciones agrupadas por estado (para gráfico de barras/torta)
-            if (projectId.HasValue)
-            {
-                var statusCounts = await _execRepo.GetStatusCountsByProjectAsync(projectId.Value);
+                // Agrupado por estado para el gráfico (Doughnut)
+                var statusGrouped = allExecutionsForProjects
+                    .GroupBy(e => e.StatusId)
+                    .Select(g => new { StatusId = g.Key, Count = g.Count() });
 
-                foreach (var kvp in statusCounts)
+                foreach (var item in statusGrouped)
                 {
-                    var status = allStatuses.FirstOrDefault(s => s.Id == kvp.Key);
+                    var status = allStatuses.FirstOrDefault(s => s.Id == item.StatusId);
                     if (status != null)
                     {
-                        summary.ExecutionsByStatus.Add(
-                            new ExecutionsByStatusDto
-                            {
-                                StatusName = status.Name,
-                                StatusCode = status.Code,
-                                Count = kvp.Value,
-                            }
-                        );
+                        summary.ExecutionsByStatus.Add(new ExecutionsByStatusDto
+                        {
+                            StatusName = status.Name,
+                            StatusCode = status.Code,
+                            Count = item.Count
+                        });
                     }
                 }
-            }
 
-            // Progreso Kanban (tareas por columna)
-            if (projectId.HasValue)
-            {
-                var boards = await _boardRepo.GetByProjectAsync(projectId.Value);
-                foreach (var board in boards)
-                {
-                    foreach (var column in board.Columns)
+                var userTasks = userProjects
+                    .SelectMany(p => p.KanbanBoards ?? new List<QAMS.Domain.Entities.KanbanBoard>())
+                    .SelectMany(b => b.Columns ?? new List<QAMS.Domain.Entities.KanbanColumn>())
+                    .GroupBy(c => c.Name)
+                    .Select(g => new TaskProgressDto
                     {
-                        summary.TaskProgress.Add(
-                            new TaskProgressDto
-                            {
-                                ColumnName = column.Name,
-                                TaskCount = column.Tasks.Count,
-                            }
-                        );
-                    }
-                }
+                        ColumnName = g.Key,
+                        TaskCount = g.Sum(c => c.Tasks?.Count ?? 0)
+                    })
+                    .ToList();
+
+                summary.TaskProgress.AddRange(userTasks);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generando dashboard para el usuario: {UserId}.", userId);
             }
 
             _logger.LogInformation(
-                "Dashboard generado: {Total} ejecuciones, {Rate}% aprobación.",
-                summary.TotalExecutions,
-                summary.PassRate
+                "Dashboard generado para {UserId}: {Total} ejecuciones, {Rate}% aprobación.",
+                userId, summary.TotalExecutions, summary.PassRate
             );
 
             return summary;
+        }
+
+        public async Task<List<TimelineEventDto>> GetProjectTimelineAsync(Guid projectId)
+        {
+            _logger.LogInformation("Obteniendo timeline para el proyecto: {ProjectId}.", projectId);
+
+            // Obtenemos el proyecto para tener la fecha de inicio basica
+            var project = await _projectRepo.GetByIdAsync(projectId);
+            var startDate = project?.CreatedAt.Date ?? DateTime.MinValue.Date;
+
+            // Obtenemos las ejecuciones del proyecto con detalles de estados y resultados de pasos
+            var projectExecutions = await _execRepo.GetByProjectAsync(projectId);
+            
+            // Ordenamos por fecha de ejecución
+            var sortedExecs = projectExecutions
+                .OrderBy(e => e.ExecutionDate)
+                .ToList();
+
+            var timeline = new List<TimelineEventDto>();
+
+            foreach (var exec in sortedExecs)
+            {
+                var eventDto = new TimelineEventDto
+                {
+                    ExecutionId = exec.Id,
+                    TestCaseTitle = exec.TestCase?.Title ?? "Prueba Individual",
+                    ExecutionDate = exec.ExecutionDate,
+                    StatusId = exec.StatusId,
+                    Hour = exec.ExecutionDate.Hour,
+                    DayIndex = (project != null) ? (int)(exec.ExecutionDate.Date - startDate).TotalDays : 0
+                };
+
+                // Lógica de Estado e Inteligencia (Sincronizada con el Reporte PDF)
+                var isTrulyPassed = (exec.Status != null && (exec.Status.Code == "PASSED" || exec.Status.Name == "Aprobado")) || exec.StatusId == 3;
+                var isEnProgreso = (exec.Status != null && (exec.Status.Code == "IN_PROGRESS" || exec.Status.Name == "En Progreso")) || exec.StatusId == 2;
+                
+                // Verificamos si tiene resultados en todos sus pasos
+                var hasResultsForAllSteps = exec.StepResults != null && exec.StepResults.Any() && exec.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult));
+
+                if (isTrulyPassed)
+                {
+                    eventDto.StatusName = "Aprobado";
+                    eventDto.StatusColor = "#4CAF50";
+                }
+                else if (isEnProgreso)
+                {
+                    if (hasResultsForAllSteps)
+                    {
+                        eventDto.StatusName = "Completado/En Revisión";
+                        eventDto.StatusColor = "#4CAF50";
+                    }
+                    else
+                    {
+                        eventDto.StatusName = "En Progreso";
+                        eventDto.StatusColor = "#2196F3";
+                    }
+                }
+                else if (exec.StatusId == 4 || (exec.Status != null && exec.Status.Code == "FAILED"))
+                {
+                    eventDto.StatusName = "Fallido";
+                    eventDto.StatusColor = "#F44336";
+                }
+                else
+                {
+                    eventDto.StatusName = exec.Status?.Name ?? "Pendiente";
+                    eventDto.StatusColor = "#9E9E9E";
+                }
+
+                timeline.Add(eventDto);
+            }
+
+            return timeline;
+        }
+
+        public async Task<TimelineChartDto> GetTimelineChartDataAsync(Guid projectId)
+        {
+            var events = await GetProjectTimelineAsync(projectId);
+            var result = new TimelineChartDto
+            {
+                Events = events
+            };
+
+            if (events.Any())
+            {
+                result.MinHour = events.Min(e => e.Hour);
+                result.MaxHour = events.Max(e => e.Hour);
+                
+                // Generamos etiquetas de días únicos DD/MM
+                result.DayLabels = events
+                    .OrderBy(e => e.ExecutionDate)
+                    .Select(e => e.ExecutionDate.ToString("dd/MM"))
+                    .Distinct()
+                    .ToList();
+            }
+
+            return result;
+        }
+
+        public async Task<List<BurndownPointDto>> GetBurndownDataAsync(Guid projectId)
+        {
+            _logger.LogInformation("Calculando burndown (horas) para el proyecto: {ProjectId}.", projectId);
+
+            var project = await _projectRepo.FindWithDetailsAsync(p => p.Id == projectId);
+            var projectEntity = project.FirstOrDefault();
+            if (projectEntity == null) return new List<BurndownPointDto>();
+
+            var totalHours = projectEntity.GetCalculatedTotalHours();
+            var executions = await _execRepo.GetByProjectAsync(projectId);
+            
+            // Determinar rango de fechas
+            var startDate = projectEntity.StartDate ?? projectEntity.CreatedAt;
+            var endDate = projectEntity.EndDate ?? (executions.Any() ? executions.Max(e => e.ExecutionDate) : DateTime.Now);
+            
+            if (endDate < startDate) endDate = startDate.AddDays(7);
+
+            var burndown = new List<BurndownPointDto>();
+            decimal idealRemaining = totalHours;
+            decimal actualRemaining = totalHours;
+            decimal burnRate = projectEntity.WorkHoursPerDay > 0 ? projectEntity.WorkHoursPerDay : 7;
+
+            // Agrupar ejecuciones exitosas por día
+            var completedHoursByDay = executions
+                .Where(e => (e.StatusId == 3) || 
+                            (e.StatusId == 2 && e.StepResults != null && e.StepResults.Any() && e.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult))) ||
+                            (e.Status != null && (e.Status.Code == "PASSED" || e.Status.Name == "Aprobado")))
+                .GroupBy(e => e.ExecutionDate.Date)
+                .ToDictionary(g => g.Key, g => g.Select(e => e.TestCase?.EstimatedTimeHours ?? 0).Sum());
+
+            var current = startDate.Date;
+            var finalDate = endDate.Date;
+
+            while (current <= finalDate || current <= DateTime.Now.Date)
+            {
+                // Excluir fines de semana de los puntos de datos del gráfico
+                if (current.DayOfWeek != DayOfWeek.Saturday && current.DayOfWeek != DayOfWeek.Sunday)
+                {
+                    burndown.Add(new BurndownPointDto
+                    {
+                        Date = current,
+                        DateLabel = current.ToString("dd/MM"),
+                        IdealHours = Math.Max(0, idealRemaining),
+                        ActualHours = Math.Max(0, actualRemaining)
+                    });
+
+                    if (completedHoursByDay.TryGetValue(current, out var burnedToday))
+                    {
+                        actualRemaining -= burnedToday;
+                    }
+                    
+                    idealRemaining -= burnRate;
+                }
+
+                current = current.AddDays(1);
+                
+                // Limites de seguridad para evitar loops infinitos
+                if (current > finalDate && current > DateTime.Now.Date) break;
+                if (current > startDate.AddDays(365)) break; 
+            }
+
+            return burndown;
+        }
+
+        public async Task<List<DrawdownPointDto>> GetDrawdownDataAsync(Guid projectId)
+        {
+            _logger.LogInformation("Calculando drawdown para el proyecto: {ProjectId}.", projectId);
+
+            var project = await _projectRepo.GetByIdAsync(projectId);
+            if (project == null) return new List<DrawdownPointDto>();
+
+            var totalCases = project.TestCases.Count;
+            var executions = await _execRepo.GetByProjectAsync(projectId);
+            
+            // Agrupar por fecha (solo fecha, sin hora)
+            var execsByDay = executions
+                .OrderBy(e => e.ExecutionDate)
+                .GroupBy(e => e.ExecutionDate.Date)
+                .ToList();
+
+            var drawdown = new List<DrawdownPointDto>();
+            var passedTestCases = new HashSet<Guid>();
+
+            // Si no hay ejecuciones, punto inicial con todo pendiente
+            if (!execsByDay.Any())
+            {
+                drawdown.Add(new DrawdownPointDto
+                {
+                    Date = DateTime.Now.Date,
+                    DateLabel = DateTime.Now.ToString("dd/MM"),
+                    RemainingCases = totalCases,
+                    PassedTotal = 0,
+                    PercentageRemaining = 100
+                });
+                return drawdown;
+            }
+
+            foreach (var dayGroup in execsByDay)
+            {
+                foreach (var exec in dayGroup)
+                {
+                    // Lógica inteligente de "Aprobado"
+                    var isTrulyPassed = (exec.StatusId == 3) || 
+                                       (exec.StatusId == 2 && exec.StepResults != null && exec.StepResults.Any() && exec.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult))) ||
+                                       (exec.Status != null && (exec.Status.Code == "PASSED" || exec.Status.Name == "Aprobado"));
+
+                    if (isTrulyPassed)
+                    {
+                        passedTestCases.Add(exec.TestCaseId);
+                    }
+                }
+
+                var remaining = totalCases - passedTestCases.Count;
+                drawdown.Add(new DrawdownPointDto
+                {
+                    Date = dayGroup.Key,
+                    DateLabel = dayGroup.Key.ToString("dd/MM"),
+                    RemainingCases = remaining,
+                    PassedTotal = passedTestCases.Count,
+                    PercentageRemaining = totalCases > 0 ? Math.Round((double)remaining / totalCases * 100, 2) : 0
+                });
+            }
+
+            return drawdown;
         }
     }
 }

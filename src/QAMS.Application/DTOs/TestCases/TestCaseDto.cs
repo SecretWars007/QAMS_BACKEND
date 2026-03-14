@@ -5,7 +5,9 @@ namespace QAMS.Application.DTOs.TestCases
     {
         public Guid Id { get; set; }
         public Guid ProjectId { get; set; }
+        public string ProjectName { get; set; } = string.Empty;
         public Guid TestSuiteId { get; set; }
+        public string TestSuiteName { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string? Preconditions { get; set; }
@@ -22,6 +24,7 @@ namespace QAMS.Application.DTOs.TestCases
         public int TestTypeId { get; set; }
         public string TestTypeName { get; set; } = string.Empty;
         public List<string> CertifierNames { get; set; } = new();
+        public List<Guid> CertifierUserIds { get; set; } = new();
         public List<TestStepDto> Steps { get; set; } = new();
     }
 }

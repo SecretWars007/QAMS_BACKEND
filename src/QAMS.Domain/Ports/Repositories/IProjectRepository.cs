@@ -8,6 +8,8 @@ namespace QAMS.Domain.Ports.Repositories
         Task<Project?> GetWithTestSuitesAsync(Guid projectId);
         Task<Project?> GetWithKanbanBoardsAsync(Guid projectId);
         Task<Project?> GetWithDetailsAsync(Guid projectId);
+        Task<Project?> GetByIdTrackedAsync(Guid projectId);
         Task<List<Project>> FindWithDetailsAsync(System.Linq.Expressions.Expression<Func<Project, bool>> predicate);
+        Task<Project?> GetFullProjectForComplianceReportAsync(Guid projectId);
     }
 }

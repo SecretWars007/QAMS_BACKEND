@@ -42,6 +42,11 @@ namespace QAMS.Api.Controllers
         public async Task<IActionResult> CreateTask([FromBody] CreateKanbanTaskDto dto) =>
             Created("", await _service.CreateTaskAsync(dto));
 
+        [HttpPut("task/{taskId:guid}")]
+        [HasPermission("KANBAN_UPDATE")]
+        public async Task<IActionResult> UpdateTask(Guid taskId, [FromBody] UpdateKanbanTaskDto dto) =>
+            Ok(await _service.UpdateTaskAsync(taskId, dto));
+
         [HttpPut("task/{taskId:guid}/move")]
         [HasPermission("KANBAN_UPDATE")]
         public async Task<IActionResult> MoveTask(Guid taskId, [FromBody] MoveTaskDto dto) =>

@@ -5,6 +5,10 @@ namespace QAMS.Application.Interfaces
 {
     public interface IDashboardService
     {
-        Task<DashboardSummaryDto> GetSummaryAsync(Guid? projectId = null);
+        Task<DashboardSummaryDto> GetSummaryAsync(Guid userId);
+        Task<List<TimelineEventDto>> GetProjectTimelineAsync(Guid projectId);
+        Task<TimelineChartDto> GetTimelineChartDataAsync(Guid projectId);
+        Task<List<DrawdownPointDto>> GetDrawdownDataAsync(Guid projectId);
+        Task<List<BurndownPointDto>> GetBurndownDataAsync(Guid projectId);
     }
 }

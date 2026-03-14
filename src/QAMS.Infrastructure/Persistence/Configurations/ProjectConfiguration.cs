@@ -23,6 +23,9 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(p => p.IsActive).HasColumnName("is_active").HasDefaultValue(true);
             builder.Property(p => p.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
             builder.Property(p => p.UpdatedAt).HasColumnName("updated_at");
+            builder.Property(p => p.WorkHoursPerDay).HasColumnName("work_hours_per_day").HasDefaultValue(7);
+            builder.Property(p => p.ExecutedHours).HasColumnName("executed_hours").HasColumnType("numeric(10,2)").HasDefaultValue(0m);
+            builder.Property(p => p.RemainingHours).HasColumnName("remaining_hours").HasColumnType("numeric(10,2)").HasDefaultValue(0m);
 
             builder.Property(p => p.CreatedByUserId).HasColumnName("created_by_user_id");
             
@@ -38,6 +41,8 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 .WithMany(s => s.Projects)
                 .HasForeignKey(p => p.ProjectStatusId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Property(p => p.DevolucionesCounter).HasColumnName("devoluciones_counter").HasDefaultValue(0);
         }
     }
 }

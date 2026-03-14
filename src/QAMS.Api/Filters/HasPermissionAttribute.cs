@@ -23,12 +23,19 @@ namespace QAMS.Api.Filters
 
         public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Logging.ILogger<HasPermissionAttribute>>();
+            
             // Obtener el ID del usuario del JWT
             var userIdClaim = context.HttpContext.User
                 .FindFirst(ClaimTypes.NameIdentifier);
 
+            logger.LogInformation("HasPermission: Validando para User={UserId}, Permiso={Permission}. Claims: {Claims}", 
+                userIdClaim?.Value ?? "null", _permissionCode,
+                string.Join(", ", context.HttpContext.User.Claims.Select(c => $"{c.Type}={c.Value}")));
+
             if (userIdClaim is null || !Guid.TryParse(userIdClaim.Value, out var userId))
             {
+                logger.LogWarning("HasPermission: Claim NameIdentifier no encontrado o inválido.");
                 context.Result = new UnauthorizedResult();
                 return;
             }

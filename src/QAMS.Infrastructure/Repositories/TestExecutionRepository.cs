@@ -28,6 +28,8 @@ namespace QAMS.Infrastructure.Repositories
                     .ThenInclude(sr => sr.TestStep)
                 .Include(te => te.StepResults)
                     .ThenInclude(sr => sr.Status)
+                .Include(te => te.StepResults)
+                    .ThenInclude(sr => sr.Evidences)
                 .Include(te => te.Evidences)
                     .ThenInclude(ev => ev.FileType)
                 .FirstOrDefaultAsync(te => te.Id == executionId);
@@ -48,6 +50,19 @@ namespace QAMS.Infrastructure.Repositories
         }
 
         /// <summary>
+        /// Obtiene todas las ejecuciones de un caso de prueba SIN AsNoTracking,
+        /// permitiendo que EF Core rastree y persista cambios (usado para sincronización Kanban).
+        /// </summary>
+        public async Task<List<TestExecution>> GetByTestCaseTrackedAsync(Guid testCaseId)
+        {
+            return await _dbSet
+                .Where(te => te.TestCaseId == testCaseId)
+                .Include(te => te.Status)
+                .OrderByDescending(te => te.ExecutionDate)
+                .ToListAsync();
+        }
+
+        /// <summary>
         /// Obtiene todas las ejecuciones asignadas a un tester.
         /// </summary>
         public async Task<IReadOnlyList<TestExecution>> GetByTesterAsync(Guid testerId)
@@ -61,16 +76,43 @@ namespace QAMS.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Cuenta ejecuciones agrupadas por StatusId para un proyecto.
-        /// Retorna Dictionary con StatusId como clave y conteo como valor.
-        /// Usado en el dashboard para gráficos de progreso.
-        /// </summary>
+        public async Task<IReadOnlyList<TestExecution>> GetByProjectAsync(Guid projectId)
+        {
+            return await _dbSet
+                .Where(te => te.TestCase.ProjectId == projectId)
+                .Include(te => te.TestCase)
+                .Include(te => te.Tester)
+                .Include(te => te.Status)
+                .Include(te => te.StepResults)
+                    .ThenInclude(sr => sr.TestStep)
+                .Include(te => te.StepResults)
+                    .ThenInclude(sr => sr.Status)
+                .Include(te => te.StepResults)
+                    .ThenInclude(sr => sr.Evidences)
+                .Include(te => te.Evidences)
+                .OrderByDescending(te => te.ExecutionDate)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
         public async Task<Dictionary<int, int>> GetStatusCountsByProjectAsync(Guid projectId)
         {
             // Navegar: TestExecution -> TestCase -> TestSuite -> Project
             return await _dbSet
                 .Where(te => te.TestCase.TestSuite.ProjectId == projectId)
+                .GroupBy(te => te.StatusId)
+                .Select(g => new { StatusId = g.Key, Count = g.Count() })
+                .AsNoTracking()
+                .ToDictionaryAsync(x => x.StatusId, x => x.Count);
+        }
+
+        /// <summary>
+        /// Cuenta ejecuciones agrupadas por StatusId para un tester.
+        /// </summary>
+        public async Task<Dictionary<int, int>> GetStatusCountsByUserAsync(Guid userId)
+        {
+            return await _dbSet
+                .Where(te => te.TesterId == userId)
                 .GroupBy(te => te.StatusId)
                 .Select(g => new { StatusId = g.Key, Count = g.Count() })
                 .AsNoTracking()

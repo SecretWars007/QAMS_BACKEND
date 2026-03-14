@@ -46,5 +46,18 @@ namespace QAMS.Api.Controllers
         [HasPermission("PROJECTS_VIEW")]
         public async Task<IActionResult> GetTestCasesByProject(Guid id, [FromServices] ITestCaseService testCaseService)
             => Ok(await testCaseService.GetByProjectIdAsync(id));
+
+        [HttpPost("{id:guid}/devolution")]
+        [HasPermission("PROJECTS_UPDATE")]
+        public async Task<IActionResult> RegisterDevolution(Guid id, [FromBody] RegisterDevolutionDto dto)
+        {
+            var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+            return Ok(await _projectService.RegisterDevolutionAsync(id, userId, dto));
+        }
+
+        [HttpPost("devolution/{devolutionId:guid}/response")]
+        [HasPermission("PROJECTS_UPDATE")]
+        public async Task<IActionResult> RespondDevolution(Guid devolutionId, [FromBody] RespondDevolutionDto dto)
+            => Ok(await _projectService.RespondToDevolutionAsync(devolutionId, dto));
     }
 }

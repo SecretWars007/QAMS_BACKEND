@@ -18,15 +18,15 @@ namespace QAMS.Infrastructure.Repositories
             _dbSet = context.Set<T>();
         }
 
-        public async Task<T?> GetByIdAsync(Guid id) => await _dbSet.FindAsync(id);
-
-        public async Task<IReadOnlyList<T>> GetAllAsync() =>
+        public virtual async Task<T?> GetByIdAsync(Guid id) => await _dbSet.FindAsync(id);
+        
+        public virtual async Task<IReadOnlyList<T>> GetAllAsync() =>
             await _dbSet.AsNoTracking().ToListAsync();
 
-        public async Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>> predicate) =>
+        public virtual async Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>> predicate) =>
             await _dbSet.Where(predicate).AsNoTracking().ToListAsync();
 
-        public async Task<T> AddAsync(T entity)
+        public virtual async Task<T> AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);
             return entity;
@@ -36,10 +36,10 @@ namespace QAMS.Infrastructure.Repositories
 
         public void Delete(T entity) => _dbSet.Remove(entity);
 
-        public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate) =>
+        public virtual async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate) =>
             await _dbSet.AnyAsync(predicate);
 
-        public async Task<int> CountAsync(Expression<Func<T, bool>> predicate) =>
+        public virtual async Task<int> CountAsync(Expression<Func<T, bool>> predicate) =>
             await _dbSet.CountAsync(predicate);
     }
 }

@@ -16,6 +16,9 @@ namespace QAMS.Application.Services
         private readonly ICatalogRepository<TestCasePriority> _priorityRepo;
         private readonly ICatalogRepository<TestType> _testTypeRepo;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IKanbanService _kanbanService;
+        private readonly ITestExecutionService _execService;
+        private readonly IKanbanBoardRepository _kanbanBoardRepo;
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
         private readonly ILogger<TestCaseService> _logger;
@@ -25,6 +28,9 @@ namespace QAMS.Application.Services
             ICatalogRepository<TestCasePriority> priorityRepo,
             ICatalogRepository<TestType> testTypeRepo,
             ICurrentUserService currentUserService,
+            IKanbanService kanbanService,
+            ITestExecutionService execService,
+            IKanbanBoardRepository kanbanBoardRepo,
             IUnitOfWork uow,
             IMapper mapper,
             ILogger<TestCaseService> logger
@@ -34,6 +40,9 @@ namespace QAMS.Application.Services
             _priorityRepo = priorityRepo;
             _testTypeRepo = testTypeRepo;
             _currentUserService = currentUserService;
+            _kanbanService = kanbanService;
+            _execService = execService;
+            _kanbanBoardRepo = kanbanBoardRepo;
             _uow = uow;
             _mapper = mapper;
             _logger = logger;
@@ -108,6 +117,7 @@ namespace QAMS.Application.Services
                         StepOrder = stepDto.StepOrder,
                         Action = stepDto.Action,
                         ExpectedResult = stepDto.ExpectedResult,
+                        CreatedByUserId = _currentUserService.UserId
                     }
                 );
             }
@@ -127,6 +137,50 @@ namespace QAMS.Application.Services
 
             await _testCaseRepo.AddAsync(testCase);
             await _uow.SaveChangesAsync();
+
+            // Registrar automáticamente en Kanban como tarea
+            try
+            {
+                var boards = await _kanbanBoardRepo.GetByProjectAsync(testCase.ProjectId);
+                var board = boards.FirstOrDefault();
+                if (board != null)
+                {
+                    // Recargar tablero completo para tener las columnas
+                    var fullBoard = await _kanbanBoardRepo.GetFullBoardAsync(board.Id);
+                    var todoColumn = fullBoard?.Columns.FirstOrDefault(c => c.Name == "Por Hacer");
+                    
+                    if (todoColumn != null)
+                    {
+                        await _kanbanService.CreateTaskAsync(new QAMS.Application.DTOs.Kanban.CreateKanbanTaskDto
+                        {
+                            KanbanColumnId = todoColumn.Id,
+                            Title = testCase.Title,
+                            Description = testCase.Description,
+                            TestCaseId = testCase.Id,
+                            PriorityId = 2, // Normal (suponiendo catálogo standard)
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear tarea Kanban automática para el caso {TestCaseId}.", testCase.Id);
+                // No lanzamos excepción para no romper la creación del TestCase
+            }
+
+            // Registrar automáticamente una ejecución con estado PENDIENTE
+            try
+            {
+                await _execService.CreateAsync(_currentUserService.UserId ?? Guid.Empty, new QAMS.Application.DTOs.TestExecutions.CreateTestExecutionDto
+                {
+                    TestCaseId = testCase.Id,
+                    Notes = "Ejecución automática al registrar caso de prueba."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear ejecución automática para el caso {TestCaseId}.", testCase.Id);
+            }
 
             _logger.LogInformation(
                 "Caso de prueba '{Title}' creado con {StepCount} pasos.",
@@ -161,31 +215,59 @@ namespace QAMS.Application.Services
             testCase.TestTypeId = dto.TestTypeId;
             testCase.UpdatedAt = DateTime.UtcNow;
 
-            // Reemplazar pasos: limpiar y re-crear
-            testCase.TestSteps.Clear();
-            foreach (var stepDto in dto.Steps)
+            // Reemplazar pasos: mezclar para evitar violaciones de clave única en TestSteps
+            var existingSteps = testCase.TestSteps.OrderBy(s => s.StepOrder).ToList();
+            var incomingSteps = dto.Steps.OrderBy(s => s.StepOrder).ToList();
+
+            for (int i = 0; i < incomingSteps.Count; i++)
             {
-                testCase.TestSteps.Add(
-                    new TestStep
-                    {
-                        Id = Guid.NewGuid(),
-                        TestCaseId = testCase.Id,
-                        StepOrder = stepDto.StepOrder,
-                        Action = stepDto.Action,
-                        ExpectedResult = stepDto.ExpectedResult,
-                    }
-                );
+                var incoming = incomingSteps[i];
+                if (i < existingSteps.Count)
+                {
+                    var existing = existingSteps[i];
+                    existing.Action = incoming.Action;
+                    existing.ExpectedResult = incoming.ExpectedResult;
+                    existing.StepOrder = incoming.StepOrder;
+                }
+                else
+                {
+                    testCase.TestSteps.Add(
+                        new TestStep
+                        {
+                            Id = Guid.NewGuid(),
+                            TestCaseId = testCase.Id,
+                            StepOrder = incoming.StepOrder,
+                            Action = incoming.Action,
+                            ExpectedResult = incoming.ExpectedResult,
+                            CreatedByUserId = _currentUserService.UserId
+                        }
+                    );
+                }
             }
 
-            // Reemplazar certificadores
-            testCase.Certifiers.Clear();
-            foreach (var certifierId in dto.CertifierUserIds)
+            // Eliminar los pasos sobrantes
+            for (int i = incomingSteps.Count; i < existingSteps.Count; i++)
+            {
+                testCase.TestSteps.Remove(existingSteps[i]);
+            }
+
+            // Reemplazar certificadores de forma segura
+            var existingCertifiersIds = testCase.Certifiers.Select(c => c.UserId).ToList();
+            var incomingCertifiersIds = dto.CertifierUserIds;
+
+            var toRemove = testCase.Certifiers.Where(c => !incomingCertifiersIds.Contains(c.UserId)).ToList();
+            foreach (var c in toRemove)
+            {
+                testCase.Certifiers.Remove(c);
+            }
+
+            foreach (var userId in incomingCertifiersIds.Where(id => !existingCertifiersIds.Contains(id)))
             {
                 testCase.Certifiers.Add(
                     new TestCaseCertifier
                     {
                         TestCaseId = testCase.Id,
-                        UserId = certifierId,
+                        UserId = userId,
                         AssignedAt = DateTime.UtcNow
                     }
                 );
@@ -196,6 +278,15 @@ namespace QAMS.Application.Services
 
             var updated = await _testCaseRepo.GetWithStepsAsync(id);
             return _mapper.Map<TestCaseDto>(updated);
+        }
+
+        public async Task<List<TestStepDto>> GetStepsAsync(Guid id)
+        {
+            _logger.LogInformation("Obteniendo pasos del caso {Id}.", id);
+            var testCase = await _testCaseRepo.GetWithStepsAsync(id)
+                ?? throw new EntityNotFoundException(nameof(TestCase), id);
+                
+            return _mapper.Map<List<TestStepDto>>(testCase.TestSteps);
         }
 
         public async Task DeleteAsync(Guid id)

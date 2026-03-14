@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "ePl5xa7EWs4=",
+  "dgSpecHash": "/XjjuhFjyx8=",
   "success": true,
   "projectFilePath": "C:\\diplomado\\QAMS\\src\\QAMS.Infrastructure\\QAMS.Infrastructure.csproj",
   "expectedPackageFiles": [
@@ -43,6 +43,7 @@
     "C:\\Users\\HP VICTUS\\.nuget\\packages\\mono.texttemplating\\2.2.1\\mono.texttemplating.2.2.1.nupkg.sha512",
     "C:\\Users\\HP VICTUS\\.nuget\\packages\\npgsql\\8.0.6\\npgsql.8.0.6.nupkg.sha512",
     "C:\\Users\\HP VICTUS\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\8.0.11\\npgsql.entityframeworkcore.postgresql.8.0.11.nupkg.sha512",
+    "C:\\Users\\HP VICTUS\\.nuget\\packages\\questpdf\\2024.12.1\\questpdf.2024.12.1.nupkg.sha512",
     "C:\\Users\\HP VICTUS\\.nuget\\packages\\system.codedom\\4.4.0\\system.codedom.4.4.0.nupkg.sha512",
     "C:\\Users\\HP VICTUS\\.nuget\\packages\\system.collections.immutable\\6.0.0\\system.collections.immutable.6.0.0.nupkg.sha512",
     "C:\\Users\\HP VICTUS\\.nuget\\packages\\system.composition\\6.0.0\\system.composition.6.0.0.nupkg.sha512",

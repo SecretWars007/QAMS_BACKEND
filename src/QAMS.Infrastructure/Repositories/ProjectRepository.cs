@@ -43,6 +43,16 @@ namespace QAMS.Infrastructure.Repositories
                     .ThenInclude(pt => pt.User)
                 .Include(p => p.TestSuites)
                 .Include(p => p.KanbanBoards)
+                .Include(p => p.HistoricDevolutions)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+        }
+
+        public async Task<Project?> GetByIdTrackedAsync(Guid projectId)
+        {
+            return await _dbSet
+                .Include(p => p.TestCases)
+                    .ThenInclude(tc => tc.TestExecutions)
+                        .ThenInclude(te => te.Status)
                 .FirstOrDefaultAsync(p => p.Id == projectId);
         }
 
@@ -54,10 +64,38 @@ namespace QAMS.Infrastructure.Repositories
                 .Include(p => p.ProjectTesters)
                     .ThenInclude(pt => pt.User)
                 .Include(p => p.TestSuites)
+                .Include(p => p.TestCases)
+                    .ThenInclude(tc => tc.TestSteps)
                 .Include(p => p.KanbanBoards)
+                    .ThenInclude(kb => kb.Columns)
+                        .ThenInclude(kc => kc.Tasks)
+                .Include(p => p.HistoricDevolutions)
                 .Where(predicate)
-                .AsNoTracking()
                 .ToListAsync();
+        }
+
+        public async Task<Project?> GetFullProjectForComplianceReportAsync(Guid projectId)
+        {
+            return await _dbSet
+                .Include(p => p.ProjectStatus)
+                .Include(p => p.CreatedBy)
+                .Include(p => p.TestCases)
+                    .ThenInclude(tc => tc.TestExecutions)
+                        .ThenInclude(te => te.Status)
+                .Include(p => p.TestCases)
+                    .ThenInclude(tc => tc.TestExecutions)
+                        .ThenInclude(te => te.StepResults)
+                            .ThenInclude(sr => sr.Status)
+                .Include(p => p.TestCases)
+                    .ThenInclude(tc => tc.TestExecutions)
+                        .ThenInclude(te => te.StepResults)
+                            .ThenInclude(sr => sr.TestStep)
+                .Include(p => p.TestCases)
+                    .ThenInclude(tc => tc.TestExecutions)
+                        .ThenInclude(te => te.Evidences)
+                            .ThenInclude(ev => ev.FileType)
+                .Include(p => p.HistoricDevolutions)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
         }
     }
 }

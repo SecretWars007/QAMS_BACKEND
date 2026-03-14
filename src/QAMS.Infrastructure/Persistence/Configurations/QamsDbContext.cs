@@ -135,6 +135,11 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         public DbSet<Project> Projects => Set<Project>();
 
         /// <summary>
+        /// Tabla de histórico de devoluciones de proyectos.
+        /// </summary>
+        public DbSet<ProjectDevolution> ProjectDevolutions => Set<ProjectDevolution>();
+
+        /// <summary>
         /// Tabla de suites (conjuntos) de prueba.
         /// Una suite pertenece a un proyecto y contiene casos de prueba.
         /// Tabla PostgreSQL: test_suites
@@ -181,6 +186,20 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         /// Tabla PostgreSQL: evidences
         /// </summary>
         public DbSet<Evidence> Evidences => Set<Evidence>();
+
+        /// <summary>
+        /// Tabla de observaciones y respuestas por paso de ejecución.
+        /// </summary>
+        public DbSet<ExecutionStepObservation> ExecutionStepObservations => Set<ExecutionStepObservation>();
+
+        public DbSet<ExecutionStepObservationResponse> ExecutionStepObservationResponses => Set<ExecutionStepObservationResponse>();
+
+        /// <summary>
+        /// Tabla de observaciones generales a nivel de proyecto.
+        /// </summary>
+        public DbSet<ProjectObservation> ProjectObservations => Set<ProjectObservation>();
+
+        public DbSet<ProjectObservationResponse> ProjectObservationResponses => Set<ProjectObservationResponse>();
 
         // =======================================================================
         // TABLAS KANBAN (Gestión Visual de Tareas)

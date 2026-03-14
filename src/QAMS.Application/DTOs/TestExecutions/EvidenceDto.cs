@@ -4,6 +4,8 @@ namespace QAMS.Application.DTOs.TestExecutions
     public class EvidenceDto
     {
         public Guid Id { get; set; }
+        public Guid TestExecutionId { get; set; }
+        public Guid? ExecutionStepResultId { get; set; }
         public int FileTypeId { get; set; }
         public string FileTypeName { get; set; } = string.Empty;
         public string FileName { get; set; } = string.Empty;

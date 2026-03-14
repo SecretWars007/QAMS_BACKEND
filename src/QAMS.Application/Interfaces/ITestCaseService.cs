@@ -11,6 +11,7 @@ namespace QAMS.Application.Interfaces
         Task<List<TestCaseDto>> GetByProjectAndSuiteAsync(Guid projectId, Guid suiteId);
         Task<TestCaseDto> CreateAsync(CreateTestCaseDto dto);
         Task<TestCaseDto> UpdateAsync(Guid id, CreateTestCaseDto dto);
+        Task<List<TestStepDto>> GetStepsAsync(Guid id);
         Task DeleteAsync(Guid id);
     }
 }

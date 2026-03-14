@@ -16,6 +16,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(te => te.TesterId).HasColumnName("tester_id");
             builder.Property(te => te.StatusId).HasColumnName("status_id").IsRequired();
             builder.Property(te => te.Notes).HasColumnName("notes").HasMaxLength(2000);
+            builder.Property(te => te.ActualTimeHours).HasColumnName("actual_time_hours").HasColumnType("numeric(5,2)");
             builder
                 .Property(te => te.ExecutionDate)
                 .HasColumnName("execution_date")

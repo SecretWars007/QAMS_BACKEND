@@ -19,5 +19,7 @@ namespace QAMS.Domain.Entities
         public string? ActualResult { get; set; }
         public string? Notes { get; set; }
         public DateTime EvaluatedAt { get; set; } = DateTime.UtcNow;
+        public virtual ICollection<Evidence> Evidences { get; set; } = new List<Evidence>();
+        public virtual ICollection<ExecutionStepObservation> Observations { get; set; } = new List<ExecutionStepObservation>();
     }
 }

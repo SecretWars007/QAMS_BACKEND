@@ -12,6 +12,7 @@ namespace QAMS.Application.DTOs.TestExecutions
         public string StatusName { get; set; } = string.Empty;
         public string StatusCode { get; set; } = string.Empty;
         public string? Notes { get; set; }
+        public decimal? ActualTimeHours { get; set; }
         public DateTime ExecutionDate { get; set; }
         public DateTime? CompletedAt { get; set; }
         public List<StepResultDto> StepResults { get; set; } = new();

@@ -10,7 +10,8 @@ using QAMS.Domain.Ports.Services;
 namespace QAMS.Application.Services
 {
     /// <summary>
-    /// Servicio de autenticación: login, registro, refresh, logout.
+    /// Servicio de autenticación: login, registro, refresh, logout,
+    /// recuperación y cambio de contraseña.
     /// SRP: solo autenticación. DIP: todas las dependencias son interfaces.
     /// </summary>
     public class AuthService : IAuthService
@@ -138,6 +139,92 @@ namespace QAMS.Application.Services
             await _uow.SaveChangesAsync();
 
             _logger.LogInformation("Refresh token revocado para '{UserId}'.", userId);
+        }
+
+        // ─── Recuperación de contraseña ────────────────────────────────────────
+
+        /// <summary>
+        /// Genera un token temporal de 6 dígitos para restablecer la contraseña,
+        /// asociado al email registrado. Válido por 15 minutos.
+        /// En producción, el token debe enviarse por correo electrónico.
+        /// </summary>
+        public async Task<string> ForgotPasswordAsync(ForgotPasswordRequestDto request)
+        {
+            _logger.LogInformation("Solicitud de restablecimiento para '{Email}'.", request.Email);
+
+            var user = await _userRepo.GetByEmailAsync(request.Email);
+
+            // Por seguridad no se revela si el email existe o no
+            if (user is null || !user.IsActive)
+            {
+                _logger.LogWarning("Email '{Email}' no encontrado en forgot-password.", request.Email);
+                return string.Empty;
+            }
+
+            var token = new Random().Next(100000, 999999).ToString();
+            user.PasswordResetToken = token;
+            user.PasswordResetTokenExpiryTime = DateTime.UtcNow.AddMinutes(15);
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.Update(user);
+            await _uow.SaveChangesAsync();
+
+            _logger.LogInformation("Token de reset generado para '{Email}'.", request.Email);
+
+            // TODO: enviar token por email; por ahora se retorna en el response (solo desarrollo)
+            return token;
+        }
+
+        /// <summary>
+        /// Restablece la contraseña validando el token temporal enviado al email.
+        /// </summary>
+        public async Task ResetPasswordAsync(ResetPasswordRequestDto request)
+        {
+            _logger.LogInformation("Restablecimiento de contraseña para '{Email}'.", request.Email);
+
+            var user = await _userRepo.GetByEmailAsync(request.Email)
+                ?? throw new DomainException("Email o token inválido.");
+
+            if (user.PasswordResetToken is null
+                || user.PasswordResetToken != request.ResetToken
+                || user.PasswordResetTokenExpiryTime <= DateTime.UtcNow)
+            {
+                throw new DomainException("El token de restablecimiento es inválido o ha expirado.");
+            }
+
+            user.PasswordHash = _hasher.HashPassword(request.NewPassword);
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiryTime = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.Update(user);
+            await _uow.SaveChangesAsync();
+
+            _logger.LogInformation("Contraseña restablecida para '{Email}'.", request.Email);
+        }
+
+        // ─── Cambio de contraseña (usuario autenticado) ───────────────────────
+
+        /// <summary>
+        /// Permite a un usuario autenticado cambiar su contraseña verificando la actual.
+        /// </summary>
+        public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequestDto request)
+        {
+            _logger.LogInformation("Cambio de contraseña para UserId '{UserId}'.", userId);
+
+            var user = await _userRepo.GetByIdAsync(userId)
+                ?? throw new EntityNotFoundException(nameof(User), userId);
+
+            if (!_hasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+                throw new DomainException("La contraseña actual es incorrecta.");
+
+            user.PasswordHash = _hasher.HashPassword(request.NewPassword);
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.Update(user);
+            await _uow.SaveChangesAsync();
+
+            _logger.LogInformation("Contraseña cambiada para UserId '{UserId}'.", userId);
         }
     }
 }

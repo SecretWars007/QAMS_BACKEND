@@ -20,6 +20,8 @@ namespace QAMS.Application.Services
         private readonly IGenericRepository<KanbanColumn> _columnRepo;
         private readonly IGenericRepository<KanbanTask> _taskRepo;
         private readonly ICatalogRepository<TaskPriority> _priorityRepo;
+        private readonly ITestExecutionRepository _execRepo;
+        private readonly ICatalogRepository<ExecutionStatus> _execStatusRepo;
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
         private readonly ILogger<KanbanService> _logger;
@@ -29,6 +31,8 @@ namespace QAMS.Application.Services
             IGenericRepository<KanbanColumn> columnRepo,
             IGenericRepository<KanbanTask> taskRepo,
             ICatalogRepository<TaskPriority> priorityRepo,
+            ITestExecutionRepository execRepo,
+            ICatalogRepository<ExecutionStatus> execStatusRepo,
             IUnitOfWork uow,
             IMapper mapper,
             ILogger<KanbanService> logger
@@ -38,6 +42,8 @@ namespace QAMS.Application.Services
             _columnRepo = columnRepo;
             _taskRepo = taskRepo;
             _priorityRepo = priorityRepo;
+            _execRepo = execRepo;
+            _execStatusRepo = execStatusRepo;
             _uow = uow;
             _mapper = mapper;
             _logger = logger;
@@ -82,10 +88,11 @@ namespace QAMS.Application.Services
             // Crear columnas predeterminadas
             var defaultColumns = new[]
             {
-                ("Por Hacer", 0),
-                ("En Progreso", 1),
-                ("En Revisión", 2),
-                ("Completado", 3),
+                ("Tareas Pendientes", 0),
+                ("Por Hacer", 1),
+                ("En Progreso", 2),
+                ("En Revisión", 3),
+                ("Completado", 4),
             };
 
             foreach (var (columnName, order) in defaultColumns)
@@ -159,6 +166,36 @@ namespace QAMS.Application.Services
         }
 
         /// <summary>
+        /// Actualiza los datos de una tarea Kanban.
+        /// </summary>
+        public async Task<KanbanTaskDto> UpdateTaskAsync(Guid taskId, UpdateKanbanTaskDto dto)
+        {
+            _logger.LogInformation("Actualizando tarea Kanban {TaskId}.", taskId);
+
+            var task = await _taskRepo.GetByIdAsync(taskId)
+                ?? throw new EntityNotFoundException(nameof(KanbanTask), taskId);
+
+            // Validar prioridad si cambió
+            if (task.PriorityId != dto.PriorityId)
+            {
+                _ = await _priorityRepo.GetByIdAsync(dto.PriorityId)
+                    ?? throw new EntityNotFoundException(nameof(TaskPriority), dto.PriorityId);
+                task.PriorityId = dto.PriorityId;
+            }
+
+            task.Title = dto.Title;
+            task.Description = dto.Description;
+            task.AssigneeId = dto.AssigneeId;
+            task.DueDate = dto.DueDate;
+            task.UpdatedAt = DateTime.UtcNow;
+
+            _taskRepo.Update(task);
+            await _uow.SaveChangesAsync();
+
+            return _mapper.Map<KanbanTaskDto>(task);
+        }
+
+        /// <summary>
         /// Mueve una tarea a otra columna y/o cambia su posición.
         /// Reordena las tareas en la columna de destino.
         /// </summary>
@@ -175,10 +212,21 @@ namespace QAMS.Application.Services
                 await _taskRepo.GetByIdAsync(taskId)
                 ?? throw new EntityNotFoundException(nameof(KanbanTask), taskId);
 
+            // Obtener información de la columna destino para sincronización
+            var targetColumn = await _columnRepo.GetByIdAsync(dto.TargetColumnId)
+                ?? throw new EntityNotFoundException(nameof(KanbanColumn), dto.TargetColumnId);
+
             // Actualizar columna y orden
             task.KanbanColumnId = dto.TargetColumnId;
             task.OrderIndex = dto.NewOrderIndex;
             task.UpdatedAt = DateTime.UtcNow;
+
+            // --- LÓGICA DE SINCRONIZACIÓN CON EJECUCIONES ---
+            if (task.TestCaseId.HasValue)
+            {
+                await SyncExecutionStatusAsync(task.TestCaseId.Value, targetColumn.Name, task.AssigneeId);
+            }
+            // ------------------------------------------------
 
             // Reordenar tareas existentes en la columna destino
             var tasksInColumn = await _taskRepo.FindAsync(t =>
@@ -209,6 +257,75 @@ namespace QAMS.Application.Services
 
             _taskRepo.Delete(task);
             await _uow.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Sincroniza el estado de las ejecuciones basándose en la columna Kanban destino.
+        /// Usa una query con tracking para que EF Core pueda persistir los cambios.
+        /// </summary>
+        private async Task SyncExecutionStatusAsync(Guid testCaseId, string columnName, Guid? testerId)
+        {
+            string? statusCode = columnName?.Trim() switch
+            {
+                var s when s.Equals("Tareas Pendientes", StringComparison.OrdinalIgnoreCase) => "PENDING",
+                var s when s.Equals("Por Hacer", StringComparison.OrdinalIgnoreCase) => "PENDING",
+                var s when s.Equals("En Progreso", StringComparison.OrdinalIgnoreCase) => "IN_PROGRESS",
+                var s when s.Equals("En Revisión", StringComparison.OrdinalIgnoreCase) => "IN_PROGRESS",
+                var s when s.Equals("Completado", StringComparison.OrdinalIgnoreCase) => "PASSED",
+                _ => null
+            };
+
+            if (statusCode == null) return;
+
+            _logger.LogInformation(
+                "Sincronizando ejecuciones de TestCase {TestCaseId} a estado {Status} por movimiento a columna '{Column}'.",
+                testCaseId, statusCode, columnName);
+
+            // Usar el método tracked para que EF Core pueda persistir los cambios
+            var executions = await _execRepo.GetByTestCaseTrackedAsync(testCaseId);
+            if (!executions.Any())
+            {
+                _logger.LogWarning("No se encontraron ejecuciones para el TestCase {TestCaseId}. No se sincronizó.", testCaseId);
+                return;
+            }
+
+            var status = await _execStatusRepo.GetByCodeAsync(statusCode);
+            if (status == null)
+            {
+                _logger.LogWarning("Estado con código '{Code}' no encontrado en catálogo. No se sincronizó.", statusCode);
+                return;
+            }
+
+            if (statusCode == "PASSED")
+            {
+                // Al completar: solo actualizar la ejecución más reciente
+                var latestExec = executions.First(); // Ya ordenadas por fecha desc
+                if (latestExec.StatusId != status.Id)
+                {
+                    latestExec.StatusId = status.Id;
+                    latestExec.CompletedAt = DateTime.UtcNow;
+                    _execRepo.Update(latestExec);
+                    _logger.LogInformation("Ejecución {ExecId} marcada como PASSED.", latestExec.Id);
+                }
+            }
+            else
+            {
+                // Para PENDING / IN_PROGRESS: actualizar todas las ejecuciones no terminales
+                foreach (var exec in executions)
+                {
+                    var currentCode = exec.Status?.Code;
+                    // No sobreescribir ejecuciones ya completadas (PASSED/FAILED)
+                    if (currentCode == "PASSED" || currentCode == "FAILED" || currentCode == "BLOCKED") continue;
+
+                    if (exec.StatusId != status.Id)
+                    {
+                        exec.StatusId = status.Id;
+                        exec.CompletedAt = null;
+                        _execRepo.Update(exec);
+                        _logger.LogInformation("Ejecución {ExecId} actualizada a {Status}.", exec.Id, statusCode);
+                    }
+                }
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "/hzvHUlNCaQ=",
+  "dgSpecHash": "Bw4W+GmMIIs=",
   "success": true,
   "projectFilePath": "C:\\diplomado\\QAMS\\src\\QAMS.Api\\QAMS.Api.csproj",
   "expectedPackageFiles": [
@@ -49,6 +49,7 @@
     "C:\\Users\\HP VICTUS\\.nuget\\packages\\mono.texttemplating\\2.2.1\\mono.texttemplating.2.2.1.nupkg.sha512",
     "C:\\Users\\HP VICTUS\\.nuget\\packages\\npgsql\\8.0.6\\npgsql.8.0.6.nupkg.sha512",
     "C:\\Users\\HP VICTUS\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\8.0.11\\npgsql.entityframeworkcore.postgresql.8.0.11.nupkg.sha512",
+    "C:\\Users\\HP VICTUS\\.nuget\\packages\\questpdf\\2024.12.1\\questpdf.2024.12.1.nupkg.sha512",
     "C:\\Users\\HP VICTUS\\.nuget\\packages\\serilog\\3.1.1\\serilog.3.1.1.nupkg.sha512",
     "C:\\Users\\HP VICTUS\\.nuget\\packages\\serilog.aspnetcore\\8.0.0\\serilog.aspnetcore.8.0.0.nupkg.sha512",
     "C:\\Users\\HP VICTUS\\.nuget\\packages\\serilog.extensions.hosting\\8.0.0\\serilog.extensions.hosting.8.0.0.nupkg.sha512",

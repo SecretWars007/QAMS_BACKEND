@@ -107,6 +107,20 @@ try {
     else {
         Log-Error "Failed: No cases found with filter."
     }
+
+    # Verification of the new steps endpoint
+    Write-Host "Verifying dedicated steps endpoint..."
+    $stepsUri = "$baseUrl/TestCases/$caseId/steps"
+    $stepsResponse = Invoke-WebRequest -Uri $stepsUri -Method Get -Headers $headers -UseBasicParsing
+    $steps = $stepsResponse.Content | ConvertFrom-Json
+    
+    if ($steps.Count -eq 3) {
+        Write-Host "SUCCESS: Steps endpoint working. Found $($steps.Count) steps."
+        "STEPS_SUCCESS" | Out-File "c:\diplomado\QAMS\steps_success.txt" -Encoding ASCII
+    }
+    else {
+        Log-Error "Failed: Steps endpoint returned $($steps.Count) steps, expected 3."
+    }
 }
 catch {
     Log-Error "Failed to create TestCase: $_"
