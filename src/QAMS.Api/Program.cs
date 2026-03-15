@@ -267,7 +267,6 @@ app.UseSwaggerUI(c =>
 });
 
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAngular");
