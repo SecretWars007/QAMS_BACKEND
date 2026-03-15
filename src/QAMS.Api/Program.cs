@@ -25,6 +25,13 @@ Log.Logger = new LoggerConfiguration()
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
 
+// Normalizar cadena de conexión de Render (postgresql:// -> postgres://)
+var rawConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (!string.IsNullOrEmpty(rawConnectionString) && rawConnectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = rawConnectionString.Replace("postgresql://", "postgres://", StringComparison.OrdinalIgnoreCase);
+}
+
 // Infrastructure (DbContext, Repos, PasswordHasher, JWT, FileStorage)
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
@@ -161,9 +168,23 @@ using (var scope = app.Services.CreateScope())
         }
         else
         {
-            // Mostrar versión enmascarada para seguridad (ej: Host=...;Database=...;Username=...)
-            var parts = connectionString.Split(';');
-            var masked = string.Join(";", parts.Select(p => p.StartsWith("Password", StringComparison.OrdinalIgnoreCase) ? "Password=***" : p));
+            // Enmascaramiento robusto para URI y Semicolon
+            string masked;
+            if (connectionString.Contains("://"))
+            {
+                try 
+                {
+                    var uri = new Uri(connectionString);
+                    var user = uri.UserInfo.Split(':')[0];
+                    masked = $"{uri.Scheme}://{user}:***@{uri.Host}{uri.AbsolutePath}";
+                }
+                catch { masked = "URI Malformada"; }
+            }
+            else
+            {
+                var parts = connectionString.Split(';');
+                masked = string.Join(";", parts.Select(p => p.Trim().StartsWith("Password", StringComparison.OrdinalIgnoreCase) ? "Password=***" : p));
+            }
             Log.Information("Cadena de conexión detectada (enmascarada): {ConnectionString}", masked);
         }
         
