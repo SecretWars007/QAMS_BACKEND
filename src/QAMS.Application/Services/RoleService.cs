@@ -142,5 +142,96 @@ namespace QAMS.Application.Services
             var permissions = await _permRepo.GetAllAsync();
             return _mapper.Map<List<PermissionDto>>(permissions);
         }
+        
+        public async Task ToggleStatusAsync(Guid id)
+        {
+            _logger.LogInformation("Cambiando estado del rol {RoleId}.", id);
+            var role = await _roleRepo.GetByIdAsync(id)
+                ?? throw new EntityNotFoundException(nameof(Role), id);
+
+            role.IsActive = !role.IsActive;
+            _roleRepo.Update(role);
+            await _uow.SaveChangesAsync();
+            _logger.LogInformation("Rol {RoleId} ahora está {Status}.", id, role.IsActive ? "Activo" : "Inactivo");
+        }
+
+        public async Task<RoleDto> DuplicateAsync(Guid id, string newName)
+        {
+            _logger.LogInformation("Duplicando rol {RoleId} como '{NewName}'.", id, newName);
+            
+            var sourceRole = await _roleRepo.GetWithPermissionsAsync(id)
+                ?? throw new EntityNotFoundException(nameof(Role), id);
+
+            if (await _roleRepo.GetByNameAsync(newName) is not null)
+                throw new DomainException($"El rol '{newName}' ya existe.");
+
+            var newRole = new Role
+            {
+                Id = Guid.NewGuid(),
+                Name = newName,
+                Description = $"Copia de {sourceRole.Name}. {sourceRole.Description}",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            foreach (var perm in sourceRole.RolePermissions)
+            {
+                newRole.RolePermissions.Add(new RolePermission
+                {
+                    RoleId = newRole.Id,
+                    PermissionId = perm.PermissionId,
+                    AssignedAt = DateTime.UtcNow
+                });
+            }
+
+            await _roleRepo.AddAsync(newRole);
+            await _uow.SaveChangesAsync();
+
+            _logger.LogInformation("Rol duplicado exitosamente con ID {NewRoleId}.", newRole.Id);
+            return _mapper.Map<RoleDto>(newRole);
+        }
+
+        public async Task AddPermissionsAsync(Guid roleId, List<Guid> permissionIds)
+        {
+            _logger.LogInformation("Agregando {Count} permisos al rol {RoleId}.", permissionIds.Count, roleId);
+            
+            var role = await _roleRepo.GetWithPermissionsAsync(roleId)
+                ?? throw new EntityNotFoundException(nameof(Role), roleId);
+
+            foreach (var permId in permissionIds)
+            {
+                if (role.RolePermissions.Any(rp => rp.PermissionId == permId)) continue;
+
+                if (!await _permRepo.AnyAsync(p => p.Id == permId))
+                    throw new EntityNotFoundException(nameof(Permission), permId);
+
+                role.RolePermissions.Add(new RolePermission
+                {
+                    RoleId = roleId,
+                    PermissionId = permId,
+                    AssignedAt = DateTime.UtcNow
+                });
+            }
+
+            _roleRepo.Update(role);
+            await _uow.SaveChangesAsync();
+        }
+
+        public async Task RemovePermissionsAsync(Guid roleId, List<Guid> permissionIds)
+        {
+            _logger.LogInformation("Removiendo {Count} permisos del rol {RoleId}.", permissionIds.Count, roleId);
+            
+            var role = await _roleRepo.GetWithPermissionsAsync(roleId)
+                ?? throw new EntityNotFoundException(nameof(Role), roleId);
+
+            var toRemove = role.RolePermissions.Where(rp => permissionIds.Contains(rp.PermissionId)).ToList();
+            foreach (var rp in toRemove)
+            {
+                role.RolePermissions.Remove(rp);
+            }
+
+            _roleRepo.Update(role);
+            await _uow.SaveChangesAsync();
+        }
     }
 }

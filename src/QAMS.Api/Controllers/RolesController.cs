@@ -58,5 +58,37 @@ namespace QAMS.Api.Controllers
             await _roleService.AssignPermissionsAsync(id, dto);
             return NoContent();
         }
+
+        [HttpPost("{id:guid}/toggle-status")]
+        [HasPermission("ROLES_UPDATE")]
+        public async Task<IActionResult> ToggleStatus(Guid id)
+        {
+            await _roleService.ToggleStatusAsync(id);
+            return NoContent();
+        }
+
+        [HttpPost("{id:guid}/duplicate")]
+        [HasPermission("ROLES_CREATE")]
+        public async Task<IActionResult> Duplicate(Guid id, [FromQuery] string newName)
+        {
+            var created = await _roleService.DuplicateAsync(id, newName);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+
+        [HttpPost("{id:guid}/permissions/add")]
+        [HasPermission("ROLES_ASSIGN_PERMISSIONS")]
+        public async Task<IActionResult> AddPermissions(Guid id, [FromBody] List<Guid> permissionIds)
+        {
+            await _roleService.AddPermissionsAsync(id, permissionIds);
+            return NoContent();
+        }
+
+        [HttpPost("{id:guid}/permissions/remove")]
+        [HasPermission("ROLES_ASSIGN_PERMISSIONS")]
+        public async Task<IActionResult> RemovePermissions(Guid id, [FromBody] List<Guid> permissionIds)
+        {
+            await _roleService.RemovePermissionsAsync(id, permissionIds);
+            return NoContent();
+        }
     }
 }

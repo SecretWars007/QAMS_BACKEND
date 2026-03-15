@@ -153,6 +153,19 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var db = services.GetRequiredService<QamsDbContext>();
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            Log.Error("CRÍTICO: No se encontró la cadena de conexión 'DefaultConnection' en la configuración.");
+        }
+        else
+        {
+            // Mostrar versión enmascarada para seguridad (ej: Host=...;Database=...;Username=...)
+            var parts = connectionString.Split(';');
+            var masked = string.Join(";", parts.Select(p => p.StartsWith("Password", StringComparison.OrdinalIgnoreCase) ? "Password=***" : p));
+            Log.Information("Cadena de conexión detectada (enmascarada): {ConnectionString}", masked);
+        }
         
         // En Producción, esperar un poco para asegurar que la base de datos de Render esté lista
         if (environment.IsProduction())

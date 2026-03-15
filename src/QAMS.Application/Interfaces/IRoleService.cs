@@ -11,5 +11,9 @@ namespace QAMS.Application.Interfaces
         Task DeleteAsync(Guid id);
         Task AssignPermissionsAsync(Guid roleId, AssignPermissionsDto dto);
         Task<List<PermissionDto>> GetAllPermissionsAsync();
+        Task ToggleStatusAsync(Guid id);
+        Task<RoleDto> DuplicateAsync(Guid id, string newName);
+        Task AddPermissionsAsync(Guid roleId, List<Guid> permissionIds);
+        Task RemovePermissionsAsync(Guid roleId, List<Guid> permissionIds);
     }
 }
