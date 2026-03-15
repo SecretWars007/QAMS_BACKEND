@@ -1,3 +1,4 @@
+// src/QAMS.Api/Controllers/TestSuitesController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QAMS.Api.Filters;
@@ -12,12 +13,19 @@ namespace QAMS.Api.Controllers
     public class TestSuitesController : ControllerBase
     {
         private readonly ITestSuiteService _service;
-        public TestSuitesController(ITestSuiteService service) { _service = service; }
+        private readonly ILogger<TestSuitesController> _logger;
+
+        public TestSuitesController(ITestSuiteService service, ILogger<TestSuitesController> logger)
+        {
+            _service = service;
+            _logger = logger;
+        }
 
         [HttpPost]
-        [HasPermission("PROJECTS_CREATE")] // Re-using PROJECT permission as Suite is part of Project
+        [HasPermission("PROJECTS_CREATE")]
         public async Task<IActionResult> Create([FromBody] CreateTestSuiteDto dto)
         {
+            _logger.LogInformation("POST /api/testsuites - Creando suite '{Name}' para proyecto {ProjectId}.", dto.Name, dto.ProjectId);
             var suite = await _service.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = suite.Id }, suite);
         }
@@ -25,23 +33,34 @@ namespace QAMS.Api.Controllers
         [HttpGet("{id:guid}")]
         [HasPermission("PROJECTS_VIEW")]
         public async Task<IActionResult> GetById(Guid id)
-            => Ok(await _service.GetByIdAsync(id));
+        {
+            _logger.LogInformation("GET /api/testsuites/{SuiteId}", id);
+            return Ok(await _service.GetByIdAsync(id));
+        }
 
         [HttpGet("project/{projectId:guid}")]
         [HasPermission("PROJECTS_VIEW")]
         public async Task<IActionResult> GetByProject(Guid projectId)
-            => Ok(await _service.GetByProjectIdAsync(projectId));
+        {
+            _logger.LogInformation("GET /api/testsuites/project/{ProjectId}", projectId);
+            return Ok(await _service.GetByProjectIdAsync(projectId));
+        }
 
         [HttpPut("{id:guid}")]
+        [HasPermission("PROJECTS_UPDATE")]
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateTestSuiteDto dto)
-            => Ok(await _service.UpdateAsync(id, dto));
+        {
+            _logger.LogInformation("PUT /api/testsuites/{SuiteId} - Actualizando suite.", id);
+            return Ok(await _service.UpdateAsync(id, dto));
+        }
 
         [HttpDelete("{id:guid}")]
         [HasPermission("PROJECTS_DELETE")]
         public async Task<IActionResult> Delete(Guid id)
-        { 
-            await _service.DeleteAsync(id); 
-            return NoContent(); 
+        {
+            _logger.LogInformation("DELETE /api/testsuites/{SuiteId}", id);
+            await _service.DeleteAsync(id);
+            return NoContent();
         }
     }
 }

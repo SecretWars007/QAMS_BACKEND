@@ -29,6 +29,7 @@ public class UserServiceTests
 {
     private readonly Mock<IUserRepository> _mockUserRepository = new();
     private readonly Mock<IRoleRepository> _mockRoleRepository = new();
+    private readonly Mock<IPasswordHasher> _mockPasswordHasher = new();
     private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
     private readonly Mock<IMapper> _mockMapper = new();
     private readonly Mock<ILogger<UserService>> _mockLogger = new();
@@ -40,6 +41,7 @@ public class UserServiceTests
     private UserService CreateService() => new UserService(
         _mockUserRepository.Object,
         _mockRoleRepository.Object,
+        _mockPasswordHasher.Object,
         _mockUnitOfWork.Object,
         _mockMapper.Object,
         _mockLogger.Object
@@ -53,12 +55,12 @@ public class UserServiceTests
         var roleId = Guid.NewGuid();
 
         _mockUserRepository
-            .Setup(r => r.GetByIdAsync(userId))
-            .ReturnsAsync(new User { Id = userId, Username = "testuser", IsActive = true });
+            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
+            .ReturnsAsync(true);
 
         _mockRoleRepository
-            .Setup(r => r.GetByIdAsync(roleId))
-            .ReturnsAsync(new Role { Id = roleId, Name = "TestRole" });
+            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Role, bool>>>()))
+            .ReturnsAsync(true);
 
         _mockUnitOfWork
             .Setup(u => u.SaveChangesAsync())
@@ -70,8 +72,6 @@ public class UserServiceTests
         await service.AssignRoleAsync(userId, roleId);
 
         // ASSERT
-        _mockUserRepository.Verify(r => r.GetByIdAsync(userId), Times.Once);
-        _mockRoleRepository.Verify(r => r.GetByIdAsync(roleId), Times.Once);
         _mockUserRepository.Verify(r => r.AssignRoleAsync(userId, roleId), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
@@ -83,8 +83,8 @@ public class UserServiceTests
         var roleId = Guid.NewGuid();
 
         _mockUserRepository
-            .Setup(r => r.GetByIdAsync(userId))
-            .ReturnsAsync((User)null);
+            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
+            .ReturnsAsync(false);
 
         var service = CreateService();
 
@@ -93,7 +93,7 @@ public class UserServiceTests
             () => service.AssignRoleAsync(userId, roleId)
         );
 
-        _mockRoleRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
+        _mockRoleRepository.Verify(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Role, bool>>>()), Times.Never);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
     }
 
@@ -104,12 +104,12 @@ public class UserServiceTests
         var roleId = Guid.NewGuid();
 
         _mockUserRepository
-            .Setup(r => r.GetByIdAsync(userId))
-            .ReturnsAsync(new User { Id = userId, Username = "test" });
+            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
+            .ReturnsAsync(true);
 
         _mockRoleRepository
-            .Setup(r => r.GetByIdAsync(roleId))
-            .ReturnsAsync((Role)null);
+            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Role, bool>>>()))
+            .ReturnsAsync(false);
 
         var service = CreateService();
 
@@ -128,8 +128,12 @@ public class UserServiceTests
         var roleId = Guid.NewGuid();
 
         _mockUserRepository
-            .Setup(r => r.GetByIdAsync(userId))
-            .ReturnsAsync(new User { Id = userId, Username = "test" });
+            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
+            .ReturnsAsync(true);
+            
+        _mockRoleRepository
+            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Role, bool>>>()))
+            .ReturnsAsync(true);
 
         _mockUnitOfWork
             .Setup(u => u.SaveChangesAsync())
@@ -141,7 +145,6 @@ public class UserServiceTests
         await service.RemoveRoleAsync(userId, roleId);
 
         // ASSERT
-        _mockUserRepository.Verify(r => r.GetByIdAsync(userId), Times.Once);
         _mockUserRepository.Verify(r => r.RemoveRoleAsync(userId, roleId), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
@@ -153,8 +156,8 @@ public class UserServiceTests
         var roleId = Guid.NewGuid();
 
         _mockUserRepository
-            .Setup(r => r.GetByIdAsync(userId))
-            .ReturnsAsync((User)null);
+            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
+            .ReturnsAsync(false);
 
         var service = CreateService();
 
@@ -176,8 +179,8 @@ public class UserServiceTests
         var userId = Guid.NewGuid();
 
         _mockUserRepository
-            .Setup(r => r.GetByIdAsync(userId))
-            .ReturnsAsync(new User { Id = userId, Username = "test" });
+            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
+            .ReturnsAsync(true);
 
         _mockUnitOfWork
             .Setup(u => u.SaveChangesAsync())
@@ -189,7 +192,6 @@ public class UserServiceTests
         await service.RemoveAllRolesAsync(userId);
 
         // ASSERT
-        _mockUserRepository.Verify(r => r.GetByIdAsync(userId), Times.Once);
         _mockUserRepository.Verify(r => r.RemoveAllRolesAsync(userId), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
     }

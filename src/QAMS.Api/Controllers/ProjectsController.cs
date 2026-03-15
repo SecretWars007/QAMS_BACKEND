@@ -13,21 +13,35 @@ namespace QAMS.Api.Controllers
     public class ProjectsController : ControllerBase
     {
         private readonly IProjectService _projectService;
-        public ProjectsController(IProjectService projectService)
-        { _projectService = projectService; }
+        private readonly ILogger<ProjectsController> _logger;
+
+        public ProjectsController(IProjectService projectService, ILogger<ProjectsController> logger)
+        {
+            _projectService = projectService;
+            _logger = logger;
+        }
 
         [HttpGet]
         [HasPermission("PROJECTS_VIEW")]
-        public async Task<IActionResult> GetAll() => Ok(await _projectService.GetAllAsync());
+        public async Task<IActionResult> GetAll()
+        {
+            _logger.LogInformation("GET /api/projects - Obteniendo todos los proyectos.");
+            return Ok(await _projectService.GetAllAsync());
+        }
 
         [HttpGet("{id:guid}")]
         [HasPermission("PROJECTS_VIEW")]
-        public async Task<IActionResult> GetById(Guid id) => Ok(await _projectService.GetByIdAsync(id));
+        public async Task<IActionResult> GetById(Guid id)
+        {
+            _logger.LogInformation("GET /api/projects/{ProjectId} - Obteniendo proyecto.", id);
+            return Ok(await _projectService.GetByIdAsync(id));
+        }
 
         [HttpPost]
         [HasPermission("PROJECTS_CREATE")]
         public async Task<IActionResult> Create([FromBody] CreateProjectDto dto)
         {
+            _logger.LogInformation("POST /api/projects - Creando proyecto '{Name}'.", dto.Name);
             var project = await _projectService.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = project.Id }, project);
         }
@@ -35,29 +49,43 @@ namespace QAMS.Api.Controllers
         [HttpPut("{id:guid}")]
         [HasPermission("PROJECTS_UPDATE")]
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateProjectDto dto)
-            => Ok(await _projectService.UpdateAsync(id, dto));
+        {
+            _logger.LogInformation("PUT /api/projects/{ProjectId} - Actualizando proyecto.", id);
+            return Ok(await _projectService.UpdateAsync(id, dto));
+        }
 
         [HttpDelete("{id:guid}")]
         [HasPermission("PROJECTS_DELETE")]
         public async Task<IActionResult> Delete(Guid id)
-        { await _projectService.DeleteAsync(id); return NoContent(); }
+        {
+            _logger.LogInformation("DELETE /api/projects/{ProjectId} - Eliminando proyecto.", id);
+            await _projectService.DeleteAsync(id);
+            return NoContent();
+        }
 
         [HttpGet("{id:guid}/testcases")]
         [HasPermission("PROJECTS_VIEW")]
         public async Task<IActionResult> GetTestCasesByProject(Guid id, [FromServices] ITestCaseService testCaseService)
-            => Ok(await testCaseService.GetByProjectIdAsync(id));
+        {
+            _logger.LogInformation("GET /api/projects/{ProjectId}/testcases - Obteniendo casos de prueba.", id);
+            return Ok(await testCaseService.GetByProjectIdAsync(id));
+        }
 
         [HttpPost("{id:guid}/devolution")]
         [HasPermission("PROJECTS_UPDATE")]
         public async Task<IActionResult> RegisterDevolution(Guid id, [FromBody] RegisterDevolutionDto dto)
         {
             var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+            _logger.LogInformation("POST /api/projects/{ProjectId}/devolution - Registrando devolución. UserId: {UserId}", id, userId);
             return Ok(await _projectService.RegisterDevolutionAsync(id, userId, dto));
         }
 
         [HttpPost("devolution/{devolutionId:guid}/response")]
         [HasPermission("PROJECTS_UPDATE")]
         public async Task<IActionResult> RespondDevolution(Guid devolutionId, [FromBody] RespondDevolutionDto dto)
-            => Ok(await _projectService.RespondToDevolutionAsync(devolutionId, dto));
+        {
+            _logger.LogInformation("POST /api/projects/devolution/{DevolutionId}/response - Respondiendo devolución.", devolutionId);
+            return Ok(await _projectService.RespondToDevolutionAsync(devolutionId, dto));
+        }
     }
 }

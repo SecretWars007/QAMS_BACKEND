@@ -19,19 +19,22 @@ namespace QAMS.Infrastructure.Services
         private readonly ITestExecutionRepository _execRepo;
         private readonly IObservationRepository _observationRepo;
         private readonly IEvidenceRepository _evidenceRepo;
+        private readonly ILogger<PdfReportService> _logger;
         private readonly string _uploadsPath;
 
         public PdfReportService(
             IProjectRepository projectRepo,
             ITestExecutionRepository execRepo,
             IObservationRepository observationRepo,
-            IEvidenceRepository evidenceRepo)
+            IEvidenceRepository evidenceRepo,
+            ILogger<PdfReportService> logger)
         {
             QuestPDF.Settings.License = LicenseType.Community;
             _projectRepo = projectRepo;
             _execRepo = execRepo;
             _observationRepo = observationRepo;
             _evidenceRepo = evidenceRepo;
+            _logger = logger;
             _uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
         }
 
@@ -49,6 +52,8 @@ namespace QAMS.Infrastructure.Services
 
         public async Task<byte[]> GenerateProjectObservationsReportAsync(Guid projectId)
         {
+            _logger.LogInformation("Generando reporte de observaciones para el proyecto {ProjectId}.", projectId);
+            
             var projectList = await _projectRepo.FindWithDetailsAsync(p => p.Id == projectId);
             var project = projectList.FirstOrDefault();
             if (project == null) return Array.Empty<byte>();
@@ -258,6 +263,8 @@ namespace QAMS.Infrastructure.Services
 
         public async Task<byte[]> GenerateFinalComplianceReportAsync(Guid projectId)
         {
+            _logger.LogInformation("Generando reporte de cumplimiento final para el proyecto {ProjectId}.", projectId);
+            
             var project = await _projectRepo.GetFullProjectForComplianceReportAsync(projectId);
             if (project == null) return Array.Empty<byte>();
 
@@ -413,6 +420,8 @@ namespace QAMS.Infrastructure.Services
 
         private async Task<byte[]> GenerateProjectReportInternalAsync(Guid projectId, bool isBurndownOnly = false)
         {
+            _logger.LogInformation("Generando reporte interno (BurndownOnly: {IsBurndownOnly}) para {ProjectId}.", isBurndownOnly, projectId);
+            
             var projectList = await _projectRepo.FindWithDetailsAsync(p => p.Id == projectId);
             var project = projectList.FirstOrDefault();
             

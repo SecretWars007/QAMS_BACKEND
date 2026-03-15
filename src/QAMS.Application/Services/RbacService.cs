@@ -23,7 +23,7 @@ namespace QAMS.Application.Services
 
         public async Task<bool> UserHasPermissionAsync(Guid userId, string permissionCode)
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Verificando permiso '{Permission}' para usuario '{UserId}'.",
                 permissionCode,
                 userId

@@ -11,86 +11,19 @@ using QAMS.Domain.Ports.Services;
 namespace QAMS.Application.Services
 {
     /// <summary>
-    /// SERVICIO DE USUARIOS: Implementa lógica de negocio para gestión de usuarios y roles.
-    /// 
-    /// RESPONSABILIDADES:
-    /// 1. Validación de usuarios y roles antes de operaciones
-    /// 2. Coordinación entre repositorios (User, Role, Unit of Work)
-    /// 3. Transformación entre DTOs (API) y entidades del dominio
-    /// 4. Registro de eventos de negocio mediante logging
-    /// 5. Manejo de excepciones de negocio
-    /// 
-    /// PRINCIPIOS APLICADOS:
-    /// - SRP (Single Responsibility): Solo gestiona lógica de usuario
-    /// - DIP (Dependency Inversion): Depende de abstracciones (interfaces), no de implementaciones
-    /// - SOLID: Alta cohesión, bajo acoplamiento mediante inyección de dependencias
-    /// - Async/Await: Operaciones asincrónicas para no bloquear threads
-    /// 
-    /// PATRÓN ARQUITECTÓNICO:
-    /// - Application Service: Coordina repository + domain + DTO
-    /// - Unit of Work: Agrupa operaciones en transacciones
-    /// - Auto Mapper: Mapeo automático entre objetos
+    /// Servicio de Usuarios: Gestiona la lógica de negocio de usuarios, incluyendo
+    /// creación, actualización, eliminación (soft-delete) y asignación de roles.
+    /// Coordina UserRepo, RoleRepo y generadores de hash para seguridad.
     /// </summary>
     public class UserService : IUserService
     {
-        // ================================================================
-        // DEPENDENCIAS INYECTADAS (inyectadas a través del constructor)
-        // ================================================================
-
-        /// <summary>
-        /// Repositorio de usuarios: maneja persistencia de entidades User.
-        /// Proporciona operaciones CRUD y consultas especializadas.
-        /// </summary>
         private readonly IUserRepository _userRepo;
-
-        /// <summary>
-        /// Repositorio de roles: maneja persistencia de entidades Role.
-        /// Valida que los roles existan antes de asignarlos.
-        /// </summary>
         private readonly IRoleRepository _roleRepo;
-
-        /// <summary>
-        /// Hasher de contraseñas: cifra contraseñas de manera segura.
-        /// Implementa algoritmo de hashing con salt (ej: BCrypt).
-        /// </summary>
         private readonly IPasswordHasher _hasher;
-
-        /// <summary>
-        /// Unidad de Trabajo: coordina transacciones entre múltiples repositorios.
-        /// Asegura que todos los cambios se persistan juntos (atomicidad).
-        /// </summary>
         private readonly IUnitOfWork _uow;
-
-        /// <summary>
-        /// Mapper automático: convierte entre DTOs y entidades de dominio.
-        /// Ej: User entity → UserDto (para API responses)
-        /// </summary>
         private readonly IMapper _mapper;
-
-        /// <summary>
-        /// Logger estructurado: registra eventos y errores del servicio.
-        /// Utiliza inyección de dependencia de Microsoft.Extensions.Logging.
-        /// </summary>
         private readonly ILogger<UserService> _logger;
 
-        // ================================================================
-        // CONSTRUCTOR: Inyecta todas las dependencias (Dependency Injection)
-        // ================================================================
-
-        /// <summary>
-        /// Inicializa una nueva instancia de UserService con todas sus dependencias.
-        /// 
-        /// PARÁMETROS:
-        /// - userRepo: acceso a datos de usuarios
-        /// - roleRepo: acceso a datos de roles
-        /// - hasher: cifrado de contraseñas
-        /// - uow: coordinación de transacciones
-        /// - mapper: transformación de objetos
-        /// - logger: registro de eventos
-        /// 
-        /// NOTA: Todas las dependencias son obligatorias (no nulas).
-        /// Si alguna es null, se lanzará ArgumentNullException.
-        /// </summary>
         public UserService(
             IUserRepository userRepo,
             IRoleRepository roleRepo,
@@ -100,7 +33,6 @@ namespace QAMS.Application.Services
             ILogger<UserService> logger
         )
         {
-            // Asignar cada dependencia a su campo privado para uso en métodos posteriores
             _userRepo = userRepo;
             _roleRepo = roleRepo;
             _hasher = hasher;
@@ -109,31 +41,9 @@ namespace QAMS.Application.Services
             _logger = logger;
         }
 
-        // ================================================================
-        // OPERACIONES CRUD DE LECTURA (GET)
-        // ================================================================
-
         /// <summary>
-        /// OBTIENE UN USUARIO POR SU ID JUNTO CON SUS ROLES.
-        /// 
-        /// FLUJO:
-        /// 1. Registra intent de lectura en logs
-        /// 2. Busca usuario con eager-load de roles
-        /// 3. Lanza excepción si no existe
-        /// 4. Mapea entidad a DTO
-        /// 5. Retorna DTO para que el controlador lo serialice a JSON
-        /// 
-        /// PARÁMETRO:
-        /// - id: identificador único del usuario (Guid)
-        /// 
-        /// RETORNA:
-        /// - UserDto: objeto de transferencia de datos con información del usuario
-        /// 
-        /// EXCEPCIONES POSIBLES:
-        /// - EntityNotFoundException: cuando el usuario no existe
-        /// 
-        /// CASO DE USO:
-        /// - GET /api/users/{id} - obtener perfil de usuario
+        /// Obtiene un usuario específico por su ID junto con sus roles cargados.
+        /// Lanza EntityNotFoundException si no existe.
         /// </summary>
         public async Task<UserDto> GetByIdAsync(Guid id)
         {
@@ -153,24 +63,7 @@ namespace QAMS.Application.Services
         }
 
         /// <summary>
-        /// OBTIENE TODOS LOS USUARIOS DEL SISTEMA.
-        /// 
-        /// FLUJO:
-        /// 1. Registra intent de lectura masiva
-        /// 2. Obtiene todos los usuarios sin roles (optimización: evita N+1 queries)
-        /// 3. Mapea lista de entidades a lista de DTOs
-        /// 4. Retorna lista serializable a JSON
-        /// 
-        /// RETORNA:
-        /// - List<UserDto>: lista vacía si no hay usuarios, nunca null
-        /// 
-        /// CASO DE USO:
-        /// - GET /api/users - listar usuarios con paginación
-        /// - POST request para operaciones masivas
-        /// 
-        /// NOTA:
-        /// - No carga roles para evitar overhead de N+1 queries
-        /// - Si se necesitan roles, usar GetWithRolesAsync individualmente
+        /// Obtiene la lista completa de usuarios con sus respectivos roles.
         /// </summary>
         public async Task<List<UserDto>> GetAllAsync()
         {
@@ -183,46 +76,9 @@ namespace QAMS.Application.Services
             // Mapear cada usuario a su DTO correspondiente
             return _mapper.Map<List<UserDto>>(users);
         }
-
-        // ================================================================
-        // OPERACIONES CRUD DE CREACIÓN (POST)
-        // ================================================================
-
         /// <summary>
-        /// CREA UN NUEVO USUARIO EN EL SISTEMA.
-        /// 
-        /// FLUJO DETALLADO:
-        /// 1. Valida que username sea único
-        /// 2. Valida que email sea único
-        /// 3. Crea nueva entidad User con valores iniciales
-        /// 4. Cifra la contraseña con el hasher
-        /// 5. Persiste usuario en BD (SaveChanges #1)
-        /// 6. Valida que cada rol a asignar existe
-        /// 7. Asigna cada rol al usuario
-        /// 8. Persiste asignaciones de rol (SaveChanges #2)
-        /// 9. Retorna UserDto con datos persistidos
-        /// 
-        /// PARÁMETRO:
-        /// - dto: objeto CreateUserDto con datos del nuevo usuario
-        ///   * Username: identificador único
-        ///   * Email: correo único
-        ///   * Password: contraseña en texto plano (se cifra aquí)
-        ///   * FullName: nombre completo
-        ///   * RoleIds: lista de roles a asignar
-        /// 
-        /// RETORNA:
-        /// - UserDto: usuario recién creado con ID generado
-        /// 
-        /// EXCEPCIONES POSIBLES:
-        /// - DomainException: si username o email ya existen
-        /// - EntityNotFoundException: si algún roleId no existe
-        /// 
-        /// CASO DE USO:
-        /// - POST /api/users con JSON body
-        /// 
-        /// NOTA IMPORTANTE:
-        /// - Las contraseñas NUNCA se retornan en responses
-        /// - Se hacen 2 SaveChangesAsync para separar usuario de roles
+        /// Crea un nuevo usuario validando que el correo y nombre de usuario no existan.
+        /// Cifra la contraseña y asigna los roles iniciales provistos.
         /// </summary>
         public async Task<UserDto> CreateAsync(CreateUserDto dto)
         {
@@ -303,46 +159,9 @@ namespace QAMS.Application.Services
             var created = await _userRepo.GetWithRolesAsync(user.Id);
             return _mapper.Map<UserDto>(created);
         }
-
-        // ================================================================
-        // OPERACIONES CRUD DE ACTUALIZACIÓN (PUT)
-        // ================================================================
-
         /// <summary>
-        /// ACTUALIZA UN USUARIO EXISTENTE.
-        /// 
-        /// FLUJO DETALLADO:
-        /// 1. Valida que el usuario exista
-        /// 2. Carga usuario con sus roles actuales
-        /// 3. Actualiza campos básicos (email, nombre, estado)
-        /// 4. Persiste cambios básicos (SaveChanges #1)
-        /// 5. Reemplaza TODOS los roles (remove all + assign new)
-        /// 6. Valida que cada nuevo rol exista
-        /// 7. Persiste cambios de roles (SaveChanges #2)
-        /// 8. Retorna usuario actualizado
-        /// 
-        /// PARÁMETRO:
-        /// - id: identificador del usuario a actualizar
-        /// - dto: objeto UpdateUserDto con valores nuevos
-        ///   * Email: nuevo correo (se valida en el controlador)
-        ///   * FullName: nuevo nombre completo
-        ///   * IsActive: estado del usuario (activo/inactivo)
-        ///   * RoleIds: nuevo conjunto de roles (reemplaza completamente)
-        /// 
-        /// RETORNA:
-        /// - UserDto: usuario actualizado con sus nuevos roles
-        /// 
-        /// EXCEPCIONES POSIBLES:
-        /// - EntityNotFoundException: si el usuario no existe
-        /// - EntityNotFoundException: si algún nuevo roleId no existe
-        /// 
-        /// COMPORTAMIENTO ESPECIAL:
-        /// - Los roles se REEMPLAZAN completamente (no se agregan)
-        /// - Si dto.RoleIds está vacío, el usuario queda sin roles
-        /// - El password NO se actualiza en este método
-        /// 
-        /// CASO DE USO:
-        /// - PUT /api/users/{id} con JSON body
+        /// Actualiza la información base de un usuario y reemplaza TODOS sus roles actuales
+        /// por la nueva lista provista en el DTO.
         /// </summary>
         public async Task<UserDto> UpdateAsync(Guid id, UpdateUserDto dto)
         {
@@ -404,38 +223,8 @@ namespace QAMS.Application.Services
             var updated = await _userRepo.GetWithRolesAsync(id);
             return _mapper.Map<UserDto>(updated);
         }
-
-        // ================================================================
-        // OPERACIONES DE GESTIÓN DE ROLES (POST, DELETE)
-        // ================================================================
-
         /// <summary>
-        /// ASIGNA UN ROL A UN USUARIO.
-        /// 
-        /// FLUJO:
-        /// 1. Valida que el usuario exista
-        /// 2. Valida que el rol exista
-        /// 3. Asigna rol al usuario (idempotente: no duplica si ya existe)
-        /// 4. Persiste cambios
-        /// 
-        /// PARÁMETROS:
-        /// - userId: identificador del usuario
-        /// - roleId: identificador del rol a asignar
-        /// 
-        /// EXCEPCIONES POSIBLES:
-        /// - EntityNotFoundException: si usuario o rol no existen
-        /// 
-        /// IDEMPOTENCIA:
-        /// - Si ya existe la asignación, el método completa sin error
-        /// - Se implementa en UserRepository.AssignRoleAsync
-        /// 
-        /// CASO DE USO:
-        /// - POST /api/users/{userId}/roles/{roleId}
-        /// - Asignar rol a usuario existente
-        /// 
-        /// NOTA:
-        /// - Este método NO retorna datos (endpoint retorna 204 No Content)
-        /// - La respuesta de éxito es la ausencia de excepción
+        /// Asigna un rol específico a un usuario. Es una operación idempotente (si ya existe, no hace nada).
         /// </summary>
         public async Task AssignRoleAsync(Guid userId, Guid roleId)
         {
@@ -455,34 +244,8 @@ namespace QAMS.Application.Services
             // PERSISTENCIA: Guardar cambios en la BD
             await _uow.SaveChangesAsync();
         }
-
         /// <summary>
-        /// REMUEVE UN ROL ESPECÍFICO DE UN USUARIO.
-        /// 
-        /// FLUJO:
-        /// 1. Valida que el usuario exista
-        /// 2. Valida que el rol exista
-        /// 3. Remueve la asignación del usuario-rol
-        /// 4. Persiste cambios
-        /// 
-        /// PARÁMETROS:
-        /// - userId: identificador del usuario
-        /// - roleId: identificador del rol a remover
-        /// 
-        /// EXCEPCIONES POSIBLES:
-        /// - EntityNotFoundException: si usuario o rol no existen
-        /// 
-        /// IDEMPOTENCIA:
-        /// - Si la asignación no existe, completa sin error
-        /// - Se implementa en UserRepository.RemoveRoleAsync
-        /// 
-        /// CASO DE USO:
-        /// - DELETE /api/users/{userId}/roles/{roleId}
-        /// - Remover un rol específico de un usuario
-        /// 
-        /// DIFERENCIA CON RemoveAllRolesAsync:
-        /// - Este remueve UN rol específico
-        /// - RemoveAllRolesAsync remueve TODOS los roles
+        /// Remueve la asignación de un rol específico para un usuario. Idempotente.
         /// </summary>
         public async Task RemoveRoleAsync(Guid userId, Guid roleId)
         {
@@ -502,34 +265,8 @@ namespace QAMS.Application.Services
             // PERSISTENCIA: Guardar cambios
             await _uow.SaveChangesAsync();
         }
-
         /// <summary>
-        /// REMUEVE TODOS LOS ROLES DE UN USUARIO.
-        /// 
-        /// FLUJO:
-        /// 1. Valida que el usuario exista
-        /// 2. Remueve TODAS las asignaciones de rol del usuario
-        /// 3. Persiste cambios
-        /// 
-        /// PARÁMETRO:
-        /// - userId: identificador del usuario a desasignar roles
-        /// 
-        /// EXCEPCIONES POSIBLES:
-        /// - EntityNotFoundException: si el usuario no existe
-        /// 
-        /// IDEMPOTENCIA:
-        /// - Si el usuario no tiene roles, completa sin error
-        /// - RemoveRange con colección vacía no hace nada
-        /// 
-        /// CASO DE USO:
-        /// - DELETE /api/users/{userId}/roles
-        /// - Remover todos los roles de un usuario (ej: usuario despedido)
-        /// - Reset de permisos
-        /// 
-        /// DIFERENCIA CON RemoveRoleAsync:
-        /// - Este remueve TODOS los roles en una operación
-        /// - RemoveRoleAsync remueve UN rol específico
-        /// - Este es más eficiente que llamar RemoveRoleAsync en loop
+        /// Elimina todas las asociaciones de un usuario con todos los roles.
         /// </summary>
         public async Task RemoveAllRolesAsync(Guid userId)
         {
@@ -544,46 +281,9 @@ namespace QAMS.Application.Services
             // PERSISTENCIA: Guardar todos los cambios de una vez
             await _uow.SaveChangesAsync();
         }
-
-        // ================================================================
-        // OPERACIONES CRUD DE ELIMINACIÓN (DELETE)
-        // ================================================================
-
         /// <summary>
-        /// ELIMINA (desactiva) UN USUARIO DEL SISTEMA.
-        /// 
-        /// FLUJO:
-        /// 1. Valida que el usuario exista
-        /// 2. Implementa soft delete (marca como inactivo)
-        /// 3. No elimina datos, solo los oculta lógicamente
-        /// 4. Persiste cambios
-        /// 
-        /// PARÁMETRO:
-        /// - id: identificador del usuario a eliminar
-        /// 
-        /// EXCEPCIONES POSIBLES:
-        /// - EntityNotFoundException: si el usuario no existe
-        /// 
-        /// TIPO DE ELIMINACIÓN: SOFT DELETE
-        /// - No elimina filas de la BD (evita violaciones de FK)
-        /// - Solo marca IsActive = false
-        /// - Los datos siguen siendo consultables (auditoría)
-        /// - Se puede "restaurar" reactivando el usuario
-        /// 
-        /// VENTAJAS DEL SOFT DELETE:
-        /// 1. No rompe relaciones (FK a proyectos, test cases, etc.)
-        /// 2. Auditoría: se sabe quién creó qué dato
-        /// 3. Reversible: se puede reactivar el usuario
-        /// 4. Cumplimiento normativo: GDPR requiere retención de datos
-        /// 
-        /// CASO DE USO:
-        /// - DELETE /api/users/{id}
-        /// - Remover un usuario (ej: usuario despedido)
-        /// - No se usa DELETE de BD, solo actualización lógica
-        /// 
-        /// NOTA:
-        /// - Los datos del usuario permanecen intactos en las tablas
-        /// - Las búsquedas deben filtrar por IsActive = true
+        /// Realiza un borrado lógico (soft-delete) de un usuario cambiando su estado IsActive a falso.
+        /// No elimina los registros físicos para mantener auditoría e integridad referencial.
         /// </summary>
         public async Task DeleteAsync(Guid id)
         {
@@ -611,3 +311,4 @@ namespace QAMS.Application.Services
         }
     }
 }
+

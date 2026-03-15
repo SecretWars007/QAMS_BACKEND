@@ -13,49 +13,69 @@ namespace QAMS.Api.Controllers
     public class KanbanController : ControllerBase
     {
         private readonly IKanbanService _service;
+        private readonly ILogger<KanbanController> _logger;
 
-        public KanbanController(IKanbanService service)
+        public KanbanController(IKanbanService service, ILogger<KanbanController> logger)
         {
             _service = service;
+            _logger = logger;
         }
 
         [HttpGet("board/{boardId:guid}")]
-        [HasPermission("KANBAN_VIEW")]
-        public async Task<IActionResult> GetBoard(Guid boardId) =>
-            Ok(await _service.GetBoardAsync(boardId));
+        [HasPermission("PROJECTS_VIEW")]
+        public async Task<IActionResult> GetBoard(Guid boardId)
+        {
+            _logger.LogInformation("GET /api/kanban/board/{BoardId}", boardId);
+            return Ok(await _service.GetBoardAsync(boardId));
+        }
 
         [HttpGet("project/{projectId:guid}")]
-        [HasPermission("KANBAN_VIEW")]
-        public async Task<IActionResult> GetByProject(Guid projectId) =>
-            Ok(await _service.GetBoardsByProjectAsync(projectId));
+        [HasPermission("PROJECTS_VIEW")]
+        public async Task<IActionResult> GetByProject(Guid projectId)
+        {
+            _logger.LogInformation("GET /api/kanban/project/{ProjectId}", projectId);
+            return Ok(await _service.GetBoardsByProjectAsync(projectId));
+        }
 
         [HttpPost("board")]
-        [HasPermission("KANBAN_CREATE")]
-        public async Task<IActionResult> CreateBoard([FromBody] CreateBoardDto dto)
+        [HasPermission("PROJECTS_UPDATE")]
+        public async Task<IActionResult> CreateBoard([FromBody] CreateKanbanBoardDto dto)
         {
+            _logger.LogInformation("POST /api/kanban/board - Creando board '{Name}' para proyecto {ProjectId}", dto.Name, dto.ProjectId);
             var board = await _service.CreateBoardAsync(dto.ProjectId, dto.Name);
-            return Created("", board);
+            return CreatedAtAction(nameof(GetBoard), new { boardId = board.Id }, board);
         }
 
         [HttpPost("task")]
-        [HasPermission("KANBAN_CREATE")]
-        public async Task<IActionResult> CreateTask([FromBody] CreateKanbanTaskDto dto) =>
-            Created("", await _service.CreateTaskAsync(dto));
+        [HasPermission("PROJECTS_UPDATE")]
+        public async Task<IActionResult> CreateTask([FromBody] CreateKanbanTaskDto dto)
+        {
+            _logger.LogInformation("POST /api/kanban/task - Creando tarea '{Title}' en columna {ColumnId}", dto.Title, dto.KanbanColumnId);
+            var task = await _service.CreateTaskAsync(dto);
+            return Ok(task);
+        }
 
         [HttpPut("task/{taskId:guid}")]
-        [HasPermission("KANBAN_UPDATE")]
-        public async Task<IActionResult> UpdateTask(Guid taskId, [FromBody] UpdateKanbanTaskDto dto) =>
-            Ok(await _service.UpdateTaskAsync(taskId, dto));
+        [HasPermission("PROJECTS_UPDATE")]
+        public async Task<IActionResult> UpdateTask(Guid taskId, [FromBody] UpdateKanbanTaskDto dto)
+        {
+            _logger.LogInformation("PUT /api/kanban/task/{TaskId} - Actualizando tarea", taskId);
+            return Ok(await _service.UpdateTaskAsync(taskId, dto));
+        }
 
         [HttpPut("task/{taskId:guid}/move")]
-        [HasPermission("KANBAN_UPDATE")]
-        public async Task<IActionResult> MoveTask(Guid taskId, [FromBody] MoveTaskDto dto) =>
-            Ok(await _service.MoveTaskAsync(taskId, dto));
+        [HasPermission("PROJECTS_UPDATE")]
+        public async Task<IActionResult> MoveTask(Guid taskId, [FromBody] MoveTaskDto dto)
+        {
+            _logger.LogInformation("PUT /api/kanban/task/{TaskId}/move - Moviendo a columna {ColumnId} posición {Order}", taskId, dto.TargetColumnId, dto.NewOrderIndex);
+            return Ok(await _service.MoveTaskAsync(taskId, dto));
+        }
 
         [HttpDelete("task/{taskId:guid}")]
-        [HasPermission("KANBAN_DELETE")]
+        [HasPermission("PROJECTS_UPDATE")]
         public async Task<IActionResult> DeleteTask(Guid taskId)
         {
+            _logger.LogInformation("DELETE /api/kanban/task/{TaskId}", taskId);
             await _service.DeleteTaskAsync(taskId);
             return NoContent();
         }

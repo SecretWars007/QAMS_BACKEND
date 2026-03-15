@@ -29,7 +29,7 @@ namespace QAMS.Api.Filters
             var userIdClaim = context.HttpContext.User
                 .FindFirst(ClaimTypes.NameIdentifier);
 
-            logger.LogInformation("HasPermission: Validando para User={UserId}, Permiso={Permission}. Claims: {Claims}", 
+            logger.LogDebug("HasPermission: Validando para User={UserId}, Permiso={Permission}. Claims: {Claims}", 
                 userIdClaim?.Value ?? "null", _permissionCode,
                 string.Join(", ", context.HttpContext.User.Claims.Select(c => $"{c.Type}={c.Value}")));
 

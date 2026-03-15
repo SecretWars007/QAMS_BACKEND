@@ -120,16 +120,32 @@ namespace QAMS.Api.Controllers
                 Observation = request.Observation
             };
 
-            var obs = await _service.AddObservationAsync(
-                GetUserId(), 
-                dto, 
-                fileStream, 
-                request.File?.FileName, 
-                request.File?.ContentType);
+            // Use a using statement for fileStream if it was opened
+            if (fileStream != null)
+            {
+                await using (fileStream) // 'await using' for IAsyncDisposable
+                {
+                    var obs = await _service.AddObservationAsync(
+                        GetUserId(), 
+                        dto, 
+                        fileStream, 
+                        request.File?.FileName, 
+                        request.File?.ContentType);
 
-            if (fileStream != null) await fileStream.DisposeAsync();
+                    return Created("", obs);
+                }
+            }
+            else
+            {
+                var obs = await _service.AddObservationAsync(
+                    GetUserId(), 
+                    dto, 
+                    null, // No file stream
+                    null, 
+                    null);
 
-            return Created("", obs);
+                return Created("", obs);
+            }
         }
 
         [HttpPost("observation/{observationId:guid}/response")]

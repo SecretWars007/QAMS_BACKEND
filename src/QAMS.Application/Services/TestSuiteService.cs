@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using QAMS.Application.DTOs.TestSuites;
 using QAMS.Application.Interfaces;
 using QAMS.Domain.Entities;
@@ -13,21 +14,26 @@ namespace QAMS.Application.Services
         private readonly IProjectRepository _projectRepo;
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
+        private readonly ILogger<TestSuiteService> _logger;
 
         public TestSuiteService(
             ITestSuiteRepository testSuiteRepo,
             IProjectRepository projectRepo,
             IUnitOfWork uow,
-            IMapper mapper)
+            IMapper mapper,
+            ILogger<TestSuiteService> logger)
         {
             _testSuiteRepo = testSuiteRepo;
             _projectRepo = projectRepo;
             _uow = uow;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<TestSuiteDto> CreateAsync(CreateTestSuiteDto dto)
         {
+            _logger.LogInformation("Creando suite de pruebas '{Name}' para el proyecto {ProjectId}.", dto.Name, dto.ProjectId);
+            
             var project = await _projectRepo.GetByIdAsync(dto.ProjectId)
                 ?? throw new EntityNotFoundException(nameof(Project), dto.ProjectId);
 
@@ -51,6 +57,8 @@ namespace QAMS.Application.Services
 
         public async Task<TestSuiteDto> GetByIdAsync(Guid id)
         {
+            _logger.LogInformation("Obteniendo suite de pruebas {SuiteId}.", id);
+            
             var suite = await _testSuiteRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestSuite), id);
             
@@ -59,12 +67,16 @@ namespace QAMS.Application.Services
 
         public async Task<List<TestSuiteDto>> GetByProjectIdAsync(Guid projectId)
         {
+            _logger.LogInformation("Obteniendo suites de pruebas para proyecto {ProjectId}.", projectId);
+            
             var suites = await _testSuiteRepo.GetByProjectWithTestCasesAsync(projectId);
             return _mapper.Map<List<TestSuiteDto>>(suites);
         }
 
         public async Task DeleteAsync(Guid id)
         {
+            _logger.LogInformation("Eliminando suite de pruebas {SuiteId}.", id);
+            
             var suite = await _testSuiteRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestSuite), id);
 
@@ -74,6 +86,8 @@ namespace QAMS.Application.Services
 
         public async Task<TestSuiteDto> UpdateAsync(Guid id, CreateTestSuiteDto dto)
         {
+            _logger.LogInformation("Actualizando suite de pruebas {SuiteId}.", id);
+            
             var suite = await _testSuiteRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestSuite), id);
 

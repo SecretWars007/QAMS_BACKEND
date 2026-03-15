@@ -158,10 +158,15 @@ builder.Services.AddCors(o =>
     o.AddPolicy(
         "AllowAngular",
         p =>
-            p.WithOrigins(frontendUrl)
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials()
+            p.WithOrigins(
+                frontendUrl,
+                "http://localhost:4200",
+                "https://qams-web.onrender.com",
+                "https://qams-web.onrender.com/"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
     );
 });
 

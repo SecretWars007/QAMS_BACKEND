@@ -13,37 +13,59 @@ namespace QAMS.Api.Controllers
     public class TestCasesController : ControllerBase
     {
         private readonly ITestCaseService _service;
-        public TestCasesController(ITestCaseService service) { _service = service; }
+        private readonly ILogger<TestCasesController> _logger;
+
+        public TestCasesController(ITestCaseService service, ILogger<TestCasesController> logger)
+        {
+            _service = service;
+            _logger = logger;
+        }
 
         [HttpGet("{id:guid}")]
         [HasPermission("TEST_CASES_VIEW")]
         public async Task<IActionResult> GetById(Guid id)
-            => Ok(await _service.GetByIdAsync(id));
+        {
+            _logger.LogInformation("GET /api/testcases/{TestCaseId}", id);
+            return Ok(await _service.GetByIdAsync(id));
+        }
 
         [HttpGet("suite/{suiteId:guid}")]
         [HasPermission("TEST_CASES_VIEW")]
         public async Task<IActionResult> GetBySuite(Guid suiteId)
-            => Ok(await _service.GetBySuiteAsync(suiteId));
+        {
+            _logger.LogInformation("GET /api/testcases/suite/{SuiteId}", suiteId);
+            return Ok(await _service.GetBySuiteAsync(suiteId));
+        }
 
         [HttpGet]
         [HasPermission("TEST_CASES_VIEW")]
         public async Task<IActionResult> GetByProject([FromQuery] Guid projectId)
-            => Ok(await _service.GetByProjectIdAsync(projectId));
+        {
+            _logger.LogInformation("GET /api/testcases?projectId={ProjectId}", projectId);
+            return Ok(await _service.GetByProjectIdAsync(projectId));
+        }
 
         [HttpGet("project/{projectId:guid}/suite/{suiteId:guid}")]
         [HasPermission("TEST_CASES_VIEW")]
         public async Task<IActionResult> GetByProjectAndSuite(Guid projectId, Guid suiteId)
-            => Ok(await _service.GetByProjectAndSuiteAsync(projectId, suiteId));
+        {
+            _logger.LogInformation("GET /api/testcases/project/{ProjectId}/suite/{SuiteId}", projectId, suiteId);
+            return Ok(await _service.GetByProjectAndSuiteAsync(projectId, suiteId));
+        }
 
         [HttpGet("{id:guid}/steps")]
         [HasPermission("TEST_CASES_VIEW")]
         public async Task<IActionResult> GetSteps(Guid id)
-            => Ok(await _service.GetStepsAsync(id));
+        {
+            _logger.LogInformation("GET /api/testcases/{TestCaseId}/steps", id);
+            return Ok(await _service.GetStepsAsync(id));
+        }
 
         [HttpPost]
         [HasPermission("TEST_CASES_CREATE")]
         public async Task<IActionResult> Create([FromBody] CreateTestCaseDto dto)
         {
+            _logger.LogInformation("POST /api/testcases - Creando caso '{Title}'.", dto.Title);
             var tc = await _service.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = tc.Id }, tc);
         }
@@ -51,11 +73,18 @@ namespace QAMS.Api.Controllers
         [HttpPut("{id:guid}")]
         [HasPermission("TEST_CASES_UPDATE")]
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateTestCaseDto dto)
-            => Ok(await _service.UpdateAsync(id, dto));
+        {
+            _logger.LogInformation("PUT /api/testcases/{TestCaseId} - Actualizando caso.", id);
+            return Ok(await _service.UpdateAsync(id, dto));
+        }
 
         [HttpDelete("{id:guid}")]
         [HasPermission("TEST_CASES_DELETE")]
         public async Task<IActionResult> Delete(Guid id)
-        { await _service.DeleteAsync(id); return NoContent(); }
+        {
+            _logger.LogInformation("DELETE /api/testcases/{TestCaseId}", id);
+            await _service.DeleteAsync(id);
+            return NoContent();
+        }
     }
 }
