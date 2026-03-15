@@ -9,6 +9,7 @@ COPY src/QAMS.Api/QAMS.Api.csproj src/QAMS.Api/
 COPY src/QAMS.Application/QAMS.Application.csproj src/QAMS.Application/
 COPY src/QAMS.Infrastructure/QAMS.Infrastructure.csproj src/QAMS.Infrastructure/
 COPY src/QAMS.Domain/QAMS.Domain.csproj src/QAMS.Domain/
+COPY src/QAMS.Tests/QAMS.Tests.csproj src/QAMS.Tests/
 
 RUN dotnet restore QAMS.sln
 
