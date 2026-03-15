@@ -25,11 +25,30 @@ Log.Logger = new LoggerConfiguration()
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
 
-// Normalizar cadena de conexión de Render (postgresql:// -> postgres://)
+// Normalizar cadena de conexión de Render (URI -> Semicolon format)
 var rawConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (!string.IsNullOrEmpty(rawConnectionString) && rawConnectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+if (!string.IsNullOrEmpty(rawConnectionString) && rawConnectionString.Contains("://"))
 {
-    builder.Configuration["ConnectionStrings:DefaultConnection"] = rawConnectionString.Replace("postgresql://", "postgres://", StringComparison.OrdinalIgnoreCase);
+    try 
+    {
+        // Forzar prefijo para que System.Uri lo reconozca
+        var uriString = rawConnectionString.Replace("postgresql://", "postgres://", StringComparison.OrdinalIgnoreCase);
+        var uri = new Uri(uriString);
+        var userInfo = uri.UserInfo.Split(':');
+        var user = userInfo[0];
+        var password = userInfo.Length > 1 ? userInfo[1] : "";
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var database = uri.AbsolutePath.TrimStart('/');
+        
+        // Reconstruir en formato estándar de .NET (Compatible con cualquier driver)
+        var semicolonString = $"Host={host};Port={port};Database={database};Username={user};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
+        builder.Configuration["ConnectionStrings:DefaultConnection"] = semicolonString;
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Error crítico al normalizar la URI de conexión.");
+    }
 }
 
 // Infrastructure (DbContext, Repos, PasswordHasher, JWT, FileStorage)
@@ -168,24 +187,13 @@ using (var scope = app.Services.CreateScope())
         }
         else
         {
-            // Enmascaramiento robusto para URI y Semicolon
-            string masked;
-            if (connectionString.Contains("://"))
-            {
-                try 
-                {
-                    var uri = new Uri(connectionString);
-                    var user = uri.UserInfo.Split(':')[0];
-                    masked = $"{uri.Scheme}://{user}:***@{uri.Host}{uri.AbsolutePath}";
-                }
-                catch { masked = "URI Malformada"; }
-            }
-            else
-            {
-                var parts = connectionString.Split(';');
-                masked = string.Join(";", parts.Select(p => p.Trim().StartsWith("Password", StringComparison.OrdinalIgnoreCase) ? "Password=***" : p));
-            }
-            Log.Information("Cadena de conexión detectada (enmascarada): {ConnectionString}", masked);
+            // Enmascaramiento robusto (siempre será Semicolon después de la normalización)
+            var parts = connectionString.Split(';');
+            var masked = string.Join(";", parts.Select(p => {
+                var trimmed = p.Trim();
+                return trimmed.StartsWith("Password", StringComparison.OrdinalIgnoreCase) ? "Password=***" : trimmed;
+            }));
+            Log.Information("Cadena de conexión detectada y normalizada: {ConnectionString}", masked);
         }
         
         // En Producción, esperar un poco para asegurar que la base de datos de Render esté lista
