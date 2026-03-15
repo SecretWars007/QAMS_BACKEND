@@ -1,7 +1,0 @@
-c:\diplomado\QAMS\src\QAMS.Infrastructure\Services\PdfReportService.cs(110,79): error CS1501: Ninguna sobrecarga para el método 'ToString' toma 1 argumentos [c:\diplomado\QAMS\src\QAMS.Infrastructure\QAMS.Infrastructure.csproj]
-
-ERROR al compilar.
-    2 Advertencia(s)
-    1 Errores
-
-Tiempo transcurrido 00:00:06.02

@@ -61,28 +61,25 @@ coverage.*
 *.coveragexml
 BenchmarkDotNet.Artifacts/
 
-# ── Logs de la app y archivos de depuración temporales ──
-logs/
+# ── Archivos temporales, logs y scripts (Ignorar siempre) ──
 *.log
 *.log.*
+*.txt
+*.ps1
+*.psm1
+*.csv
+logs/
 src/QAMS.Api/logs/
 
-# ── Archivos de diagnóstico / scripts temporales en raíz ──
-*.txt
-*.json
-!docker-compose.yml
+# ── Excepciones para documentación y configuración importante ──
+!README.md
 !DOCKER.md
 !SWAGGER_SETUP.md
-!README.md
-
-# Scripts de diagnóstico sueltos (no son parte del proyecto)
-db_diag.ps1
-sql_diag.ps1
-get_dashboard.ps1
-test_kanban_endpoints.ps1
-verify_execution_post.ps1
-verify_testcase.ps1
-init-admin.sql
+!render.yaml
+!docker-compose.yml
+!Dockerfile
+!.gitignore
+!.dockerignore
 
 # ── Docker ─────────────────────────────────
 # No ignorar docker-compose.yml ni Dockerfile → son parte del proyecto
