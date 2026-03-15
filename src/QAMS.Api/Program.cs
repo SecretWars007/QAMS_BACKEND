@@ -127,15 +127,18 @@ builder.Services.AddSwaggerGen(c =>
 
 // CORS
 builder.Services.AddCors(o =>
+{
+    var frontendUrl = builder.Configuration["FRONTEND_URL"] ?? "http://localhost:4200";
     o.AddPolicy(
         "AllowAngular",
         p =>
-            p.WithOrigins("http://localhost:4200")
+            p.WithOrigins(frontendUrl)
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials()
-    )
-);
+    );
+});
+
 
 var app = builder.Build();
 
