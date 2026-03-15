@@ -150,26 +150,36 @@ builder.Services.AddCors(o =>
     o.AddPolicy(
         "AllowAngular",
         p =>
+        {
+            var frontendUrl = builder.Configuration["FRONTEND_URL"];
+            if (!string.IsNullOrEmpty(frontendUrl))
+            {
+                p.WithOrigins(frontendUrl.TrimEnd('/'));
+            }
+
             p.SetIsOriginAllowed(origin => 
             {
                 if (string.IsNullOrEmpty(origin)) return false;
-                var host = new Uri(origin).Host;
-                return host.EndsWith("onrender.com", StringComparison.OrdinalIgnoreCase) || 
-                       host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
-                       host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+                try {
+                    var host = new Uri(origin).Host;
+                    return host.EndsWith(".onrender.com", StringComparison.OrdinalIgnoreCase) || 
+                           host.Equals("onrender.com", StringComparison.OrdinalIgnoreCase) ||
+                           host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                           host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+                } catch { return false; }
             })
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials()
             .SetPreflightMaxAge(TimeSpan.FromMinutes(10))
-            .WithExposedHeaders("Content-Disposition")
+            .WithExposedHeaders("Content-Disposition");
+        }
     );
 });
 
 
 var app = builder.Build();
 
-app.UseCors("AllowAngular"); // Mover al inicio absoluto
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Apply EF migrations (or create DB) and seed catalogs at startup
@@ -271,6 +281,7 @@ app.UseSwaggerUI(c =>
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
