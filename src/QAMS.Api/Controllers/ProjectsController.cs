@@ -76,7 +76,8 @@ namespace QAMS.Api.Controllers
         [HasPermission("PROJECTS_UPDATE")]
         public async Task<IActionResult> RegisterDevolution(Guid id, [FromBody] RegisterDevolutionDto dto)
         {
-            var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+            var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userId = userIdStr != null ? Guid.Parse(userIdStr) : Guid.Empty;
             _logger.LogInformation("POST /api/projects/{ProjectId}/devolution - Registrando devolución. UserId: {UserId}", id, userId);
             return Ok(await _projectService.RegisterDevolutionAsync(id, userId, dto));
         }

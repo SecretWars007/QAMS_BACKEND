@@ -161,6 +161,16 @@ namespace QAMS.Infrastructure.Repositories
                 .ToListAsync();
 
         /// <summary>
+        /// OBTIENE VARIOS USUARIOS POR SUS IDS CON ROLES (BATCH LOADING).
+        /// </summary>
+        public async Task<List<User>> GetByIdsWithRolesAsync(IEnumerable<Guid> userIds) =>
+            await _dbSet
+                .Where(u => userIds.Contains(u.Id))
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .ToListAsync();
+
+        /// <summary>
         /// OBTIENE UN USUARIO CON ROLES Y PERMISOS (CARGA COMPLETA PARA AUTENTICACIÓN).
         /// 
         /// PATRÓN APPLIED: EAGER LOADING ANIDADO (múltiples niveles)

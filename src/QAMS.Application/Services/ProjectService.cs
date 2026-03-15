@@ -202,13 +202,14 @@ namespace QAMS.Application.Services
 
         private async Task AssignTestersAsync(Project project, List<Guid> testerIds)
         {
+            var testers = await _userRepo.GetByIdsWithRolesAsync(testerIds);
+            
             foreach (var testerId in testerIds)
             {
-                var user = await _userRepo.GetWithRolesAsync(testerId)
+                var user = testers.FirstOrDefault(u => u.Id == testerId)
                     ?? throw new EntityNotFoundException(nameof(User), testerId);
 
                 // Validar que el usuario tenga el rol de Tester
-                // El ID del rol Tester está en SystemRoles.TesterRoleId
                 if (!user.UserRoles.Any(ur => ur.RoleId == QAMS.Domain.Constants.SystemRoles.TesterRoleId))
                 {
                     throw new DomainException($"El usuario {user.FullName} no tiene el rol de Tester.");

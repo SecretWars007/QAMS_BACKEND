@@ -265,7 +265,9 @@ namespace QAMS.Application.Services
         /// </summary>
         private async Task SyncExecutionStatusAsync(Guid testCaseId, string columnName, Guid? testerId)
         {
-            string? statusCode = columnName?.Trim() switch
+            if (string.IsNullOrWhiteSpace(columnName)) return;
+
+            string? statusCode = columnName.Trim() switch
             {
                 var s when s.Equals("Tareas Pendientes", StringComparison.OrdinalIgnoreCase) => "PENDING",
                 var s when s.Equals("Por Hacer", StringComparison.OrdinalIgnoreCase) => "PENDING",

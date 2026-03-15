@@ -65,7 +65,8 @@ namespace QAMS.Application.Services
                 // Casos de prueba pendientes: No tienen ninguna ejecución exitosa (PASSED, ID=3)
                 var allTestCaseIds = allTestCases.Select(tc => tc.Id).ToList();
                 var passedTestCaseIds = (await _execRepo.FindAsync(e => 
-                    allTestCaseIds.Contains(e.TestCaseId) && e.StatusId == 3))
+                    allTestCaseIds.Contains(e.TestCaseId)))
+                    .Where(e => e.IsSuccessful())
                     .Select(e => e.TestCaseId)
                     .Distinct()
                     .ToList();
@@ -171,11 +172,9 @@ namespace QAMS.Application.Services
                 };
 
                 // Lógica de Estado e Inteligencia (Sincronizada con el Reporte PDF)
-                var isTrulyPassed = (exec.Status != null && (exec.Status.Code == "PASSED" || exec.Status.Name == "Aprobado")) || exec.StatusId == 3;
-                var isEnProgreso = (exec.Status != null && (exec.Status.Code == "IN_PROGRESS" || exec.Status.Name == "En Progreso")) || exec.StatusId == 2;
-                
-                // Verificamos si tiene resultados en todos sus pasos
-                var hasResultsForAllSteps = exec.StepResults != null && exec.StepResults.Any() && exec.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult));
+                var isTrulyPassed = exec.IsSuccessful();
+                var isInReview = exec.IsInReview();
+                var isEnProgreso = exec.StatusId == 2 || exec.Status?.Code == "IN_PROGRESS";
 
                 if (isTrulyPassed)
                 {
@@ -184,7 +183,7 @@ namespace QAMS.Application.Services
                 }
                 else if (isEnProgreso)
                 {
-                    if (hasResultsForAllSteps)
+                    if (isInReview)
                     {
                         eventDto.StatusName = "Completado/En Revisión";
                         eventDto.StatusColor = "#4CAF50";
@@ -195,7 +194,7 @@ namespace QAMS.Application.Services
                         eventDto.StatusColor = "#2196F3";
                     }
                 }
-                else if (exec.StatusId == 4 || (exec.Status != null && exec.Status.Code == "FAILED"))
+                else if (exec.IsFailed())
                 {
                     eventDto.StatusName = "Fallido";
                     eventDto.StatusColor = "#F44336";
@@ -260,9 +259,7 @@ namespace QAMS.Application.Services
 
             // Agrupar ejecuciones exitosas por día
             var completedHoursByDay = executions
-                .Where(e => (e.StatusId == 3) || 
-                            (e.StatusId == 2 && e.StepResults != null && e.StepResults.Any() && e.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult))) ||
-                            (e.Status != null && (e.Status.Code == "PASSED" || e.Status.Name == "Aprobado")))
+                .Where(e => e.IsSuccessful())
                 .GroupBy(e => e.ExecutionDate.Date)
                 .ToDictionary(g => g.Key, g => g.Select(e => e.TestCase?.EstimatedTimeHours ?? 0).Sum());
 
@@ -338,11 +335,7 @@ namespace QAMS.Application.Services
                 foreach (var exec in dayGroup)
                 {
                     // Lógica inteligente de "Aprobado"
-                    var isTrulyPassed = (exec.StatusId == 3) || 
-                                       (exec.StatusId == 2 && exec.StepResults != null && exec.StepResults.Any() && exec.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult))) ||
-                                       (exec.Status != null && (exec.Status.Code == "PASSED" || exec.Status.Name == "Aprobado"));
-
-                    if (isTrulyPassed)
+                    if (exec.IsSuccessful())
                     {
                         passedTestCases.Add(exec.TestCaseId);
                     }

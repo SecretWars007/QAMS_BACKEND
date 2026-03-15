@@ -15,7 +15,7 @@ namespace QAMS.Domain.Entities
         public Guid TesterId { get; set; }
         public User Tester { get; set; } = null!;
         public int StatusId { get; set; }
-        public ExecutionStatus Status { get; set; } = null!;
+        public ExecutionStatus? Status { get; set; }
         public string? Notes { get; set; }
         public decimal? ActualTimeHours { get; set; }
         public DateTime ExecutionDate { get; set; } = DateTime.UtcNow;
@@ -23,5 +23,23 @@ namespace QAMS.Domain.Entities
 
         public ICollection<ExecutionStepResult> StepResults { get; set; } = new List<ExecutionStepResult>();
         public ICollection<Evidence> Evidences { get; set; } = new List<Evidence>();
+
+        public bool IsSuccessful()
+        {
+            var isTrulyPassed = (StatusId == 3) || (Status?.Code == "PASSED" || Status?.Name == "Aprobado");
+            return isTrulyPassed || IsInReview();
+        }
+
+        public bool IsInReview()
+        {
+            var isEnProgreso = (StatusId == 2) || (Status?.Code == "IN_PROGRESS" || Status?.Name == "En Progreso");
+            var hasResultsForAllSteps = StepResults != null && StepResults.Any() && StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult));
+            return isEnProgreso && hasResultsForAllSteps;
+        }
+
+        public bool IsFailed()
+        {
+            return StatusId == 4 || Status?.Code == "FAILED";
+        }
     }
 }

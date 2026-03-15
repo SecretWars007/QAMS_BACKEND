@@ -301,8 +301,8 @@ namespace QAMS.Infrastructure.Services
                         col.Item().PaddingTop(20).Row(row =>
                         {
                             var totalCases = project.TestCases.Count;
-                            var passedCases = project.TestCases.Count(tc => tc.TestExecutions.Any(e => e is QAMS.Domain.Entities.TestExecution te && (te.StatusId == 3 || te.Status?.Code == "PASSED")));
-                            var failedCases = project.TestCases.Count(tc => tc.TestExecutions.Any(e => e is QAMS.Domain.Entities.TestExecution te && (te.StatusId == 4 || te.Status?.Code == "FAILED")));
+                            var passedCases = project.TestCases.Count(tc => tc.TestExecutions.Any(e => e is QAMS.Domain.Entities.TestExecution te && te.IsSuccessful()));
+                            var failedCases = project.TestCases.Count(tc => tc.TestExecutions.Any(e => e is QAMS.Domain.Entities.TestExecution te && te.IsFailed()));
 
                             row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).Column(stat =>
                             {
@@ -622,12 +622,12 @@ namespace QAMS.Infrastructure.Services
                                                         execCol.Item().Text($"Descripción Ejecución (Notas): {exec.Notes}").FontSize(8).FontColor("#616161");
 
                                                     // Lógica de evaluación inteligente para el Estado Global
-                                                    var isTrulyPassed = (exec.Status != null && (exec.Status.Code == "PASSED" || exec.Status.Name == "Aprobado")) || exec.StatusId == 3;
-                                                    var isEnProgreso = (exec.Status != null && (exec.Status.Code == "IN_PROGRESS" || exec.Status.Name == "En Progreso")) || exec.StatusId == 2;
-                                                    var hasResultsForAllSteps = exec.StepResults != null && exec.StepResults.Any() && exec.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult));
+                                                    var isTrulyPassed = exec.IsSuccessful();
+                                                    var isEnProgreso = exec.StatusId == 2 || exec.Status?.Code == "IN_PROGRESS";
+                                                    var isInReview = exec.IsInReview();
                                                     
-                                                    var statusName = isTrulyPassed ? "Aprobado" : (isEnProgreso ? (hasResultsForAllSteps ? "Completado/En Revisión" : "En Progreso") : (exec.Status?.Name ?? (exec.StatusId == 4 ? "Fallido" : (exec.StatusId == 1 ? "Pendiente" : exec.StatusId.ToString()))));
-                                                    var statusColor = isTrulyPassed || (isEnProgreso && hasResultsForAllSteps) ? "#4CAF50" : (isEnProgreso ? "#2196F3" : (exec.StatusId == 4 ? "#F44336" : "#757575"));
+                                                    var statusName = isTrulyPassed ? "Aprobado" : (isEnProgreso ? (isInReview ? "Completado/En Revisión" : "En Progreso") : (exec.Status?.Name ?? (exec.StatusId == 4 ? "Fallido" : (exec.StatusId == 1 ? "Pendiente" : exec.StatusId.ToString()))));
+                                                    var statusColor = isTrulyPassed || isInReview ? "#4CAF50" : (isEnProgreso ? "#2196F3" : (exec.IsFailed() ? "#F44336" : "#757575"));
 
                                                     execCol.Item().Text(text => 
                                                     {
