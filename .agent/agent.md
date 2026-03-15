@@ -6,9 +6,9 @@ Welcome! This document defines the architectural standards, coding practices, an
 **QAMS** is a premium management system for Quality Assurance teams. It enables managing projects, test cases, test executions, and tracking progress via Kanban boards and automated reports.
 
 - **Backend**: .NET 9 Web API
-- **Frontend**: Angular (Premium UI/UX)
 - **Primary Database**: PostgreSQL
 - **Infrastructure**: Docker & Docker Compose
+
 
 ---
 
@@ -78,12 +78,19 @@ When working as the AI agent (Antigravity), you must follow this workflow:
 4.  **Execute**: Implement changes incrementally. Use `replace_file_content` for surgical edits and `write_to_file` for new components.
 5.  **Verify**: Always run `dotnet build` and check logs to ensure the system is stable. If Docker is available, test there.
 6.  **Document**: Update `walkthrough.md` to show what was accomplished.
+7.  **Sync**: Proactively use `git add`, `git commit`, and `git push` to keep the remote repository updated with the changes made in each task. Always use descriptive commit messages (prefix with `feat:`, `fix:`, `chore:`, etc.).
 
-## 5. UI/UX Vision (Fullstack)
-The frontend should feel **premium and professional**:
-- Use frosted glass effects (Glassmorphism), subtle gradients, and modern typography (Inter/Outfit).
-- High response speed and micro-animations for interactivity.
-- Consistent color palette: Deep dark modes or clean architectural whites.
+## 5. Git Workflow & Repository Management
+The agent is authorized to manage the lifecycle of the backend code including version control:
+- **Commits**: Group logical changes into atomic commits.
+- **Push**: Push to the origin branch (e.g., `main` or `master`) once a significant chunk of work is verified.
+- **Scope**: Stay strictly within the Backend repository (`QAMS`).
+
+## 6. Architecture Vision
+The backend is the core of the system:
+- Maintain high performance and clean API responses.
+- Ensure all business logic remains in the Application layer.
+- Keep the API layer thin and focused on HTTP concerns.
 
 ---
 

@@ -978,7 +978,7 @@ namespace QAMS.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("KanbanBoards");
+                    b.ToTable("KanbanBoards", (string)null);
                 });
 
             modelBuilder.Entity("QAMS.Domain.Entities.KanbanColumn", b =>
@@ -1004,7 +1004,7 @@ namespace QAMS.Infrastructure.Migrations
 
                     b.HasIndex("KanbanBoardId");
 
-                    b.ToTable("KanbanColumns");
+                    b.ToTable("KanbanColumns", (string)null);
                 });
 
             modelBuilder.Entity("QAMS.Domain.Entities.KanbanTask", b =>
@@ -1054,7 +1054,7 @@ namespace QAMS.Infrastructure.Migrations
 
                     b.HasIndex("TestCaseId");
 
-                    b.ToTable("KanbanTasks");
+                    b.ToTable("KanbanTasks", (string)null);
                 });
 
             modelBuilder.Entity("QAMS.Domain.Entities.Permission", b =>

@@ -5,6 +5,7 @@ using QAMS.Application.Interfaces;
 using QAMS.Domain.Entities.Catalogs;
 using QAMS.Domain.Exceptions;
 using QAMS.Domain.Ports.Repositories;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace QAMS.Application.Services
 {
@@ -14,27 +15,16 @@ namespace QAMS.Application.Services
     /// </summary>
     public class CatalogService : ICatalogService
     {
-        private readonly ICatalogRepository<ExecutionStatus> _execStatusRepo;
-        private readonly ICatalogRepository<EvidenceType> _evidTypeRepo;
-        private readonly ICatalogRepository<StepResultStatus> _stepStatusRepo;
-        private readonly ICatalogRepository<TaskPriority> _taskPriorityRepo;
-        private readonly ICatalogRepository<TestCasePriority> _casePriorityRepo;
+        private readonly IServiceProvider _serviceProvider;
         private readonly IUnitOfWork _uow;
         private readonly ILogger<CatalogService> _logger;
 
         public CatalogService(
-            ICatalogRepository<ExecutionStatus> execStatusRepo,
-            ICatalogRepository<EvidenceType> evidTypeRepo,
-            ICatalogRepository<StepResultStatus> stepStatusRepo,
-            ICatalogRepository<TaskPriority> taskPriorityRepo,
-            ICatalogRepository<TestCasePriority> casePriorityRepo,
-            IUnitOfWork uow, ILogger<CatalogService> logger)
+            IServiceProvider serviceProvider,
+            IUnitOfWork uow, 
+            ILogger<CatalogService> logger)
         {
-            _execStatusRepo = execStatusRepo;
-            _evidTypeRepo = evidTypeRepo;
-            _stepStatusRepo = stepStatusRepo;
-            _taskPriorityRepo = taskPriorityRepo;
-            _casePriorityRepo = casePriorityRepo;
+            _serviceProvider = serviceProvider;
             _uow = uow;
             _logger = logger;
         }
@@ -42,104 +32,118 @@ namespace QAMS.Application.Services
         public async Task<List<CatalogItemDto>> GetActiveByCatalogNameAsync(string catalogName)
         {
             _logger.LogInformation("Obteniendo activos del catálogo '{Name}'.", catalogName);
-            return catalogName.ToLower() switch
-            {
-                "executionstatus" => Map(await _execStatusRepo.GetAllActiveAsync()),
-                "evidencetype" => Map(await _evidTypeRepo.GetAllActiveAsync()),
-                "stepresultstatus" => Map(await _stepStatusRepo.GetAllActiveAsync()),
-                "taskpriority" => Map(await _taskPriorityRepo.GetAllActiveAsync()),
-                "testcasepriority" => Map(await _casePriorityRepo.GetAllActiveAsync()),
-                _ => throw new DomainException($"Catálogo '{catalogName}' no reconocido.")
-            };
+            var items = await ResolveRepo<IReadOnlyList<CatalogBase>>(catalogName, async repo => await repo.GetAllActiveAsync());
+            return Map(items);
         }
 
         public async Task<List<CatalogItemDto>> GetAllByCatalogNameAsync(string catalogName)
         {
             _logger.LogInformation("Obteniendo todos del catálogo '{Name}'.", catalogName);
-            return catalogName.ToLower() switch
-            {
-                "executionstatus" => Map(await _execStatusRepo.GetAllAsync()),
-                "evidencetype" => Map(await _evidTypeRepo.GetAllAsync()),
-                "stepresultstatus" => Map(await _stepStatusRepo.GetAllAsync()),
-                "taskpriority" => Map(await _taskPriorityRepo.GetAllAsync()),
-                "testcasepriority" => Map(await _casePriorityRepo.GetAllAsync()),
-                _ => throw new DomainException($"Catálogo '{catalogName}' no reconocido.")
-            };
+            var items = await ResolveRepo<IReadOnlyList<CatalogBase>>(catalogName, async repo => await repo.GetAllAsync());
+            return Map(items);
         }
 
         public async Task<CatalogItemDto> CreateAsync(string catalogName, CreateCatalogItemDto dto)
         {
             _logger.LogInformation("Creando valor en catálogo '{Name}': {Code}.", catalogName, dto.Code);
-            var result = catalogName.ToLower() switch
+            var result = await ResolveRepo<CatalogBase>(catalogName, async repo => 
             {
-                "executionstatus" => await Add(_execStatusRepo, dto, () => new ExecutionStatus()),
-                "evidencetype" => await Add(_evidTypeRepo, dto, () => new EvidenceType()),
-                "stepresultstatus" => await Add(_stepStatusRepo, dto, () => new StepResultStatus()),
-                "taskpriority" => await Add(_taskPriorityRepo, dto, () => new TaskPriority()),
-                "testcasepriority" => await Add(_casePriorityRepo, dto, () => new TestCasePriority()),
-                _ => throw new DomainException($"Catálogo '{catalogName}' no reconocido.")
-            };
+                if (await repo.ExistsByCodeAsync(dto.Code))
+                    throw new DomainException($"Código '{dto.Code}' ya existe.");
+                
+                var entity = CreateEntityInstance(catalogName);
+                entity.Code = dto.Code.ToUpper();
+                entity.Name = dto.Name;
+                entity.Description = dto.Description;
+                entity.SortOrder = dto.SortOrder;
+                entity.IsActive = dto.IsActive;
+                
+                await repo.AddAsync(entity);
+                return (CatalogBase)entity;
+            });
+
             await _uow.SaveChangesAsync();
-            return result;
+            return MapSingle(result);
         }
 
         public async Task<CatalogItemDto> UpdateAsync(string catalogName, int id, CreateCatalogItemDto dto)
         {
             _logger.LogInformation("Actualizando ID={Id} en catálogo '{Name}'.", id, catalogName);
-            var result = catalogName.ToLower() switch
+            var result = await ResolveRepo<CatalogBase>(catalogName, async repo => 
             {
-                "executionstatus" => await Upd(_execStatusRepo, id, dto),
-                "evidencetype" => await Upd(_evidTypeRepo, id, dto),
-                "stepresultstatus" => await Upd(_stepStatusRepo, id, dto),
-                "taskpriority" => await Upd(_taskPriorityRepo, id, dto),
-                "testcasepriority" => await Upd(_casePriorityRepo, id, dto),
+                var entity = await repo.GetByIdAsync(id)
+                    ?? throw new EntityNotFoundException(catalogName, id);
+                
+                entity.Code = dto.Code.ToUpper();
+                entity.Name = dto.Name;
+                entity.Description = dto.Description;
+                entity.SortOrder = dto.SortOrder;
+                entity.IsActive = dto.IsActive;
+                
+                repo.Update(entity);
+                return (CatalogBase)entity;
+            });
+
+            await _uow.SaveChangesAsync();
+            return MapSingle(result);
+        }
+
+        private async Task<TResult> ResolveRepo<TResult>(string catalogName, Func<dynamic, Task<TResult>> action)
+        {
+            var type = catalogName.ToLower() switch
+            {
+                "executionstatus" => typeof(ExecutionStatus),
+                "evidencetype" => typeof(EvidenceType),
+                "stepresultstatus" => typeof(StepResultStatus),
+                "taskpriority" => typeof(TaskPriority),
+                "testcasepriority" => typeof(TestCasePriority),
+                "testtype" => typeof(TestType),
+                "testsuitestatus" => typeof(TestSuiteStatus),
+                "projectstatus" => typeof(ProjectStatus),
                 _ => throw new DomainException($"Catálogo '{catalogName}' no reconocido.")
             };
-            await _uow.SaveChangesAsync();
-            return result;
+
+            var repoType = typeof(ICatalogRepository<>).MakeGenericType(type);
+            var repo = _serviceProvider.GetRequiredService(repoType);
+            return await action(repo);
         }
 
-        private List<CatalogItemDto> Map<T>(IReadOnlyList<T> items) where T : CatalogBase
-            => items.Select(e => new CatalogItemDto
-            {
-                Id = e.Id, Code = e.Code, Name = e.Name,
-                Description = e.Description, SortOrder = e.SortOrder, IsActive = e.IsActive
-            }).ToList();
-
-        private async Task<CatalogItemDto> Add<T>(
-            ICatalogRepository<T> repo, CreateCatalogItemDto dto, Func<T> factory) where T : CatalogBase
+        private CatalogBase CreateEntityInstance(string catalogName)
         {
-            if (await repo.ExistsByCodeAsync(dto.Code))
-                throw new DomainException($"Código '{dto.Code}' ya existe.");
-            var entity = factory();
-            entity.Code = dto.Code.ToUpper();
-            entity.Name = dto.Name;
-            entity.Description = dto.Description;
-            entity.SortOrder = dto.SortOrder;
-            entity.IsActive = dto.IsActive;
-            await repo.AddAsync(entity);
-            return new CatalogItemDto
+            return catalogName.ToLower() switch
             {
-                Id = entity.Id, Code = entity.Code, Name = entity.Name,
-                Description = entity.Description, SortOrder = entity.SortOrder, IsActive = entity.IsActive
+                "executionstatus" => new ExecutionStatus(),
+                "evidencetype" => new EvidenceType(),
+                "stepresultstatus" => new StepResultStatus(),
+                "taskpriority" => new TaskPriority(),
+                "testcasepriority" => new TestCasePriority(),
+                "testtype" => new TestType(),
+                "testsuitestatus" => new TestSuiteStatus(),
+                "projectstatus" => new ProjectStatus(),
+                _ => throw new DomainException($"Entidad para catálogo '{catalogName}' no reconocida.")
             };
         }
 
-        private async Task<CatalogItemDto> Upd<T>(
-            ICatalogRepository<T> repo, int id, CreateCatalogItemDto dto) where T : CatalogBase
+        private List<CatalogItemDto> Map(IEnumerable<CatalogBase> items)
         {
-            var entity = await repo.GetByIdAsync(id)
-                ?? throw new EntityNotFoundException(typeof(T).Name, id);
-            entity.Code = dto.Code.ToUpper();
-            entity.Name = dto.Name;
-            entity.Description = dto.Description;
-            entity.SortOrder = dto.SortOrder;
-            entity.IsActive = dto.IsActive;
-            repo.Update(entity);
+            var dtos = new List<CatalogItemDto>();
+            foreach (var e in items)
+            {
+                dtos.Add(MapSingle(e));
+            }
+            return dtos;
+        }
+
+        private CatalogItemDto MapSingle(CatalogBase e)
+        {
             return new CatalogItemDto
             {
-                Id = entity.Id, Code = entity.Code, Name = entity.Name,
-                Description = entity.Description, SortOrder = entity.SortOrder, IsActive = entity.IsActive
+                Id = e.Id,
+                Code = e.Code,
+                Name = e.Name,
+                Description = e.Description,
+                SortOrder = e.SortOrder,
+                IsActive = e.IsActive
             };
         }
     }
