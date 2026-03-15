@@ -1,23 +1,22 @@
-services:
-  # Base de Datos PostgreSQL
-  - type: database
-    name: qams-db
+# c:\diplomado\QAMS\render.yaml
+databases:
+  - name: qams-db
     databaseName: qams_db
-    user: postgres
-    plan: free # Cambiar a 'starter' para persistencia permanente (Free borra datos tras 90 días)
+    user: qams_user
+    plan: free
 
-  # QAMS API (Backend)
+services:
   - type: web
     name: qams-api
     env: docker
     plan: free
-    dockerFilePath: ./Dockerfile
+    dockerFilePath: Dockerfile
     dockerContext: .
-    healthCheckPath: /swagger # O un endpoint de health si existe
+    healthCheckPath: /swagger
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
-      - key: FRONTEND_URL # Se actualizará después de crear el frontend, por ahora placeholder
+      - key: FRONTEND_URL
         value: https://qams-web.onrender.com
       - key: ConnectionStrings__DefaultConnection
         fromDatabase:
