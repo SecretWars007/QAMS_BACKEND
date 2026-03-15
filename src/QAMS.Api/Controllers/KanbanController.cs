@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QAMS.Api.Filters;
+using Microsoft.Extensions.Logging;
 using QAMS.Application.DTOs.Kanban;
 using QAMS.Application.Interfaces;
 
@@ -39,9 +40,9 @@ namespace QAMS.Api.Controllers
 
         [HttpPost("board")]
         [HasPermission("PROJECTS_UPDATE")]
-        public async Task<IActionResult> CreateBoard([FromBody] CreateKanbanBoardDto dto)
+        public async Task<IActionResult> CreateBoard([FromBody] CreateBoardDto dto)
         {
-            _logger.LogInformation("POST /api/kanban/board - Creando board '{Name}' para proyecto {ProjectId}", dto.Name, dto.ProjectId);
+            _logger.LogInformation("POST /api/kanban/board - Creating board: {Name}", dto.Name);
             var board = await _service.CreateBoardAsync(dto.ProjectId, dto.Name);
             return CreatedAtAction(nameof(GetBoard), new { boardId = board.Id }, board);
         }

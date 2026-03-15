@@ -14,16 +14,9 @@ using QAMS.Application.DTOs.Users;
 using QAMS.Application.DTOs.Roles;
 using QAMS.Application.Mappings;
 using QAMS.Domain.Entities;
-using Serilog;
-
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .WriteTo.File("logs/qams-.log", rollingInterval: RollingInterval.Day)
-    .MinimumLevel.Information()
-    .CreateLogger();
-
 var builder = WebApplication.CreateBuilder(args);
-builder.Host.UseSerilog();
+// builder.Host.UseSerilog(); // Removed to use standard ILogger
+
 
 // Normalizar cadena de conexión de Render (URI -> Semicolon format)
 var rawConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -47,7 +40,7 @@ if (!string.IsNullOrEmpty(rawConnectionString) && rawConnectionString.Contains("
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "Error crítico al normalizar la URI de conexión.");
+        Console.WriteLine($"Error crítico al normalizar la URI de conexión: {ex.Message}");
     }
 }
 
@@ -188,7 +181,7 @@ using (var scope = app.Services.CreateScope())
 
         if (string.IsNullOrEmpty(connectionString))
         {
-            Log.Error("CRÍTICO: No se encontró la cadena de conexión 'DefaultConnection' en la configuración.");
+            app.Logger.LogError("CRÍTICO: No se encontró la cadena de conexión 'DefaultConnection' en la configuración.");
         }
         else
         {
@@ -198,17 +191,17 @@ using (var scope = app.Services.CreateScope())
                 var trimmed = p.Trim();
                 return trimmed.StartsWith("Password", StringComparison.OrdinalIgnoreCase) ? "Password=***" : trimmed;
             }));
-            Log.Information("Cadena de conexión detectada y normalizada: {ConnectionString}", masked);
+            app.Logger.LogInformation("Cadena de conexión detectada y normalizada: {ConnectionString}", masked);
         }
         
         // En Producción, esperar un poco para asegurar que la base de datos de Render esté lista
         if (environment.IsProduction())
         {
-            Log.Information("Ambiente de Producción detectado. Esperando 5 segundos para asegurar disponibilidad de DB...");
+            app.Logger.LogInformation("Ambiente de Producción detectado. Esperando 5 segundos para asegurar disponibilidad de DB...");
             Thread.Sleep(5000); 
         }
 
-        Log.Information("Iniciando aplicación de migraciones...");
+        app.Logger.LogInformation("Iniciando aplicación de migraciones...");
 
         // Try apply migrations; if none or fails, fall back to EnsureCreated
         try
@@ -216,34 +209,34 @@ using (var scope = app.Services.CreateScope())
             var pendingMigrations = db.Database.GetPendingMigrations();
             if (pendingMigrations.Any())
             {
-                Log.Information("Se encontraron {Count} migraciones pendientes. Aplicando...", pendingMigrations.Count());
+                app.Logger.LogInformation("Se encontraron {Count} migraciones pendientes. Aplicando...", pendingMigrations.Count());
                 db.Database.Migrate();
-                Log.Information("Migraciones aplicadas exitosamente.");
+                app.Logger.LogInformation("Migraciones aplicadas exitosamente.");
             }
             else
             {
-                Log.Information("No hay migraciones pendientes.");
+                app.Logger.LogInformation("No hay migraciones pendientes.");
                 
                 // Si no hay migrations aplicadas (proyecto usa EnsureCreated en dev o DB vacía sin historial), crear esquema
                 var applied = db.Database.GetAppliedMigrations();
                 if (applied == null || !applied.Any())
                 {
-                    Log.Information("No se encontraron migraciones aplicadas en el historial; intentando EnsureCreated().");
+                    app.Logger.LogInformation("No se encontraron migraciones aplicadas en el historial; intentando EnsureCreated().");
                     db.Database.EnsureCreated();
                 }
             }
         }
         catch (Exception migEx)
         {
-            Log.Warning(migEx, "Migrate() falló. Intentando EnsureCreated() como fallback...");
+            app.Logger.LogWarning(migEx, "Migrate() falló. Intentando EnsureCreated() como fallback...");
             try
             {
                 db.Database.EnsureCreated();
-                Log.Information("EnsureCreated() completado exitosamente.");
+                app.Logger.LogInformation("EnsureCreated() completado exitosamente.");
             }
             catch (Exception ensureEx)
             {
-                Log.Error(ensureEx, "CRÍTICO: EnsureCreated() también falló. No se pudieron crear las tablas.");
+                app.Logger.LogError(ensureEx, "CRÍTICO: EnsureCreated() también falló. No se pudieron crear las tablas.");
                 if (environment.IsProduction())
                 {
                     // En producción queremos saber si esto falla críticamente
@@ -254,10 +247,10 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "ERROR FATAL durante la inicialización de la base de datos.");
+        app.Logger.LogError(ex, "ERROR FATAL durante la inicialización de la base de datos.");
         if (environment.IsProduction())
         {
-            Log.Fatal("La aplicación no puede iniciar en Producción sin una base de datos válida.");
+            app.Logger.LogCritical("La aplicación no puede iniciar en Producción sin una base de datos válida.");
             // Opcional: throw; // Descomentar si se prefiere que el pod de Render falle y se reinicie
         }
     }
@@ -278,5 +271,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-Log.Information("QAMS API iniciada en {Env}.", app.Environment.EnvironmentName);
+app.Logger.LogInformation("QAMS API iniciada en {Env}.", app.Environment.EnvironmentName);
 app.Run();

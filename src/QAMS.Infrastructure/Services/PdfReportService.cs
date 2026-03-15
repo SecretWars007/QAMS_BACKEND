@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System;
+using Microsoft.Extensions.Logging;
 
 namespace QAMS.Infrastructure.Services
 {
@@ -300,8 +301,8 @@ namespace QAMS.Infrastructure.Services
                         col.Item().PaddingTop(20).Row(row =>
                         {
                             var totalCases = project.TestCases.Count;
-                            var passedCases = project.TestCases.Count(tc => tc.TestExecutions.Any(e => (e as QAMS.Domain.Entities.TestExecution).StatusId == 3 || (e as QAMS.Domain.Entities.TestExecution).Status?.Code == "PASSED"));
-                            var failedCases = project.TestCases.Count(tc => tc.TestExecutions.Any(e => (e as QAMS.Domain.Entities.TestExecution).StatusId == 4 || (e as QAMS.Domain.Entities.TestExecution).Status?.Code == "FAILED"));
+                            var passedCases = project.TestCases.Count(tc => tc.TestExecutions.Any(e => e is QAMS.Domain.Entities.TestExecution te && (te.StatusId == 3 || te.Status?.Code == "PASSED")));
+                            var failedCases = project.TestCases.Count(tc => tc.TestExecutions.Any(e => e is QAMS.Domain.Entities.TestExecution te && (te.StatusId == 4 || te.Status?.Code == "FAILED")));
 
                             row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).Column(stat =>
                             {
@@ -340,7 +341,7 @@ namespace QAMS.Infrastructure.Services
                                 {
                                     r.RelativeItem().Text(tc.Title).Bold().FontSize(11);
 
-                                    var lastExec = tc.TestExecutions.OrderByDescending(e => (e as QAMS.Domain.Entities.TestExecution).ExecutionDate).FirstOrDefault();
+                                    var lastExec = tc.TestExecutions.OrderByDescending(e => (e as QAMS.Domain.Entities.TestExecution).ExecutionDate).FirstOrDefault() as QAMS.Domain.Entities.TestExecution;
                                     string statusName = lastExec?.Status?.Name ?? "PENDIENTE";
                                     string statusColor = lastExec?.Status?.Code == "PASSED" ? "#2E7D32" : (lastExec == null ? "#757575" : "#C62828");
 
@@ -351,8 +352,8 @@ namespace QAMS.Infrastructure.Services
                                     tcBox.Item().PaddingTop(2).Text(tc.Description).FontSize(8).Italic().FontColor(Colors.Grey.Darken1);
 
                                 // Evidencias del último resultado
-                                var lastExecResults = tc.TestExecutions.OrderByDescending(e => (e as QAMS.Domain.Entities.TestExecution).ExecutionDate).FirstOrDefault();
-                                if (lastExecResults != null && lastExecResults.Evidences != null && lastExecResults.Evidences.Any(e => e.FileType.Code == "IMAGE"))
+                                var lastExecResults = tc.TestExecutions.OrderByDescending(e => (e as QAMS.Domain.Entities.TestExecution).ExecutionDate).FirstOrDefault() as QAMS.Domain.Entities.TestExecution;
+                                if (lastExecResults != null && lastExecResults.Evidences != null && lastExecResults.Evidences.Any(e => e.FileType != null && e.FileType.Code == "IMAGE"))
                                 {
                                     tcBox.Item().PaddingTop(8).Grid(grid =>
                                     {

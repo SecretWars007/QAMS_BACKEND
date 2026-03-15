@@ -21,8 +21,11 @@ namespace QAMS.Api.Controllers
             _logger = logger;
         }
 
-        private Guid GetUserId() =>
-            Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        private Guid GetUserId()
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+            return claim != null ? Guid.Parse(claim.Value) : Guid.Empty;
+        }
 
         [HttpGet("{id:guid}")]
         [HasPermission("EXECUTIONS_VIEW")]

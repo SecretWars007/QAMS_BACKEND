@@ -26,12 +26,11 @@ namespace QAMS.Api.Filters
             var logger = context.HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Logging.ILogger<HasPermissionAttribute>>();
             
             // Obtener el ID del usuario del JWT
-            var userIdClaim = context.HttpContext.User
-                .FindFirst(ClaimTypes.NameIdentifier);
+            var userIdClaim = context.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
 
             logger.LogDebug("HasPermission: Validando para User={UserId}, Permiso={Permission}. Claims: {Claims}", 
                 userIdClaim?.Value ?? "null", _permissionCode,
-                string.Join(", ", context.HttpContext.User.Claims.Select(c => $"{c.Type}={c.Value}")));
+                string.Join(", ", context.HttpContext.User.Claims.Select(c => $"{(c.Type ?? "N/A")}={(c.Value ?? "N/A")}")));
 
             if (userIdClaim is null || !Guid.TryParse(userIdClaim.Value, out var userId))
             {

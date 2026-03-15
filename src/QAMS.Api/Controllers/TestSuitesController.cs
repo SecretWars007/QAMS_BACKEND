@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QAMS.Api.Filters;
+using Microsoft.Extensions.Logging;
 using QAMS.Application.DTOs.TestSuites;
 using QAMS.Application.Interfaces;
 
