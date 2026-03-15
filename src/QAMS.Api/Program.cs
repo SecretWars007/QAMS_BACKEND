@@ -147,19 +147,21 @@ builder.Services.AddSwaggerGen(c =>
 // CORS
 builder.Services.AddCors(o =>
 {
-    var frontendUrl = builder.Configuration["FRONTEND_URL"] ?? "http://localhost:4200";
     o.AddPolicy(
         "AllowAngular",
         p =>
-            p.WithOrigins(
-                frontendUrl,
-                "http://localhost:4200",
-                "https://qams-web.onrender.com",
-                "https://qams-web.onrender.com/"
-            )
+            p.SetIsOriginAllowed(origin => 
+            {
+                if (string.IsNullOrEmpty(origin)) return false;
+                var uri = new Uri(origin);
+                return uri.Host.EndsWith("onrender.com", StringComparison.OrdinalIgnoreCase) || 
+                       uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                       uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+            })
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials()
+            .WithExposedHeaders("Content-Disposition") // Útil para descargas de archivos/reportes
     );
 });
 
@@ -265,7 +267,9 @@ app.UseSwaggerUI(c =>
 });
 
 
+app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseRouting();
 app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
