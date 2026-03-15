@@ -148,44 +148,71 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var environment = app.Environment;
+    
     try
     {
         var db = services.GetRequiredService<QamsDbContext>();
+        
+        // En Producción, esperar un poco para asegurar que la base de datos de Render esté lista
+        if (environment.IsProduction())
+        {
+            Log.Information("Ambiente de Producción detectado. Esperando 5 segundos para asegurar disponibilidad de DB...");
+            Thread.Sleep(5000); 
+        }
+
+        Log.Information("Iniciando aplicación de migraciones...");
+
         // Try apply migrations; if none or fails, fall back to EnsureCreated
         try
         {
-            db.Database.Migrate();
-            Log.Information("Database migrations applied.");
-
-            // Si no hay migrations aplicadas (proyecto usa EnsureCreated en dev), crear esquema
-            var applied = db.Database.GetAppliedMigrations();
-            if (applied == null || !applied.Any())
+            var pendingMigrations = db.Database.GetPendingMigrations();
+            if (pendingMigrations.Any())
             {
-                Log.Information("No applied migrations found; calling EnsureCreated() to create schema.");
-                db.Database.EnsureCreated();
+                Log.Information("Se encontraron {Count} migraciones pendientes. Aplicando...", pendingMigrations.Count());
+                db.Database.Migrate();
+                Log.Information("Migraciones aplicadas exitosamente.");
+            }
+            else
+            {
+                Log.Information("No hay migraciones pendientes.");
+                
+                // Si no hay migrations aplicadas (proyecto usa EnsureCreated en dev o DB vacía sin historial), crear esquema
+                var applied = db.Database.GetAppliedMigrations();
+                if (applied == null || !applied.Any())
+                {
+                    Log.Information("No se encontraron migraciones aplicadas en el historial; intentando EnsureCreated().");
+                    db.Database.EnsureCreated();
+                }
             }
         }
         catch (Exception migEx)
         {
-            Log.Warning(migEx, "Migrations failed, attempting EnsureCreated().");
+            Log.Warning(migEx, "Migrate() falló. Intentando EnsureCreated() como fallback...");
             try
             {
                 db.Database.EnsureCreated();
+                Log.Information("EnsureCreated() completado exitosamente.");
             }
             catch (Exception ensureEx)
             {
-                Log.Error(ensureEx, "EnsureCreated also failed.");
-                throw;
+                Log.Error(ensureEx, "CRÍTICO: EnsureCreated() también falló. No se pudieron crear las tablas.");
+                if (environment.IsProduction())
+                {
+                    // En producción queremos saber si esto falla críticamente
+                    throw; 
+                }
             }
         }
-
     }
     catch (Exception ex)
     {
-        // Registrar el error pero NO detener el arranque de la API.
-        // Esto permite que Swagger y endpoints que no dependan de la BD funcionen
-        // mientras se corrige la conexión a la base de datos en desarrollo.
-        Log.Error(ex, "Error applying migrations. Continuing without DB initialization.");
+        Log.Error(ex, "ERROR FATAL durante la inicialización de la base de datos.");
+        if (environment.IsProduction())
+        {
+            Log.Fatal("La aplicación no puede iniciar en Producción sin una base de datos válida.");
+            // Opcional: throw; // Descomentar si se prefiere que el pod de Render falle y se reinicie
+        }
     }
 }
 
