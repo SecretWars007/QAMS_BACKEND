@@ -9,5 +9,10 @@ namespace QAMS.Application.Interfaces
         Task<List<TestSuiteDto>> GetByProjectIdAsync(Guid projectId);
         Task<TestSuiteDto> UpdateAsync(Guid id, CreateTestSuiteDto dto);
         Task DeleteAsync(Guid id);
+        
+        // Enhancements
+        Task<TestSuiteStatsDto> GetSummaryStatsAsync(Guid id);
+        Task<TestSuiteDto> CloneAsync(Guid id, string newName);
+        Task MoveToProjectAsync(Guid id, Guid targetProjectId);
     }
 }

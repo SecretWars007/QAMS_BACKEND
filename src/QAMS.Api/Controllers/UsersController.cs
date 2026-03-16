@@ -68,7 +68,7 @@ namespace QAMS.Api.Controllers
         }
 
         [HttpPost("{userId:guid}/roles/{roleId:guid}")]
-        [HasPermission("USERS_MANAGE_ROLES")]
+        [HasPermission("USERS_ASSIGN_ROLES")]
         public async Task<IActionResult> AssignRole(Guid userId, Guid roleId)
         {
             _logger.LogInformation("POST /api/users/{UserId}/roles/{RoleId} - Asignando rol.", userId, roleId);
@@ -77,7 +77,7 @@ namespace QAMS.Api.Controllers
         }
 
         [HttpDelete("{userId:guid}/roles/{roleId:guid}")]
-        [HasPermission("USERS_MANAGE_ROLES")]
+        [HasPermission("USERS_ASSIGN_ROLES")]
         public async Task<IActionResult> RemoveRole(Guid userId, Guid roleId)
         {
             _logger.LogInformation("DELETE /api/users/{UserId}/roles/{RoleId} - Quitando rol.", userId, roleId);
@@ -86,7 +86,7 @@ namespace QAMS.Api.Controllers
         }
 
         [HttpDelete("{userId:guid}/roles")]
-        [HasPermission("USERS_MANAGE_ROLES")]
+        [HasPermission("USERS_ASSIGN_ROLES")]
         public async Task<IActionResult> RemoveAllRoles(Guid userId)
         {
             _logger.LogInformation("DELETE /api/users/{UserId}/roles - Removiendo todos los roles.", userId);

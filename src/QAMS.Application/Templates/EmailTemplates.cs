@@ -298,5 +298,103 @@ namespace QAMS.Application.Templates
 </body>
 </html>";
         }
+        public static string GetTestSuiteCreatedEmailHtml(string fullName, string suiteName, string projectName)
+        {
+            return $@"
+<!DOCTYPE html>
+<html lang=""es"">
+<body style=""margin:0;padding:0;background-color:#0f0f23;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;"">
+    <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" width=""100%"" style=""padding:40px 20px;"">
+        <tr>
+            <td align=""center"">
+                <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" width=""600"" style=""background-color:#1a1a2e;border:1px solid rgba(139,92,246,0.3);border-radius:16px;"">
+                    <tr>
+                        <td style=""padding:40px;"">
+                            <h2 style=""color:#ffffff;margin-top:0;text-align:center;"">Nueva Suite de Pruebas</h2>
+                            <p style=""color:#e2e8f0;font-size:16px;line-height:1.6;"">
+                                Hola {fullName},
+                            </p>
+                            <p style=""color:#94a3b8;font-size:15px;line-height:1.6;"">
+                                Se ha registrado exitosamente una nueva suite de pruebas en el sistema.
+                            </p>
+                            <div style=""background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);border-radius:8px;padding:20px;margin:20px 0;"">
+                                <p style=""margin:0;color:#a78bfa;font-size:12px;font-weight:bold;text-transform:uppercase;"">Suite</p>
+                                <p style=""margin:5px 0 0;color:#ffffff;font-size:18px;font-weight:bold;"">{suiteName}</p>
+                                <p style=""margin:10px 0 0;color:#94a3b8;font-size:12px;font-weight:bold;text-transform:uppercase;"">Proyecto</p>
+                                <p style=""margin:5px 0 0;color:#cbd5e1;font-size:14px;"">{projectName}</p>
+                            </div>
+                            <div style=""text-align:center;"">
+                                <a href=""https://qams-web.onrender.com/"" style=""display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;padding:12px 30px;border-radius:8px;font-weight:bold;"">Ver Detalle</a>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+        }
+
+        public static string GetTestSuiteUpdatedEmailHtml(string fullName, string suiteName, string projectName)
+        {
+            return $@"
+<!DOCTYPE html>
+<html lang=""es"">
+<body style=""margin:0;padding:0;background-color:#0f0f23;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;"">
+    <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" width=""100%"" style=""padding:40px 20px;"">
+        <tr>
+            <td align=""center"">
+                <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" width=""600"" style=""background-color:#1a1a2e;border:1px solid rgba(234,179,8,0.3);border-radius:16px;"">
+                    <tr>
+                        <td style=""padding:40px;"">
+                            <h2 style=""color:#facc15;margin-top:0;text-align:center;"">Suite Actualizada</h2>
+                            <p style=""color:#e2e8f0;font-size:16px;line-height:1.6;"">
+                                Hola {fullName},
+                            </p>
+                            <p style=""color:#94a3b8;font-size:15px;line-height:1.6;"">
+                                Los detalles de la suite de pruebas <strong>{suiteName}</strong> han sido actualizados.
+                            </p>
+                            <div style=""background:rgba(234,179,8,0.05);border-left:4px solid #facc15;padding:15px;margin:20px 0;"">
+                                <p style=""margin:0;color:#e2e8f0;font-size:14px;"">Proyecto: {projectName}</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+        }
+
+        public static string GetTestSuiteDeletedEmailHtml(string fullName, string suiteName, string projectName)
+        {
+            return $@"
+<!DOCTYPE html>
+<html lang=""es"">
+<body style=""margin:0;padding:0;background-color:#0f0f23;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;"">
+    <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" width=""100%"" style=""padding:40px 20px;"">
+        <tr>
+            <td align=""center"">
+                <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" width=""600"" style=""background-color:#1a1a2e;border:1px solid rgba(239,68,68,0.3);border-radius:16px;"">
+                    <tr>
+                        <td style=""padding:40px;"">
+                            <h2 style=""color:#f87171;margin-top:0;text-align:center;"">Suite Eliminada</h2>
+                            <p style=""color:#e2e8f0;font-size:16px;line-height:1.6;"">
+                                Hola {fullName},
+                            </p>
+                            <p style=""color:#94a3b8;font-size:15px;line-height:1.6;"">
+                                La suite de pruebas <strong>{suiteName}</strong> del proyecto <strong>{projectName}</strong> ha sido eliminada del sistema.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+        }
     }
 }

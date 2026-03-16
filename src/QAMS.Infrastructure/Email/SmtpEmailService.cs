@@ -25,11 +25,15 @@ namespace QAMS.Infrastructure.Email
 
         public async Task SendEmailAsync(string to, string subject, string htmlBody)
         {
-            if (string.IsNullOrWhiteSpace(_settings.Username) || string.IsNullOrWhiteSpace(_settings.Password))
+            if (string.IsNullOrWhiteSpace(_settings.Username) || string.IsNullOrWhiteSpace(_settings.Password) || 
+                _settings.Username == "YOUR_SMTP_USERNAME" || _settings.Password == "YOUR_SMTP_PASSWORD")
             {
                 _logger.LogWarning(
-                    "SMTP no configurado (Username/Password vacíos). Correo a '{To}' con asunto '{Subject}' NO enviado. " +
-                    "Configure las variables SmtpSettings__Username y SmtpSettings__Password.",
+                    "SMTP NO CONFIGURADO CORRECTAMENTE. Username: '{Username}', Password: '{PasswordMasked}'. " +
+                    "Correo a '{To}' con asunto '{Subject}' NO enviado. " +
+                    "ASEGÚRESE de configurar las variables de entorno SmtpSettings__Username y SmtpSettings__Password en Render.",
+                    _settings.Username, 
+                    string.IsNullOrEmpty(_settings.Password) ? "VACÍO" : "****",
                     to, subject);
                 return;
             }

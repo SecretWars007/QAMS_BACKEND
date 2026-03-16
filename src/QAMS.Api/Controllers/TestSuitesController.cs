@@ -63,5 +63,30 @@ namespace QAMS.Api.Controllers
             await _service.DeleteAsync(id);
             return NoContent();
         }
+
+        [HttpGet("{id:guid}/stats")]
+        [HasPermission("PROJECTS_VIEW")]
+        public async Task<IActionResult> GetStats(Guid id)
+        {
+            _logger.LogInformation("GET /api/testsuites/{SuiteId}/stats", id);
+            return Ok(await _service.GetSummaryStatsAsync(id));
+        }
+
+        [HttpPost("{id:guid}/clone")]
+        [HasPermission("PROJECTS_CREATE")]
+        public async Task<IActionResult> Clone(Guid id, [FromQuery] string newName)
+        {
+            _logger.LogInformation("POST /api/testsuites/{SuiteId}/clone", id);
+            return Ok(await _service.CloneAsync(id, newName));
+        }
+
+        [HttpPatch("{id:guid}/move/{projectId:guid}")]
+        [HasPermission("PROJECTS_UPDATE")]
+        public async Task<IActionResult> Move(Guid id, Guid projectId)
+        {
+            _logger.LogInformation("PATCH /api/testsuites/{SuiteId}/move/{ProjectId}", id, projectId);
+            await _service.MoveToProjectAsync(id, projectId);
+            return NoContent();
+        }
     }
 }
