@@ -1,0 +1,36 @@
+  Determinando los proyectos que se van a restaurar...
+  Se ha restaurado C:\diplomado\QAMS\src\QAMS.Infrastructure\QAMS.Infrastructure.csproj (en 801 ms).
+  Se ha restaurado C:\diplomado\QAMS\src\QAMS.Application\QAMS.Application.csproj (en 801 ms).
+  Se ha restaurado C:\diplomado\QAMS\src\QAMS.Api\QAMS.Api.csproj (en 802 ms).
+C:\diplomado\QAMS\src\QAMS.Tests\QAMS.Tests.csproj : warning NU1603: QAMS.Tests depende de Microsoft.NET.Test.Sdk (>= 17.8.2), pero no se encontró Microsoft.NET.Test.Sdk 17.8.2. Microsoft.NET.Test.Sdk 17.9.0 se resolvió en su lugar.
+  Se ha restaurado C:\diplomado\QAMS\src\QAMS.Tests\QAMS.Tests.csproj (en 1.14 s).
+  1 de 5 proyectos están actualizados para la restauración.
+C:\diplomado\QAMS\src\QAMS.Tests\QAMS.Tests.csproj : warning NU1603: QAMS.Tests depende de Microsoft.NET.Test.Sdk (>= 17.8.2), pero no se encontró Microsoft.NET.Test.Sdk 17.8.2. Microsoft.NET.Test.Sdk 17.9.0 se resolvió en su lugar.
+  QAMS.Domain -> C:\diplomado\QAMS\src\QAMS.Domain\bin\Debug\net9.0\QAMS.Domain.dll
+  QAMS.Application -> C:\diplomado\QAMS\src\QAMS.Application\bin\Debug\net9.0\QAMS.Application.dll
+  QAMS.Infrastructure -> C:\diplomado\QAMS\src\QAMS.Infrastructure\bin\Debug\net9.0\QAMS.Infrastructure.dll
+  QAMS.Api -> C:\diplomado\QAMS\src\QAMS.Api\bin\Debug\net9.0\QAMS.Api.dll
+  QAMS.Tests -> C:\diplomado\QAMS\src\QAMS.Tests\bin\Debug\net9.0\QAMS.Tests.dll
+Serie de pruebas para C:\diplomado\QAMS\src\QAMS.Tests\bin\Debug\net9.0\QAMS.Tests.dll (.NETCoreApp,Version=v9.0)
+Versión 18.0.1 (x64) de VSTest
+
+Iniciando la ejecución de pruebas, espere...
+1 archivos de prueba en total coincidieron con el patrón especificado.
+  Con error QAMS.Tests.Services.TestExecutionServiceTests.UploadEvidenceAsync_ShouldSaveFileAndAddEvidenceEntity [210 ms]
+  Mensaje de error:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Seguimiento de la pila:
+     at QAMS.Application.Services.TestExecutionService.UploadEvidenceAsync(Guid executionId, Stream fileStream, String fileName, String contentType, String description, Nullable`1 stepResultId) in C:\diplomado\QAMS\src\QAMS.Application\Services\TestExecutionService.cs:line 503
+   at QAMS.Tests.Services.TestExecutionServiceTests.UploadEvidenceAsync_ShouldSaveFileAndAddEvidenceEntity() in C:\diplomado\QAMS\src\QAMS.Tests\Services\TestExecutionServiceTests.cs:line 179
+--- End of stack trace from previous location ---
+  Con error QAMS.Tests.Services.TestExecutionServiceTests.CreateCompleteAsync_WhenAllPassed_ShouldSetPassedStatus [29 ms]
+  Mensaje de error:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Seguimiento de la pila:
+     at QAMS.Application.Services.TestExecutionService.<>c__DisplayClass17_0.<CreateCompleteAsync>b__5(StepResultInput sr) in C:\diplomado\QAMS\src\QAMS.Application\Services\TestExecutionService.cs:line 237
+   at System.Linq.Enumerable.Any[TSource](IEnumerable`1 source, Func`2 predicate)
+   at QAMS.Application.Services.TestExecutionService.CreateCompleteAsync(Guid testerId, CreateCompleteExecutionDto dto) in C:\diplomado\QAMS\src\QAMS.Application\Services\TestExecutionService.cs:line 237
+   at QAMS.Tests.Services.TestExecutionServiceTests.CreateCompleteAsync_WhenAllPassed_ShouldSetPassedStatus() in C:\diplomado\QAMS\src\QAMS.Tests\Services\TestExecutionServiceTests.cs:line 123
+--- End of stack trace from previous location ---
+
+Con error! - Con error:     2, Superado:     2, Omitido:     0, Total:     4, Duración: 291 ms - QAMS.Tests.dll (net9.0)

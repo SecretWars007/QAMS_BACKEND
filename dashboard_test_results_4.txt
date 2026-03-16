@@ -1,0 +1,28 @@
+  Determinando los proyectos que se van a restaurar...
+C:\diplomado\QAMS\src\QAMS.Tests\QAMS.Tests.csproj : warning NU1603: QAMS.Tests depende de Microsoft.NET.Test.Sdk (>= 17.8.2), pero no se encontró Microsoft.NET.Test.Sdk 17.8.2. Microsoft.NET.Test.Sdk 17.9.0 se resolvió en su lugar.
+  Todos los proyectos están actualizados para la restauración.
+C:\diplomado\QAMS\src\QAMS.Tests\QAMS.Tests.csproj : warning NU1603: QAMS.Tests depende de Microsoft.NET.Test.Sdk (>= 17.8.2), pero no se encontró Microsoft.NET.Test.Sdk 17.8.2. Microsoft.NET.Test.Sdk 17.9.0 se resolvió en su lugar.
+  QAMS.Domain -> C:\diplomado\QAMS\src\QAMS.Domain\bin\Debug\net9.0\QAMS.Domain.dll
+  QAMS.Application -> C:\diplomado\QAMS\src\QAMS.Application\bin\Debug\net9.0\QAMS.Application.dll
+  QAMS.Infrastructure -> C:\diplomado\QAMS\src\QAMS.Infrastructure\bin\Debug\net9.0\QAMS.Infrastructure.dll
+  QAMS.Tests -> C:\diplomado\QAMS\src\QAMS.Tests\bin\Debug\net9.0\QAMS.Tests.dll
+Serie de pruebas para C:\diplomado\QAMS\src\QAMS.Tests\bin\Debug\net9.0\QAMS.Tests.dll (.NETCoreApp,Version=v9.0)
+Versión 18.0.1 (x64) de VSTest
+
+Iniciando la ejecución de pruebas, espere...
+1 archivos de prueba en total coincidieron con el patrón especificado.
+  Con error QAMS.Tests.Services.DashboardServiceTests.GetBurndownDataAsync_ShouldCalculateIdealAndActualHours [228 ms]
+  Mensaje de error:
+   Expected firstPoint.IdealHours to be 64M, but found 72M (difference of 8).
+  Seguimiento de la pila:
+     at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+   at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(String message, Object[] args)
+   at FluentAssertions.Numeric.NumericAssertions`2.Be(T expected, String because, Object[] becauseArgs)
+   at QAMS.Tests.Services.DashboardServiceTests.GetBurndownDataAsync_ShouldCalculateIdealAndActualHours() in C:\diplomado\QAMS\src\QAMS.Tests\Services\DashboardServiceTests.cs:line 156
+--- End of stack trace from previous location ---
+
+Con error! - Con error:     1, Superado:     2, Omitido:     0, Total:     3, Duración: 637 ms - QAMS.Tests.dll (net9.0)

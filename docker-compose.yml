@@ -37,9 +37,9 @@ services:
       JwtSettings__RefreshTokenExpirationDays: "7"
       SmtpSettings__Host: "smtp.gmail.com"
       SmtpSettings__Port: "587"
-      SmtpSettings__Username: "enriquezariasedwingustavo@gmail.com"
-      SmtpSettings__Password: "rxob xdmx uwyl mzzt"
-      SmtpSettings__FromEmail: "enriquezariasedwingustavo@gmail.com"
+      SmtpSettings__Username: "${SMTP_USERNAME}"
+      SmtpSettings__Password: "${SMTP_PASSWORD}"
+      SmtpSettings__FromEmail: "${SMTP_USERNAME}"
       SmtpSettings__FromName: "QAMS - Quality Assurance Management System"
       SmtpSettings__EnableSsl: "true"
     ports:

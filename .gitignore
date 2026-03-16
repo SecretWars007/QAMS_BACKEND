@@ -1,119 +1,36 @@
-##############################################
-# .gitignore — QAMS (.NET 9 / Docker / EF Core)
-##############################################
-
-# ── .NET / MSBuild ─────────────────────────
-[Bb]in/
-[Oo]bj/
+# .NET Core
+bin/
+obj/
 *.user
-*.suo
 *.userosscache
 *.sln.docstates
-project.lock.json
-project.fragment.lock.json
-artifacts/
 
-# ── Publicaciones ──────────────────────────
-[Pp]ublish/
-[Pp]ublish[Oo]utput/
-*.pubxml
-*.pubxml.user
-
-# ── NuGet ──────────────────────────────────
-*.nupkg
-*.snupkg
-**/[Pp]ackages/
-!**/[Pp]ackages/build/
-*.nuget.props
-*.nuget.targets
-nuget.config
-
-# ── Rider / JetBrains ──────────────────────
-.idea/
-*.sln.iml
-
-# ── Visual Studio ──────────────────────────
-.vs/
-*.VC.db
-*.VC.opendb
-*.vcxproj.filters
-*.pidb
-*.svclog
-*.scc
-ipch/
-*.ncb
-*.aps
-*.pch
-*.psm1
-*.opensdf
-*.opendb
-*.VC.VC.opendb
-
-# ── VS Code ────────────────────────────────
-.vscode/
-!.vscode/extensions.json
-
-# ── Test results ───────────────────────────
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-*.trx
-coverage.*
-*.coveragexml
-BenchmarkDotNet.Artifacts/
-
-# ── Archivos temporales, logs y scripts (Ignorar siempre) ──
-*.log
-*.log.*
-*.txt
-*.ps1
-*.psm1
-*.csv
-logs/
-src/QAMS.Api/logs/
-
-# ── Excepciones para documentación y configuración importante ──
-!README.md
-!DOCKER.md
-!SWAGGER_SETUP.md
-!render.yaml
-!docker-compose.yml
-!Dockerfile
-!.gitignore
-!.dockerignore
-
-# ── Docker ─────────────────────────────────
-# No ignorar docker-compose.yml ni Dockerfile → son parte del proyecto
-# Ignorar archivos de entorno locales con secretos
-*.env
+# Secrets and Environment Variables
 .env
-.env.*
-!.env.example
-appsettings.Docker.env
-src/QAMS.Api/appsettings.Docker.env
-
-# ── Secretos y configuración local ─────────
-appsettings.Local.json
+.env.local
+.env.*.local
 appsettings.Development.json
-**/appsettings.*.env
+appsettings.Local.json
 
-# ── SO ─────────────────────────────────────
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
+# Docker
+.dockerignore
 
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-._*
+# IDEs
+.vs/
+.vscode/
+.idea/
 
-# Linux
-*~
+# User-specific
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
 
-# ── Otros ──────────────────────────────────
-*.bak
-*.tmp
-*.swp
-*.orig
+# Logs
+logs/
+*.log
+
+# Build output
+[Bb]in/
+[Oo]bj/
+publish/
