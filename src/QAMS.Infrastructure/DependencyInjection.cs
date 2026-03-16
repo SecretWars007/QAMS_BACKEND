@@ -52,6 +52,10 @@ namespace QAMS.Infrastructure
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
             services.AddScoped<IReportService, Services.PdfReportService>();
 
+            // Email SMTP
+            services.Configure<Email.SmtpSettings>(configuration.GetSection("SmtpSettings"));
+            services.AddScoped<IEmailService, Email.SmtpEmailService>();
+
             return services;
         }
     }

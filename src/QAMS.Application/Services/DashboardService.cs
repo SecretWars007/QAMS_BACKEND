@@ -48,13 +48,14 @@ namespace QAMS.Application.Services
 
             try
             {
-                // 1. Proyectos donde el usuario es tester (si no es tester, muestra todos los activos)
+                // 1. Proyectos donde el usuario participa: como tester O si fue el creador
                 var userProjects = await _projectRepo.FindWithDetailsAsync(p =>
-                    p.IsActive && p.ProjectTesters.Any(pt => pt.UserId == userId));
+                    p.IsActive && (p.ProjectTesters.Any(pt => pt.UserId == userId) || p.CreatedByUserId == userId));
 
-                // Si el usuario no está como tester en ningún proyecto, traer todos los proyectos activos
+                // Si no hay proyectos específicos, pero el usuario es admin/etc (opcional), mantenemos fallback o retornamos lo encontrado
                 if (!userProjects.Any())
                 {
+                    _logger.LogInformation("Usuario {UserId} no tiene proyectos asignados ni creados. Trayendo todos los activos como fallback.", userId);
                     userProjects = await _projectRepo.FindWithDetailsAsync(p => p.IsActive);
                 }
 

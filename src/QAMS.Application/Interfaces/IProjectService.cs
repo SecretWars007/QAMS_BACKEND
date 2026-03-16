@@ -9,6 +9,7 @@ namespace QAMS.Application.Interfaces
         Task<ProjectDto> CreateAsync(CreateProjectDto dto);
         Task<ProjectDto> UpdateAsync(Guid id, CreateProjectDto dto);
         Task DeleteAsync(Guid id);
+        Task<List<ProjectDto>> GetMyProjectsAsync(Guid userId);
 
         // Devoluciones
         Task<ProjectDevolutionDto> RegisterDevolutionAsync(Guid projectId, Guid createdByUserId, RegisterDevolutionDto dto);

@@ -6,6 +6,7 @@ using QAMS.Application.Interfaces;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Exceptions;
 using QAMS.Domain.Ports.Repositories;
+using System.Linq;
 
 namespace QAMS.Application.Services
 {
@@ -20,6 +21,7 @@ namespace QAMS.Application.Services
         private readonly IObservationRepository _observationRepo;
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
+        private readonly QAMS.Domain.Ports.Services.IEmailService _emailService;
         private readonly ILogger<ProjectService> _logger;
 
         public ProjectService(
@@ -32,6 +34,7 @@ namespace QAMS.Application.Services
             IObservationRepository observationRepo,
             IUnitOfWork uow,
             IMapper mapper,
+            QAMS.Domain.Ports.Services.IEmailService emailService,
             ILogger<ProjectService> logger)
         {
             _projectRepo = projectRepo;
@@ -43,6 +46,7 @@ namespace QAMS.Application.Services
             _observationRepo = observationRepo;
             _uow = uow;
             _mapper = mapper;
+            _emailService = emailService;
             _logger = logger;
         }
 
@@ -102,6 +106,10 @@ namespace QAMS.Application.Services
             await _kanbanService.CreateBoardAsync(project.Id, $"Tablero - {project.Name}");
 
             _logger.LogInformation("Proyecto '{Name}' creado con ID {Id}.", project.Name, project.Id);
+            
+            // Send email notification to testers and creator
+            await NotifyProjectTestersAsync(project, "Creado", "GetProjectCreatedEmailHtml");
+
             return _mapper.Map<ProjectDto>(project);
         }
 
@@ -130,6 +138,9 @@ namespace QAMS.Application.Services
             _projectRepo.Update(project);
             await _uow.SaveChangesAsync();
 
+            // Send update notification
+            await NotifyProjectTestersAsync(project, "Actualizado", "GetProjectUpdatedEmailHtml");
+
             return _mapper.Map<ProjectDto>(project);
         }
 
@@ -143,6 +154,10 @@ namespace QAMS.Application.Services
             project.UpdatedAt = DateTime.UtcNow;
             _projectRepo.Update(project);
             await _uow.SaveChangesAsync();
+
+            // Send delete notification BEFORE saving changes isn't strictly necessary, 
+            // but we send it to alert them it is inactive via DB
+            await NotifyProjectTestersAsync(project, "Desactivado/Eliminado", "GetProjectDeletedEmailHtml");
         }
 
         public async Task<ProjectDevolutionDto> RegisterDevolutionAsync(Guid projectId, Guid createdByUserId, RegisterDevolutionDto dto)
@@ -180,6 +195,25 @@ namespace QAMS.Application.Services
             _projectRepo.Update(project);
             await _uow.SaveChangesAsync();
 
+            // Send devolution notification to creator
+            try 
+            {
+                if (project.CreatedByUserId.HasValue)
+                {
+                    var creator = await _userRepo.GetByIdAsync(project.CreatedByUserId.Value);
+                    if (creator != null) 
+                    {
+                        var subject = $"Nueva Devolución en el proyecto: {project.Name}";
+                        var body = $@"<h2>Devolución Registrada</h2>
+                                    <p>Se ha registrado una nueva devolución en tu proyecto <strong>{project.Name}</strong>.</p>
+                                    <p><strong>Notas:</strong> {dto.Notes}</p>
+                                    <p><a href='https://qams-web.onrender.com/dashboard'>Ver en QAMS</a></p>";
+                        await _emailService.SendEmailAsync(creator.Email, subject, body);
+                    }
+                }
+            }
+            catch(Exception ex) { _logger.LogWarning(ex, "Error sending devolution email"); }
+
             var result = await _devolutionRepo.GetByIdAsync(devolution.Id);
             return _mapper.Map<ProjectDevolutionDto>(result);
         }
@@ -196,6 +230,22 @@ namespace QAMS.Application.Services
 
             _devolutionRepo.Update(devolution);
             await _uow.SaveChangesAsync();
+
+            // Send response notification
+            try 
+            {
+                var responder = await _userRepo.GetByIdAsync(devolution.CreatedByUserId);
+                if (responder != null) 
+                {
+                    var project = await _projectRepo.GetByIdAsync(devolution.ProjectId);
+                    var subject = $"Respuesta a Devolución: {project?.Name}";
+                    var body = $@"<h2>Respuesta de Devolución</h2>
+                                <p>Se ha respondido a la devolución en el proyecto <strong>{project?.Name}</strong>.</p>
+                                <p><strong>Respuesta:</strong> {dto.Response}</p>";
+                    await _emailService.SendEmailAsync(responder.Email, subject, body);
+                }
+            }
+            catch(Exception ex) { _logger.LogWarning(ex, "Error sending devolution response email"); }
 
             return _mapper.Map<ProjectDevolutionDto>(devolution);
         }
@@ -221,6 +271,58 @@ namespace QAMS.Application.Services
                     UserId = testerId,
                     AssignedAt = DateTime.UtcNow
                 });
+            }
+        }
+
+        public async Task<List<ProjectDto>> GetMyProjectsAsync(Guid userId)
+        {
+            _logger.LogInformation("Obteniendo mis proyectos para UserId {UserId}", userId);
+            // Proyectos donde el usuario es el creador o es un tester asignado
+            var projects = await _projectRepo.FindWithDetailsAsync(p => 
+                p.IsActive && (p.CreatedByUserId == userId || p.ProjectTesters.Any(pt => pt.UserId == userId)));
+            
+            return _mapper.Map<List<ProjectDto>>(projects);
+        }
+
+        private async Task NotifyProjectTestersAsync(Project project, string actionName, string templateName)
+        {
+            try
+            {
+                var testerIds = project.ProjectTesters.Select(pt => pt.UserId).ToList();
+                
+                if (project.CreatedByUserId.HasValue)
+                {
+                    testerIds.Add(project.CreatedByUserId.Value);
+                }
+
+                var uniqueTesterIds = testerIds.Distinct().ToList();
+
+                var users = await _userRepo.GetByIdsWithRolesAsync(uniqueTesterIds);
+
+                foreach (var user in users)
+                {
+                    string htmlBody = templateName switch
+                    {
+                        "GetProjectCreatedEmailHtml" => QAMS.Application.Templates.EmailTemplates.GetProjectCreatedEmailHtml(user.FullName, project.Name, project.Id.ToString()),
+                        "GetProjectUpdatedEmailHtml" => QAMS.Application.Templates.EmailTemplates.GetProjectUpdatedEmailHtml(user.FullName, project.Name),
+                        "GetProjectDeletedEmailHtml" => QAMS.Application.Templates.EmailTemplates.GetProjectDeletedEmailHtml(user.FullName, project.Name),
+                        _ => string.Empty
+                    };
+
+                    if (!string.IsNullOrEmpty(htmlBody))
+                    {
+                        var subject = templateName switch
+                        {
+                            "GetProjectCreatedEmailHtml" => $"Nuevo Proyecto Asignado: {project.Name}",
+                            _ => $"Proyecto {actionName}: {project.Name}"
+                        };
+                        await _emailService.SendEmailAsync(user.Email, subject, htmlBody);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send project notification emails for Project {ProjectId}", project.Id);
             }
         }
     }

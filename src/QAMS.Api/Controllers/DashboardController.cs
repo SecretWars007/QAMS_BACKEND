@@ -22,14 +22,28 @@ namespace QAMS.Api.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
+        [HasPermission("DASHBOARD_VIEW")]
+        public async Task<IActionResult> GetSummary([FromQuery] Guid? userId = null)
+        {
+            var currentUserIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var currentUserId = currentUserIdStr != null ? Guid.Parse(currentUserIdStr) : Guid.Empty;
+
+            var targetUserId = userId ?? currentUserId;
+            
+            _logger.LogInformation("GET /api/Dashboard - Obteniendo resumen para usuario {UserId}", targetUserId);
+            var summary = await _dashboardService.GetSummaryAsync(targetUserId);
+            return Ok(summary);
+        }
+
         [HttpGet("summary")]
         [HasPermission("DASHBOARD_VIEW")]
-        public async Task<IActionResult> GetSummary()
+        public async Task<IActionResult> GetSummaryForCurrentUser()
         {
             var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             var userId = userIdStr != null ? Guid.Parse(userIdStr) : Guid.Empty;
             
-            _logger.LogInformation("GET /api/dashboard/summary - Obteniendo resumen para usuario {UserId}", userId);
+            _logger.LogInformation("GET /api/Dashboard/summary - Obteniendo resumen para usuario logueado {UserId}", userId);
             var summary = await _dashboardService.GetSummaryAsync(userId);
             return Ok(summary);
         }

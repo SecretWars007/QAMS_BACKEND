@@ -10,8 +10,10 @@ using QAMS.Domain.Exceptions;
 using QAMS.Domain.Ports.Repositories;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using QAMS.Domain.Ports.Services;
 using Xunit;
 
 namespace QAMS.Tests.Services;
@@ -27,6 +29,7 @@ public class ProjectServiceTests
     private readonly Mock<IObservationRepository> _mockObservationRepo = new();
     private readonly Mock<IUnitOfWork> _mockUow = new();
     private readonly Mock<IMapper> _mockMapper = new();
+    private readonly Mock<IEmailService> _mockEmailService = new();
     private readonly Mock<ILogger<ProjectService>> _mockLogger = new();
 
     private ProjectService CreateService() => new ProjectService(
@@ -39,6 +42,7 @@ public class ProjectServiceTests
         _mockObservationRepo.Object,
         _mockUow.Object,
         _mockMapper.Object,
+        _mockEmailService.Object,
         _mockLogger.Object
     );
 

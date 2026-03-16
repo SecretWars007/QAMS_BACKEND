@@ -21,15 +21,18 @@ namespace QAMS.Application.Services
         private readonly IPasswordHasher _hasher;
         private readonly IJwtTokenGenerator _jwt;
         private readonly IUnitOfWork _uow;
+        private readonly IEmailService _emailService;
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             IUserRepository userRepo, IRbacService rbacService,
             IPasswordHasher hasher, IJwtTokenGenerator jwt,
-            IUnitOfWork uow, ILogger<AuthService> logger)
+            IUnitOfWork uow, IEmailService emailService,
+            ILogger<AuthService> logger)
         {
             _userRepo = userRepo; _rbacService = rbacService;
-            _hasher = hasher; _jwt = jwt; _uow = uow; _logger = logger;
+            _hasher = hasher; _jwt = jwt; _uow = uow;
+            _emailService = emailService; _logger = logger;
         }
 
         public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
@@ -96,6 +99,18 @@ namespace QAMS.Application.Services
             await _uow.SaveChangesAsync();
 
             _logger.LogInformation("Usuario registrado: '{Username}' ({Id}).", user.Username, user.Id);
+
+            // Enviar correo de bienvenida (no bloquea el registro si falla)
+            try
+            {
+                var htmlBody = QAMS.Application.Templates.EmailTemplates.GetWelcomeEmailHtml(user.FullName, user.Username);
+                await _emailService.SendEmailAsync(user.Email, "¡Bienvenido a QAMS! Tu cuenta ha sido creada", htmlBody);
+                _logger.LogInformation("Correo de bienvenida enviado a '{Email}'.", user.Email);
+            }
+            catch (Exception emailEx)
+            {
+                _logger.LogWarning(emailEx, "No se pudo enviar el correo de bienvenida a '{Email}'. El registro fue exitoso.", user.Email);
+            }
             return await LoginAsync(new LoginRequestDto { Username = request.Username, Password = request.Password });
         }
 
@@ -171,7 +186,18 @@ namespace QAMS.Application.Services
 
             _logger.LogInformation("Token de reset generado para '{Email}'.", request.Email);
 
-            // TODO: enviar token por email; por ahora se retorna en el response (solo desarrollo)
+            // Enviar email con token
+            try 
+            {
+                var resetLink = $"https://qams-web.onrender.com/reset-password?token={token}&email={Uri.EscapeDataString(user.Email)}";
+                var body = QAMS.Application.Templates.EmailTemplates.GetForgotPasswordEmailHtml(user.FullName, resetLink);
+                await _emailService.SendEmailAsync(user.Email, "Restablecer tu contraseña de QAMS", body);
+            }
+            catch(Exception emailEx) 
+            {
+                _logger.LogWarning(emailEx, "No se pudo enviar el correo de Forgot Password a '{Email}'.", request.Email);
+            }
+
             return token;
         }
 
@@ -201,6 +227,16 @@ namespace QAMS.Application.Services
             await _uow.SaveChangesAsync();
 
             _logger.LogInformation("Contraseña restablecida para '{Email}'.", request.Email);
+
+            try 
+            {
+                var body = QAMS.Application.Templates.EmailTemplates.GetPasswordResetSuccessEmailHtml(user.FullName);
+                await _emailService.SendEmailAsync(user.Email, "Contraseña actualizada exitosamente", body);
+            }
+            catch(Exception emailEx) 
+            {
+                _logger.LogWarning(emailEx, "No se pudo enviar el correo de confirmación de Reset Password a '{Email}'.", request.Email);
+            }
         }
 
         // ─── Cambio de contraseña (usuario autenticado) ───────────────────────
@@ -225,6 +261,40 @@ namespace QAMS.Application.Services
             await _uow.SaveChangesAsync();
 
             _logger.LogInformation("Contraseña cambiada para UserId '{UserId}'.", userId);
+
+            try 
+            {
+                var body = QAMS.Application.Templates.EmailTemplates.GetPasswordChangeSuccessEmailHtml(user.FullName);
+                await _emailService.SendEmailAsync(user.Email, "Contraseña cambiada exitosamente", body);
+            }
+            catch(Exception emailEx) 
+            {
+                _logger.LogWarning(emailEx, "No se pudo enviar el correo de confirmación de Change Password a '{Email}'.", user.Email);
+            }
+        }
+
+        // ─── Reset de contraseña por administrador ────────────────────────────
+
+        /// <summary>
+        /// Permite a un administrador restablecer la contraseña de cualquier usuario
+        /// sin necesidad de conocer la contraseña actual ni un token de recuperación.
+        /// </summary>
+        public async Task AdminResetPasswordAsync(Guid targetUserId, string newPassword)
+        {
+            _logger.LogInformation("Admin reset de contraseña para UserId '{UserId}'.", targetUserId);
+
+            var user = await _userRepo.GetByIdAsync(targetUserId)
+                ?? throw new EntityNotFoundException(nameof(User), targetUserId);
+
+            user.PasswordHash = _hasher.HashPassword(newPassword);
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiryTime = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.Update(user);
+            await _uow.SaveChangesAsync();
+
+            _logger.LogInformation("Admin reset de contraseña completado para UserId '{UserId}'.", targetUserId);
         }
     }
 }

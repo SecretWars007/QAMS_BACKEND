@@ -35,6 +35,13 @@ services:
       JwtSettings__Audience: "QAMS.Client"
       JwtSettings__AccessTokenExpirationMinutes: "60"
       JwtSettings__RefreshTokenExpirationDays: "7"
+      SmtpSettings__Host: "smtp.gmail.com"
+      SmtpSettings__Port: "587"
+      SmtpSettings__Username: "enriquezariasedwingustavo@gmail.com"
+      SmtpSettings__Password: "rxob xdmx uwyl mzzt"
+      SmtpSettings__FromEmail: "enriquezariasedwingustavo@gmail.com"
+      SmtpSettings__FromName: "QAMS - Quality Assurance Management System"
+      SmtpSettings__EnableSsl: "true"
     ports:
       - "5000:8080"
     depends_on:

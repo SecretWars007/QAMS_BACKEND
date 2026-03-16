@@ -18,6 +18,9 @@ namespace QAMS.Application.Interfaces
 
         /// <summary>Cambia la contraseña de un usuario autenticado.</summary>
         Task ChangePasswordAsync(Guid userId, ChangePasswordRequestDto request);
+
+        /// <summary>Permite a un administrador restablecer la contraseña de cualquier usuario.</summary>
+        Task AdminResetPasswordAsync(Guid targetUserId, string newPassword);
     }
 }
 

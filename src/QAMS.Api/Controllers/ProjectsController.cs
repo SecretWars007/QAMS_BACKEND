@@ -30,6 +30,16 @@ namespace QAMS.Api.Controllers
             return Ok(await _projectService.GetAllAsync());
         }
 
+        [HttpGet("my")]
+        [HasPermission("PROJECTS_VIEW")]
+        public async Task<IActionResult> GetMyProjects()
+        {
+            var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userId = userIdStr != null ? Guid.Parse(userIdStr) : Guid.Empty;
+            _logger.LogInformation("GET /api/projects/my - Obteniendo proyectos del usuario {UserId}.", userId);
+            return Ok(await _projectService.GetMyProjectsAsync(userId));
+        }
+
         [HttpGet("{id:guid}")]
         [HasPermission("PROJECTS_VIEW")]
         public async Task<IActionResult> GetById(Guid id)

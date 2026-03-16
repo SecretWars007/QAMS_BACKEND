@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using QAMS.Api.Filters;
 using QAMS.Application.DTOs.Auth;
 using QAMS.Application.Interfaces;
 
@@ -110,6 +111,21 @@ namespace QAMS.Api.Controllers
             _logger.LogInformation("POST /api/auth/change-password - UserId: {UserId}", userId);
             await _authService.ChangePasswordAsync(userId, request);
             return Ok(new { message = "Contraseña actualizada exitosamente." });
+        }
+
+        /// <summary>
+        /// POST api/auth/admin-reset-password
+        /// Permite a un administrador restablecer la contraseña de cualquier usuario.
+        /// </summary>
+        [HttpPost("admin-reset-password")]
+        [Authorize]
+        [HasPermission("USER_MANAGE")]
+        public async Task<IActionResult> AdminResetPassword([FromBody] AdminResetPasswordDto request)
+        {
+            var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            _logger.LogInformation("POST /api/auth/admin-reset-password - Admin: {AdminId}, Target: {TargetUserId}", adminId, request.UserId);
+            await _authService.AdminResetPasswordAsync(request.UserId, request.NewPassword);
+            return Ok(new { message = $"Contraseña del usuario {request.UserId} restablecida exitosamente por el administrador." });
         }
     }
 }

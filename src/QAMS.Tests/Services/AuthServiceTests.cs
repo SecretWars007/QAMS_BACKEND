@@ -24,6 +24,7 @@ public class AuthServiceTests
     private readonly Mock<IPasswordHasher> _mockHasher = new();
     private readonly Mock<IJwtTokenGenerator> _mockJwt = new();
     private readonly Mock<IUnitOfWork> _mockUow = new();
+    private readonly Mock<IEmailService> _mockEmailService = new();
     private readonly Mock<ILogger<AuthService>> _mockLogger = new();
 
     private AuthService CreateService() => new AuthService(
@@ -32,6 +33,7 @@ public class AuthServiceTests
         _mockHasher.Object,
         _mockJwt.Object,
         _mockUow.Object,
+        _mockEmailService.Object,
         _mockLogger.Object
     );
 
@@ -153,5 +155,47 @@ public class AuthServiceTests
         // Assert
         user.RefreshToken.Should().BeNull();
         _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task AdminResetPasswordAsync_WhenUserExists_ShouldUpdatePassword()
+    {
+        // Arrange
+        var targetUserId = Guid.NewGuid();
+        var user = new User 
+        { 
+            Id = targetUserId, 
+            PasswordHash = "old-hash",
+            PasswordResetToken = "some-token",
+            PasswordResetTokenExpiryTime = DateTime.UtcNow.AddMinutes(5)
+        };
+        
+        _mockUserRepo.Setup(r => r.GetByIdAsync(targetUserId)).ReturnsAsync(user);
+        _mockHasher.Setup(h => h.HashPassword("new-admin-pass")).Returns("new-admin-hash");
+
+        var service = CreateService();
+
+        // Act
+        await service.AdminResetPasswordAsync(targetUserId, "new-admin-pass");
+
+        // Assert
+        user.PasswordHash.Should().Be("new-admin-hash");
+        user.PasswordResetToken.Should().BeNull();
+        user.PasswordResetTokenExpiryTime.Should().BeNull();
+        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task AdminResetPasswordAsync_WhenUserNotFound_ShouldThrowEntityNotFoundException()
+    {
+        // Arrange
+        var targetUserId = Guid.NewGuid();
+        _mockUserRepo.Setup(r => r.GetByIdAsync(targetUserId)).ReturnsAsync((User?)null);
+
+        var service = CreateService();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<EntityNotFoundException>(() => 
+            service.AdminResetPasswordAsync(targetUserId, "any-password"));
     }
 }
