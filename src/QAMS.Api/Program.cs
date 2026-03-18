@@ -12,8 +12,8 @@ using QAMS.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
 using QAMS.Application.DTOs.Users;
 using QAMS.Application.DTOs.Roles;
-using QAMS.Application.Mappings;
 using QAMS.Domain.Entities;
+using Microsoft.AspNetCore.HttpOverrides;
 var builder = WebApplication.CreateBuilder(args);
 // builder.Host.UseSerilog(); // Removed to use standard ILogger
 
@@ -176,11 +176,25 @@ builder.Services.AddCors(o =>
         }
     );
 });
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                                ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
+// Handle PORT environment variable for Render
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
 
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseForwardedHeaders();
 
 // Apply EF migrations (or create DB) and seed catalogs at startup
 using (var scope = app.Services.CreateScope())

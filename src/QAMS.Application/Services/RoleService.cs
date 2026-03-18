@@ -6,6 +6,7 @@ using QAMS.Application.Interfaces;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Exceptions;
 using QAMS.Domain.Ports.Repositories;
+using System.Linq;
 
 namespace QAMS.Application.Services
 {
@@ -42,8 +43,9 @@ namespace QAMS.Application.Services
 
         public async Task<List<RoleDto>> GetAllAsync()
         {
-            _logger.LogInformation("Obteniendo todos los roles.");
-            var roles = await _roleRepo.GetAllWithPermissionsAsync();
+            _logger.LogInformation("Obteniendo todos los roles activos.");
+            var allRoles = await _roleRepo.GetAllWithPermissionsAsync();
+            var roles = allRoles.Where(r => r.IsActive).ToList();
             return _mapper.Map<List<RoleDto>>(roles);
         }
 

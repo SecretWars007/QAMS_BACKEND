@@ -12,5 +12,6 @@ namespace QAMS.Application.Interfaces
         Task AssignRoleAsync(Guid userId, Guid roleId);
         Task RemoveAllRolesAsync(Guid userId);
         Task RemoveRoleAsync(Guid userId, Guid roleId);
+        Task ResetPasswordAsync(Guid userId, string newPassword);
     }
 }

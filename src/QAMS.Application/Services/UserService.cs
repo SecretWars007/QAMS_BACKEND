@@ -7,6 +7,7 @@ using QAMS.Domain.Entities;
 using QAMS.Domain.Exceptions;
 using QAMS.Domain.Ports.Repositories;
 using QAMS.Domain.Ports.Services;
+using System.Linq;
 
 namespace QAMS.Application.Services
 {
@@ -20,6 +21,7 @@ namespace QAMS.Application.Services
         private readonly IUserRepository _userRepo;
         private readonly IRoleRepository _roleRepo;
         private readonly IPasswordHasher _hasher;
+        private readonly ICurrentUserService _currentUserService;
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
         private readonly ILogger<UserService> _logger;
@@ -28,6 +30,7 @@ namespace QAMS.Application.Services
             IUserRepository userRepo,
             IRoleRepository roleRepo,
             IPasswordHasher hasher,
+            ICurrentUserService currentUserService,
             IUnitOfWork uow,
             IMapper mapper,
             ILogger<UserService> logger
@@ -36,6 +39,7 @@ namespace QAMS.Application.Services
             _userRepo = userRepo;
             _roleRepo = roleRepo;
             _hasher = hasher;
+            _currentUserService = currentUserService;
             _uow = uow;
             _mapper = mapper;
             _logger = logger;
@@ -68,10 +72,11 @@ namespace QAMS.Application.Services
         public async Task<List<UserDto>> GetAllAsync()
         {
             // Registrar que se solicitó listar todos los usuarios con sus roles
-            _logger.LogInformation("Obteniendo todos los usuarios con sus roles.");
+            _logger.LogInformation("Obteniendo todos los usuarios activos con sus roles.");
 
-            // Obtener todos los usuarios de la BD con roles incluidos
-            var users = await _userRepo.GetAllWithRolesAsync();
+            // Obtener todos los usuarios activos de la BD con roles incluidos
+            var allUsers = await _userRepo.GetAllWithRolesAsync();
+            var users = allUsers.Where(u => u.IsActive).ToList();
 
             // Mapear cada usuario a su DTO correspondiente
             return _mapper.Map<List<UserDto>>(users);
@@ -99,63 +104,32 @@ namespace QAMS.Application.Services
             // CREAR NUEVA ENTIDAD: Instanciar User con valores iniciales
             var user = new User
             {
-                // Generar nuevo ID único (GUID v4)
                 Id = Guid.NewGuid(),
-                
-                // Asignar username (ya validado como único)
                 Username = dto.Username,
-                
-                // Asignar email (ya validado como único)
                 Email = dto.Email,
-                
-                // Cifrar contraseña usando el hasher de seguridad
-                // IMPORTANTE: La contraseña en texto plano se descarta después
                 PasswordHash = _hasher.HashPassword(dto.Password),
-                
-                // Asignar nombre completo
                 FullName = dto.FullName,
-                
-                // Los usuarios nuevos están activos por defecto
                 IsActive = true,
-                
-                // Timestamp de creación en UTC (estándar universal)
                 CreatedAt = DateTime.UtcNow,
             };
 
-            // PERSISTENCIA 1: Guardar el usuario base en la BD
-            // AddAsync agrega a DbSet, SaveChangesAsync ejecuta el INSERT
+            // PERSISTENCIA: Agregar el usuario y sus roles de forma atómica
             await _userRepo.AddAsync(user);
-            await _uow.SaveChangesAsync();
 
             // ASIGNACIÓN DE ROLES: Validar y asignar cada rol del DTO
-            // Iteramos sobre cada roleId proporcionado en la solicitud
             foreach (var roleId in dto.RoleIds)
             {
-                // VALIDACIÓN: Verificar que el rol exista antes de asignarlo
-                // AnyAsync retorna true solo si existe un rol con ese ID
                 if (!await _roleRepo.AnyAsync(r => r.Id == roleId))
-                    // Lanzar excepción si el rol no existe
                     throw new EntityNotFoundException(nameof(Role), roleId);
 
-                // ASIGNAR: Crear relación entre usuario y rol
-                // Esto inserta en la tabla intermedia UserRole
                 await _userRepo.AssignRoleAsync(user.Id, roleId);
             }
 
-            // PERSISTENCIA 2: Guardar todas las asignaciones de rol
-            // Se separa del primer SaveChanges para que si falla un rol,
-            // al menos el usuario fue creado
+            // Un solo SaveChangesAsync para garantizar atomicidad
             await _uow.SaveChangesAsync();
 
-            // LOGGING: Registrar que la creación fue exitosa
-            _logger.LogInformation(
-                "Usuario '{Username}' creado con ID {UserId}.",
-                user.Username,
-                user.Id
-            );
+            _logger.LogInformation("Usuario '{Username}' creado con ID {UserId}.", user.Username, user.Id);
 
-            // RETORNO: Obtener usuario recién creado con sus roles cargados
-            // y mapear a DTO para devolverlo en la respuesta HTTP
             var created = await _userRepo.GetWithRolesAsync(user.Id);
             return _mapper.Map<UserDto>(created);
         }
@@ -177,20 +151,24 @@ namespace QAMS.Application.Services
             // SECCIÓN 1: Actualizar campos básicos del usuario
             // ============================================================
 
-            // Actualizar email
+            // VALIDACIÓN: El email no debe estar en uso por OTRO usuario
+            if (user.Email != dto.Email && await _userRepo.AnyAsync(u => u.Email == dto.Email && u.Id != id))
+                throw new DomainException($"El email '{dto.Email}' ya está siendo usado por otro usuario.");
+
+            // VALIDACIÓN: No permitir auto-desactivación (similar a self-delete)
+            if (id == _currentUserService.UserId && !dto.IsActive && user.IsActive)
+            {
+                _logger.LogWarning("Intento de auto-desactivación bloqueado para el usuario {UserId}.", id);
+                throw new DomainException("No puedes desactivar tu propio usuario desde este endpoint. Usa la configuración de perfil si está disponible.");
+            }
+
+            // Actualizar campos
             user.Email = dto.Email;
-            
-            // Actualizar nombre completo
             user.FullName = dto.FullName;
-            
-            // Actualizar estado (activo/inactivo)
             user.IsActive = dto.IsActive;
-            
-            // Registrar timestamp de última actualización
             user.UpdatedAt = DateTime.UtcNow;
 
             // PERSISTENCIA 1: Guardar cambios básicos
-            // Update marca la entidad como modificada para EF Core
             _userRepo.Update(user);
             await _uow.SaveChangesAsync();
 
@@ -290,7 +268,14 @@ namespace QAMS.Application.Services
             // Registrar que se solicitó eliminar un usuario
             _logger.LogInformation("Eliminando usuario {UserId}.", id);
 
-            // VALIDACIÓN: Obtener usuario a eliminar
+            // VALIDACIÓN 1: No permitir que el usuario se elimine a sí mismo
+            if (id == _currentUserService.UserId)
+            {
+                _logger.LogWarning("Intento fallido de auto-eliminación por el usuario {UserId}.", id);
+                throw new DomainException("No puedes eliminar tu propio usuario.");
+            }
+
+            // VALIDACIÓN 2: Obtener usuario a eliminar
             var user =
                 await _userRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(User), id);
@@ -308,6 +293,25 @@ namespace QAMS.Application.Services
 
             // Logging: Registrar que el usuario fue desactivado
             _logger.LogInformation("Usuario {UserId} desactivado.", id);
+        }
+
+        /// <summary>
+        /// Cambia la contraseña de un usuario (Admin reset).
+        /// </summary>
+        public async Task ResetPasswordAsync(Guid userId, string newPassword)
+        {
+            _logger.LogInformation("Restableciendo contraseña para el usuario {UserId}.", userId);
+
+            var user = await _userRepo.GetByIdAsync(userId)
+                ?? throw new EntityNotFoundException(nameof(User), userId);
+
+            user.PasswordHash = _hasher.HashPassword(newPassword);
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userRepo.Update(user);
+            await _uow.SaveChangesAsync();
+
+            _logger.LogInformation("Contraseña restablecida exitosamente para {UserId}.", userId);
         }
     }
 }

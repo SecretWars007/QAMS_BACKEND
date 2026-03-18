@@ -119,13 +119,14 @@ namespace QAMS.Api.Controllers
         /// </summary>
         [HttpPost("admin-reset-password")]
         [Authorize]
-        [HasPermission("USER_MANAGE")]
+        [HasPermission("USERS_UPDATE")]
         public async Task<IActionResult> AdminResetPassword([FromBody] AdminResetPasswordDto request)
         {
-            var adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            _logger.LogInformation("POST /api/auth/admin-reset-password - Admin: {AdminId}, Target: {TargetUserId}", adminId, request.UserId);
-            await _authService.AdminResetPasswordAsync(request.UserId, request.NewPassword);
-            return Ok(new { message = $"Contraseña del usuario {request.UserId} restablecida exitosamente por el administrador." });
+            _logger.LogInformation("AdminResetPassword solicitado para el usuario {UserId}.", request.UserId);
+
+            await _userService.ResetPasswordAsync(request.UserId, request.NewPassword);
+
+            return Ok(new { message = "Contraseña restablecida exitosamente por el administrador." });
         }
     }
 }
