@@ -162,6 +162,13 @@ namespace QAMS.Application.Services
                 throw new DomainException("No puedes desactivar tu propio usuario desde este endpoint. Usa la configuración de perfil si está disponible.");
             }
 
+            // VALIDACIÓN: No permitir inactivar si tiene roles asignados
+            if (!dto.IsActive && user.IsActive && user.UserRoles != null && user.UserRoles.Any())
+            {
+                _logger.LogWarning("Intento de inactivación fallido: El usuario {UserId} tiene roles asignados.", id);
+                throw new DomainException("No se puede inactivar al usuario si tiene roles asignados. Primero remueve sus roles.");
+            }
+
             // Actualizar campos
             user.Email = dto.Email;
             user.FullName = dto.FullName;
@@ -275,10 +282,17 @@ namespace QAMS.Application.Services
                 throw new DomainException("No puedes eliminar tu propio usuario.");
             }
 
-            // VALIDACIÓN 2: Obtener usuario a eliminar
+            // VALIDACIÓN 2: Obtener usuario a eliminar con sus roles
             var user =
-                await _userRepo.GetByIdAsync(id)
+                await _userRepo.GetWithRolesAsync(id)
                 ?? throw new EntityNotFoundException(nameof(User), id);
+
+            // VALIDACIÓN 3: No permitir borrar si tiene roles asignados
+            if (user.UserRoles != null && user.UserRoles.Any())
+            {
+                _logger.LogWarning("Intento de eliminación fallido: El usuario {UserId} tiene {RoleCount} roles asignados.", id, user.UserRoles.Count);
+                throw new DomainException($"No se puede eliminar el usuario porque tiene roles asignados. Primero remueve sus roles.");
+            }
 
             // SOFT DELETE: Marcar como inactivo en lugar de eliminar
             // Esto preserva integridad referencial y auditoría

@@ -14,6 +14,19 @@ using QAMS.Application.DTOs.Users;
 using QAMS.Application.DTOs.Roles;
 using QAMS.Domain.Entities;
 using Microsoft.AspNetCore.HttpOverrides;
+using QAMS.Application.Mappings;
+// Cargar variables de entorno desde .env si existe (Desarrollo Local)
+var dotEnv = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+if (File.Exists(dotEnv))
+{
+    foreach (var line in File.ReadAllLines(dotEnv))
+    {
+        var parts = line.Split('=', 2);
+        if (parts.Length != 2) continue;
+        Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 // builder.Host.UseSerilog(); // Removed to use standard ILogger
 
@@ -31,11 +44,11 @@ if (!string.IsNullOrEmpty(rawConnectionString) && rawConnectionString.Contains("
         var user = userInfo[0];
         var password = userInfo.Length > 1 ? userInfo[1] : "";
         var host = uri.Host;
-        var port = uri.Port > 0 ? uri.Port : 5432;
+        var dbPort = uri.Port > 0 ? uri.Port : 5432;
         var database = uri.AbsolutePath.TrimStart('/');
         
         // Reconstruir en formato estándar de .NET (Compatible con cualquier driver)
-        var semicolonString = $"Host={host};Port={port};Database={database};Username={user};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
+        var semicolonString = $"Host={host};Port={dbPort};Database={database};Username={user};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
         builder.Configuration["ConnectionStrings:DefaultConnection"] = semicolonString;
     }
     catch (Exception ex)

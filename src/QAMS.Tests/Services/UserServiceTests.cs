@@ -43,7 +43,7 @@ public class UserServiceTests
     /// Factory method for creating UserService instance.
     /// Centralizes dependency injection to prevent duplication.
     /// </summary>
-    private UserService CreateService() => new UserService(
+    private UserService CreateService() => new(
         _mockUserRepository.Object,
         roleRepo: _mockRoleRepository.Object,
         hasher: _mockPasswordHasher.Object,
@@ -211,7 +211,7 @@ public class UserServiceTests
         var user = new User { Id = targetUserId, Username = "test", IsActive = true };
 
         _mockCurrentUserService.Setup(s => s.UserId).Returns(currentUserId);
-        _mockUserRepository.Setup(r => r.GetByIdAsync(targetUserId)).ReturnsAsync(user);
+        _mockUserRepository.Setup(r => r.GetWithRolesAsync(targetUserId)).ReturnsAsync(user);
 
         var service = CreateService();
 
@@ -237,14 +237,42 @@ public class UserServiceTests
         await Assert.ThrowsAsync<DomainException>(() => service.DeleteAsync(userId));
     }
 
+    [Fact(DisplayName = "DeleteAsync_UsuarioConRoles_DebeLanzarDomainException")]
+    public async Task DeleteAsync_WhenUserHasRoles_ShouldThrowDomainException()
+    {
+        // ARRANGE
+        var currentUserId = Guid.NewGuid();
+        var targetUserId = Guid.NewGuid();
+        var user = new User 
+        { 
+            Id = targetUserId, 
+            Username = "test", 
+            IsActive = true,
+            UserRoles = [new() { RoleId = Guid.NewGuid(), UserId = targetUserId }]
+        };
+
+        _mockCurrentUserService.Setup(s => s.UserId).Returns(currentUserId);
+        _mockUserRepository.Setup(r => r.GetWithRolesAsync(targetUserId)).ReturnsAsync(user);
+
+        var service = CreateService();
+
+        // ACT & ASSERT
+        var act = () => service.DeleteAsync(targetUserId);
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("No se puede eliminar el usuario porque tiene roles asignados. Primero remueve sus roles.");
+
+        _mockUserRepository.Verify(r => r.Update(It.IsAny<User>()), Times.Never);
+        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
+    }
+
     [Fact(DisplayName = "GetAllAsync_DebeRetornarSoloUsuariosActivos")]
     public async Task GetAllAsync_ShouldReturnOnlyActiveUsers()
     {
         // ARRANGE
         var users = new List<User>
         {
-            new User { Id = Guid.NewGuid(), IsActive = true, Username = "active" },
-            new User { Id = Guid.NewGuid(), IsActive = false, Username = "inactive" }
+            new() { Id = Guid.NewGuid(), IsActive = true, Username = "active" },
+            new() { Id = Guid.NewGuid(), IsActive = false, Username = "inactive" }
         };
 
         _mockUserRepository.Setup(r => r.GetAllWithRolesAsync()).ReturnsAsync(users);
@@ -268,7 +296,7 @@ public class UserServiceTests
         var userId = Guid.NewGuid();
         var existingUser = new User { Id = userId, Email = "old@test.com" };
         var otherUserId = Guid.NewGuid();
-        var dto = new UpdateUserDto { Email = "taken@test.com", FullName = "New Name", IsActive = true, RoleIds = new List<Guid>() };
+        var dto = new UpdateUserDto { Email = "taken@test.com", FullName = "New Name", IsActive = true, RoleIds = [] };
 
         _mockUserRepository.Setup(r => r.GetWithRolesAsync(userId)).ReturnsAsync(existingUser);
         _mockUserRepository.Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))

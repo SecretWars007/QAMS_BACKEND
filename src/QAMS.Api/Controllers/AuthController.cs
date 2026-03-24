@@ -13,11 +13,13 @@ namespace QAMS.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IUserService _userService;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(IAuthService authService, IUserService userService, ILogger<AuthController> logger)
         {
             _authService = authService;
+            _userService = userService;
             _logger = logger;
         }
 

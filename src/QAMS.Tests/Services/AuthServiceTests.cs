@@ -1,3 +1,4 @@
+#nullable enable
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;

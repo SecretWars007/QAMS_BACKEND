@@ -209,39 +209,42 @@ namespace QAMS.Infrastructure.Services
                                         if (evidences.Any())
                                         {
                                             inner.Item().PaddingTop(10).Text("EVIDENCIAS ADJUNTAS:").Bold().FontSize(9);
-                                            inner.Item().PaddingTop(5).Grid(grid =>
+                                            inner.Item().PaddingTop(5).Table(table =>
                                             {
-                                            grid.Columns(2);
-                                            grid.Spacing(5);
-
-                                            // 1. Mostrar el archivo propio de la observación si existe y es imagen/video
-                                            if (!string.IsNullOrEmpty(obs.FilePath) && (obs.FileType?.Code == "IMAGE" || obs.FileType?.Code == "VIDEO"))
-                                            {
-                                                var obsFilePath = Path.Combine(_uploadsPath, obs.FilePath);
-                                                if (File.Exists(obsFilePath))
+                                                table.ColumnsDefinition(columns =>
                                                 {
-                                                    grid.Item().Border(0.5f).BorderColor(Colors.Grey.Lighten2).Column(imgCol =>
-                                                    {
-                                                        try {
-                                                            imgCol.Item().Image(obsFilePath, ImageScaling.FitHeight);
-                                                            imgCol.Item().Padding(2).AlignCenter().Text(obs.FileName ?? "Captura de observación").FontSize(7).Italic();
-                                                        } catch {
-                                                            imgCol.Item().Padding(10).Text("[Error al cargar imagen]").FontSize(8);
-                                                        }
-                                                    });
-                                                }
-                                            }
+                                                    columns.RelativeColumn();
+                                                    columns.RelativeColumn();
+                                                });
 
-                                            // 2. Mostrar las evidencias generales del paso
-                                            foreach (var ev in evidences)
+                                                // 1. Mostrar el archivo propio de la observación si existe y es imagen/video
+                                                if (!string.IsNullOrEmpty(obs.FilePath) && (obs.FileType?.Code == "IMAGE" || obs.FileType?.Code == "VIDEO"))
+                                                {
+                                                    var obsFilePath = Path.Combine(_uploadsPath, obs.FilePath);
+                                                    if (File.Exists(obsFilePath))
+                                                    {
+                                                        table.Cell().Border(0.5f).BorderColor(Colors.Grey.Lighten2).Column(imgCol =>
+                                                        {
+                                                            try {
+                                                                imgCol.Item().Image(obsFilePath).FitHeight();
+                                                                imgCol.Item().Padding(2).AlignCenter().Text(obs.FileName ?? "Captura de observación").FontSize(7).Italic();
+                                                            } catch {
+                                                                imgCol.Item().Padding(10).Text("[Error al cargar imagen]").FontSize(8);
+                                                            }
+                                                        });
+                                                    }
+                                                }
+
+                                                // 2. Mostrar las evidencias generales del paso
+                                                foreach (var ev in evidences)
                                                 {
                                                     var filePath = Path.Combine(_uploadsPath, ev.FilePath);
                                                     if (File.Exists(filePath))
                                                     {
-                                                        grid.Item().Border(0.5f).BorderColor(Colors.Grey.Lighten2).Column(imgCol =>
+                                                        table.Cell().Border(0.5f).BorderColor(Colors.Grey.Lighten2).Column(imgCol =>
                                                         {
                                                             try {
-                                                                imgCol.Item().Image(filePath, ImageScaling.FitHeight);
+                                                                imgCol.Item().Image(filePath).FitHeight();
                                                                 imgCol.Item().Padding(2).AlignCenter().Text(ev.Description ?? "Captura de evidencia").FontSize(7).Italic();
                                                             } catch {
                                                                 imgCol.Item().Padding(10).Text("[Error al cargar imagen]").FontSize(8);
@@ -355,17 +358,22 @@ namespace QAMS.Infrastructure.Services
                                 var lastExecResults = tc.TestExecutions.OrderByDescending(e => (e as QAMS.Domain.Entities.TestExecution).ExecutionDate).FirstOrDefault() as QAMS.Domain.Entities.TestExecution;
                                 if (lastExecResults != null && lastExecResults.Evidences != null && lastExecResults.Evidences.Any(e => e.FileType != null && e.FileType.Code == "IMAGE"))
                                 {
-                                    tcBox.Item().PaddingTop(8).Grid(grid =>
+                                    tcBox.Item().PaddingTop(8).Table(table =>
                                     {
-                                        grid.Columns(3);
-                                        grid.Spacing(5);
+                                        table.ColumnsDefinition(columns =>
+                                        {
+                                            columns.RelativeColumn();
+                                            columns.RelativeColumn();
+                                            columns.RelativeColumn();
+                                        });
+
                                         foreach (var ev in lastExecResults.Evidences.Where(e => e.FileType.Code == "IMAGE").Take(6))
                                         {
                                             var path = Path.Combine(_uploadsPath, ev.FilePath);
                                             if (File.Exists(path))
                                             {
-                                                grid.Item().Border(0.2f).BorderColor(Colors.Grey.Lighten2).Column(imgCol => {
-                                                    imgCol.Item().Image(path, ImageScaling.FitWidth);
+                                                table.Cell().Border(0.2f).BorderColor(Colors.Grey.Lighten2).Column(imgCol => {
+                                                    imgCol.Item().Image(path).FitWidth();
                                                     imgCol.Item().AlignCenter().Text(ev.Description ?? "Captura").FontSize(6);
                                                 });
                                             }

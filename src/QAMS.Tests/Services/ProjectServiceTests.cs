@@ -1,3 +1,4 @@
+#nullable enable
 using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
