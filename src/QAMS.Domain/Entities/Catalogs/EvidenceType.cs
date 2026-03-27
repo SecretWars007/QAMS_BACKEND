@@ -8,6 +8,6 @@ namespace QAMS.Domain.Entities.Catalogs
     public class EvidenceType : CatalogBase
     {
         /// <summary>Evidencias de este tipo (navegación inversa)</summary>
-        public ICollection<Evidence> Evidences { get; set; } = new List<Evidence>();
+        public ICollection<Evidence> Evidences { get; set; } = [];
     }
 }

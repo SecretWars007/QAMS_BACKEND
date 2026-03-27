@@ -1,4 +1,8 @@
 // src/QAMS.Application/Interfaces/ITestExecutionService.cs
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using QAMS.Application.DTOs.TestExecutions;
 namespace QAMS.Application.Interfaces
 {

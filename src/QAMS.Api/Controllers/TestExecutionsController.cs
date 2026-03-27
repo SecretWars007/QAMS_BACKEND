@@ -11,15 +11,10 @@ namespace QAMS.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class TestExecutionsController : ControllerBase
+    public class TestExecutionsController(ITestExecutionService service, ILogger<TestExecutionsController> logger) : ControllerBase
     {
-        private readonly ITestExecutionService _service;
-        private readonly ILogger<TestExecutionsController> _logger;
-        public TestExecutionsController(ITestExecutionService service, ILogger<TestExecutionsController> logger) 
-        { 
-            _service = service; 
-            _logger = logger;
-        }
+        private readonly ITestExecutionService _service = service;
+        private readonly ILogger<TestExecutionsController> _logger = logger;
 
         private Guid GetUserId()
         {

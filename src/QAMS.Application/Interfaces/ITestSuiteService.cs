@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using QAMS.Application.DTOs.TestSuites;
 
 namespace QAMS.Application.Interfaces

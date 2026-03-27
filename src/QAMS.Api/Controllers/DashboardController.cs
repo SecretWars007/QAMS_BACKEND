@@ -11,16 +11,10 @@ namespace QAMS.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class DashboardController : ControllerBase
+    public class DashboardController(IDashboardService dashboardService, ILogger<DashboardController> logger) : ControllerBase
     {
-        private readonly IDashboardService _dashboardService;
-        private readonly ILogger<DashboardController> _logger;
-
-        public DashboardController(IDashboardService dashboardService, ILogger<DashboardController> logger)
-        {
-            _dashboardService = dashboardService;
-            _logger = logger;
-        }
+        private readonly IDashboardService _dashboardService = dashboardService;
+        private readonly ILogger<DashboardController> _logger = logger;
 
         [HttpGet]
         [HasPermission("DASHBOARD_VIEW")]

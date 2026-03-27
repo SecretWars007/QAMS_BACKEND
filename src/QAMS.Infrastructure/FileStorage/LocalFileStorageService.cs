@@ -5,18 +5,16 @@ using QAMS.Domain.Ports.Services;
 namespace QAMS.Infrastructure.FileStorage
 {
     /// <summary>Almacena archivos en disco local. OCP: reemplazable por S3.</summary>
-    public class LocalFileStorageService : IFileStorageService
+    public class LocalFileStorageService(ILogger<LocalFileStorageService> logger) : IFileStorageService
     {
-        private readonly string _basePath;
-        private readonly ILogger<LocalFileStorageService> _logger;
+        private readonly string _basePath = EnsureDirectory(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads"));
+        private readonly ILogger<LocalFileStorageService> _logger = logger;
 
-        public LocalFileStorageService(ILogger<LocalFileStorageService> logger)
+        private static string EnsureDirectory(string path)
         {
-            _basePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-            _logger = logger;
-
-            if (!Directory.Exists(_basePath))
-                Directory.CreateDirectory(_basePath);
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+            return path;
         }
 
         public async Task<string> SaveFileAsync(Stream fileStream, string fileName, string subfolder)

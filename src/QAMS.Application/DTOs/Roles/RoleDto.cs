@@ -7,6 +7,6 @@ namespace QAMS.Application.DTOs.Roles
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public bool IsActive { get; set; }
-        public List<PermissionDto> Permissions { get; set; } = new();
+        public List<PermissionDto> Permissions { get; set; } = [];
     }
 }

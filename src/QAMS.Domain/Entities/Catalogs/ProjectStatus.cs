@@ -7,6 +7,6 @@ namespace QAMS.Domain.Entities.Catalogs
     /// </summary>
     public class ProjectStatus : CatalogBase
     {
-        public ICollection<Project> Projects { get; set; } = new List<Project>();
+        public ICollection<Project> Projects { get; set; } = [];
     }
 }

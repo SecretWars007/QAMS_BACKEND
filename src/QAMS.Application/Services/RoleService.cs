@@ -14,24 +14,15 @@ namespace QAMS.Application.Services
     /// Servicio de gestión de roles dinámicos y asignación de permisos.
     /// SRP: solo gestiona roles y sus permisos.
     /// </summary>
-    public class RoleService : IRoleService
+    public class RoleService(
+        IRoleRepository roleRepo, IPermissionRepository permRepo,
+        IUnitOfWork uow, IMapper mapper, ILogger<RoleService> logger) : IRoleService
     {
-        private readonly IRoleRepository _roleRepo;
-        private readonly IPermissionRepository _permRepo;
-        private readonly IUnitOfWork _uow;
-        private readonly IMapper _mapper;
-        private readonly ILogger<RoleService> _logger;
-
-        public RoleService(
-            IRoleRepository roleRepo, IPermissionRepository permRepo,
-            IUnitOfWork uow, IMapper mapper, ILogger<RoleService> logger)
-        {
-            _roleRepo = roleRepo;
-            _permRepo = permRepo;
-            _uow = uow;
-            _mapper = mapper;
-            _logger = logger;
-        }
+        private readonly IRoleRepository _roleRepo = roleRepo;
+        private readonly IPermissionRepository _permRepo = permRepo;
+        private readonly IUnitOfWork _uow = uow;
+        private readonly IMapper _mapper = mapper;
+        private readonly ILogger<RoleService> _logger = logger;
 
         public async Task<RoleDto> GetByIdAsync(Guid id)
         {
@@ -144,7 +135,7 @@ namespace QAMS.Application.Services
             var permissions = await _permRepo.GetAllAsync();
             return _mapper.Map<List<PermissionDto>>(permissions);
         }
-        
+
         public async Task ToggleStatusAsync(Guid id)
         {
             _logger.LogInformation("Cambiando estado del rol {RoleId}.", id);
@@ -160,7 +151,7 @@ namespace QAMS.Application.Services
         public async Task<RoleDto> DuplicateAsync(Guid id, string newName)
         {
             _logger.LogInformation("Duplicando rol {RoleId} como '{NewName}'.", id, newName);
-            
+
             var sourceRole = await _roleRepo.GetWithPermissionsAsync(id)
                 ?? throw new EntityNotFoundException(nameof(Role), id);
 
@@ -196,7 +187,7 @@ namespace QAMS.Application.Services
         public async Task AddPermissionsAsync(Guid roleId, List<Guid> permissionIds)
         {
             _logger.LogInformation("Agregando {Count} permisos al rol {RoleId}.", permissionIds.Count, roleId);
-            
+
             var role = await _roleRepo.GetWithPermissionsAsync(roleId)
                 ?? throw new EntityNotFoundException(nameof(Role), roleId);
 
@@ -222,7 +213,7 @@ namespace QAMS.Application.Services
         public async Task RemovePermissionsAsync(Guid roleId, List<Guid> permissionIds)
         {
             _logger.LogInformation("Removiendo {Count} permisos del rol {RoleId}.", permissionIds.Count, roleId);
-            
+
             var role = await _roleRepo.GetWithPermissionsAsync(roleId)
                 ?? throw new EntityNotFoundException(nameof(Role), roleId);
 

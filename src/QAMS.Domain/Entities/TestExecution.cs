@@ -21,8 +21,8 @@ namespace QAMS.Domain.Entities
         public DateTime ExecutionDate { get; set; } = DateTime.UtcNow;
         public DateTime? CompletedAt { get; set; }
 
-        public ICollection<ExecutionStepResult> StepResults { get; set; } = new List<ExecutionStepResult>();
-        public ICollection<Evidence> Evidences { get; set; } = new List<Evidence>();
+        public ICollection<ExecutionStepResult> StepResults { get; set; } = [];
+        public ICollection<Evidence> Evidences { get; set; } = [];
 
         public bool IsSuccessful()
         {
@@ -33,7 +33,7 @@ namespace QAMS.Domain.Entities
         public bool IsInReview()
         {
             var isEnProgreso = (StatusId == 2) || (Status?.Code == "IN_PROGRESS" || Status?.Name == "En Progreso");
-            var hasResultsForAllSteps = StepResults != null && StepResults.Any() && StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult));
+            var hasResultsForAllSteps = StepResults != null && StepResults.Count > 0 && StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult));
             return isEnProgreso && hasResultsForAllSteps;
         }
 

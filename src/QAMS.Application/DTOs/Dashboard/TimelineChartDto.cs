@@ -5,9 +5,9 @@ namespace QAMS.Application.DTOs.Dashboard
 {
     public class TimelineChartDto
     {
-        public List<string> DayLabels { get; set; } = new();
+        public List<string> DayLabels { get; set; } = [];
         public int MinHour { get; set; }
         public int MaxHour { get; set; }
-        public List<TimelineEventDto> Events { get; set; } = new();
+        public List<TimelineEventDto> Events { get; set; } = [];
     }
 }

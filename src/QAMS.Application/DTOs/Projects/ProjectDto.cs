@@ -16,8 +16,8 @@ namespace QAMS.Application.DTOs.Projects
         public string? CreatedByUserName { get; set; }
         public int TestSuiteCount { get; set; }
         public int KanbanBoardCount { get; set; }
-        public List<string> TesterNames { get; set; } = new List<string>();
+        public List<string> TesterNames { get; set; } = [];
         public int DevolucionesCounter { get; set; }
-        public List<ProjectDevolutionDto> HistoricDevolutions { get; set; } = new List<ProjectDevolutionDto>();
+        public List<ProjectDevolutionDto> HistoricDevolutions { get; set; } = [];
     }
 }

@@ -10,9 +10,9 @@ namespace QAMS.Infrastructure.Repositories
     /// Repositorio específico para TestCase.
     /// Incluye consultas con pasos y prioridad del catálogo.
     /// </summary>
-    public class TestCaseRepository : GenericRepository<TestCase>, ITestCaseRepository
+    public class TestCaseRepository(QamsDbContext context)
+        : GenericRepository<TestCase>(context), ITestCaseRepository
     {
-        public TestCaseRepository(QamsDbContext context) : base(context) { }
 
         /// <summary>
         /// Obtiene un caso de prueba con todos sus pasos ordenados

@@ -1,4 +1,6 @@
 // src/QAMS.Domain/Ports/Repositories/ICatalogRepository.cs
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using QAMS.Domain.Entities.Catalogs;
 
 namespace QAMS.Domain.Ports.Repositories

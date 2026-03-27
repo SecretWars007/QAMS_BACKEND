@@ -9,10 +9,9 @@ namespace QAMS.Infrastructure.Repositories
     /// <summary>
     /// Repositorio específico para TestSuite.
     /// </summary>
-    public class TestSuiteRepository : GenericRepository<TestSuite>, ITestSuiteRepository
+    public class TestSuiteRepository(QamsDbContext context)
+        : GenericRepository<TestSuite>(context), ITestSuiteRepository
     {
-        public TestSuiteRepository(QamsDbContext context)
-            : base(context) { }
 
         public override async Task<TestSuite?> GetByIdAsync(Guid id)
         {

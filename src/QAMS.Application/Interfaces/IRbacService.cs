@@ -1,4 +1,8 @@
 // src/QAMS.Application/Interfaces/IRbacService.cs
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 namespace QAMS.Application.Interfaces
 {
     public interface IRbacService

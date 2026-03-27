@@ -12,14 +12,9 @@ namespace QAMS.Api.Filters
     /// Consulta la BD para verificar si el usuario tiene el permiso.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
-    public class HasPermissionAttribute : Attribute, IAsyncAuthorizationFilter
+    public class HasPermissionAttribute(string permissionCode) : Attribute, IAsyncAuthorizationFilter
     {
-        private readonly string _permissionCode;
-
-        public HasPermissionAttribute(string permissionCode)
-        {
-            _permissionCode = permissionCode;
-        }
+        private readonly string _permissionCode = permissionCode;
 
         public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {

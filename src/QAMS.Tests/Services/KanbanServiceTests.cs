@@ -30,7 +30,7 @@ public class KanbanServiceTests
     private readonly Mock<IMapper> _mockMapper = new();
     private readonly Mock<ILogger<KanbanService>> _mockLogger = new();
 
-    private KanbanService CreateService() => new KanbanService(
+    private KanbanService CreateService() => new(
         _mockBoardRepo.Object,
         _mockColumnRepo.Object,
         _mockTaskRepo.Object,
@@ -101,8 +101,8 @@ public class KanbanServiceTests
         
         var existingTasks = new List<KanbanTask> 
         { 
-            new KanbanTask { OrderIndex = 0 }, 
-            new KanbanTask { OrderIndex = 1 } 
+            new() { OrderIndex = 0 }, 
+            new() { OrderIndex = 1 } 
         };
 
         _mockPriorityRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new TaskPriority());
@@ -132,8 +132,8 @@ public class KanbanServiceTests
         
         var existingTasksInTarget = new List<KanbanTask> 
         { 
-            new KanbanTask { Id = Guid.NewGuid(), OrderIndex = 1 }, // This one should be moved to 2
-            new KanbanTask { Id = Guid.NewGuid(), OrderIndex = 2 }  // This one should be moved to 3
+            new() { Id = Guid.NewGuid(), OrderIndex = 1 }, // This one should be moved to 2
+            new() { Id = Guid.NewGuid(), OrderIndex = 2 }  // This one should be moved to 3
         };
 
         _mockTaskRepo.Setup(r => r.GetByIdAsync(taskId)).ReturnsAsync(task);
@@ -142,7 +142,7 @@ public class KanbanServiceTests
             .ReturnsAsync(existingTasksInTarget);
             
         // Mock Sync logic
-        _mockExecRepo.Setup(r => r.GetByTestCaseTrackedAsync(testCaseId)).ReturnsAsync(new List<TestExecution>());
+        _mockExecRepo.Setup(r => r.GetByTestCaseTrackedAsync(testCaseId)).ReturnsAsync([]);
 
         var service = CreateService();
 

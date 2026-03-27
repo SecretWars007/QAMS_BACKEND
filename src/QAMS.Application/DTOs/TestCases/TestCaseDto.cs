@@ -23,8 +23,8 @@ namespace QAMS.Application.DTOs.TestCases
         public DateTime? EndDate { get; set; }
         public int TestTypeId { get; set; }
         public string TestTypeName { get; set; } = string.Empty;
-        public List<string> CertifierNames { get; set; } = new();
-        public List<Guid> CertifierUserIds { get; set; } = new();
-        public List<TestStepDto> Steps { get; set; } = new();
+        public List<string> CertifierNames { get; set; } = [];
+        public List<Guid> CertifierUserIds { get; set; } = [];
+        public List<TestStepDto> Steps { get; set; } = [];
     }
 }

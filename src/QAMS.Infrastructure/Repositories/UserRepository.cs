@@ -31,7 +31,7 @@ namespace QAMS.Infrastructure.Repositories
     /// - Include/ThenInclude para eager loading de relaciones
     /// - FirstOrDefaultAsync para operaciones asincrónicas
     /// </summary>
-    public class UserRepository : GenericRepository<User>, IUserRepository
+    public class UserRepository(QamsDbContext context) : GenericRepository<User>(context), IUserRepository
     {
         // ================================================================
         // CONSTRUCTOR: Inyecta el contexto de EF Core
@@ -48,8 +48,6 @@ namespace QAMS.Infrastructure.Repositories
         /// - El contexto es inyectado por el contenedor DI
         /// - Se reutiliza en toda la aplicación (Unit of Work pattern)
         /// </summary>
-        public UserRepository(QamsDbContext context)
-            : base(context) { }
 
         // ================================================================
         // CONSULTAS POR CRITERIOS ESPECÍFICOS (BÚSQUEDA)
@@ -79,7 +77,7 @@ namespace QAMS.Infrastructure.Repositories
         /// </summary>
         public async Task<User?> GetByUsernameAsync(string username) =>
             // LINQ query: filtrar por username exacto y retornar el primero o null
-            await _dbSet.FirstOrDefaultAsync(u => u.Username == username);
+            await _dbSet.FirstOrDefaultAsync(u => string.Equals(u.Username, username, StringComparison.OrdinalIgnoreCase));
 
         /// <summary>
         /// OBTIENE UN USUARIO POR SU EMAIL.
@@ -104,7 +102,7 @@ namespace QAMS.Infrastructure.Repositories
         /// </summary>
         public async Task<User?> GetByEmailAsync(string email) =>
             // LINQ: filtrar por email exacto
-            await _dbSet.FirstOrDefaultAsync(u => u.Email == email);
+            await _dbSet.FirstOrDefaultAsync(u => string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase));
 
         /// <summary>
         /// OBTIENE UN USUARIO CON TODOS SUS ROLES (EAGER LOADING).
@@ -230,7 +228,7 @@ namespace QAMS.Infrastructure.Repositories
                 // Usar SplitQuery para evitar cartesian product y errores de múltiples colecciones
                 .AsSplitQuery()
                 // Filtrar por username y retornar el primero o null
-                .FirstOrDefaultAsync(u => u.Username == username);
+                .FirstOrDefaultAsync(u => string.Equals(u.Username, username, StringComparison.OrdinalIgnoreCase));
 
         // ================================================================
         // OPERACIONES DE ASIGNACIÓN DE ROLES (INSERT en tabla puente)

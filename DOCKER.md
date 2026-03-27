@@ -1,3 +1,5 @@
+# Guía de Docker
+
 Docker quickstart
 
 Build and run with Docker Compose (builds the API image and starts Postgres):
@@ -24,5 +26,6 @@ docker run --rm -p 5000:8080 --env-file ./src/QAMS.Api/appsettings.Docker.env qa
 ```
 
 Notes:
+
 - The `Dockerfile` at repository root builds the entire solution and publishes the `QAMS.Api` project.
 - `docker-compose.yml` already configures Postgres and the `api` service. Use the `--build` flag to ensure the image uses the updated Dockerfile.

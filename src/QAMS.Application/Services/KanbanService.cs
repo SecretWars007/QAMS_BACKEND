@@ -14,55 +14,33 @@ namespace QAMS.Application.Services
     /// Servicio de gestión del tablero Kanban: crear tableros,
     /// crear tareas, mover tareas entre columnas.
     /// </summary>
-    public class KanbanService : IKanbanService
+    public class KanbanService(
+        IKanbanBoardRepository boardRepo,
+        IGenericRepository<KanbanColumn> columnRepo,
+        IGenericRepository<KanbanTask> taskRepo,
+        ICatalogRepository<TaskPriority> priorityRepo,
+        ITestExecutionRepository execRepo,
+        ICatalogRepository<ExecutionStatus> execStatusRepo,
+        IUnitOfWork uow,
+        IMapper mapper,
+        ILogger<KanbanService> logger
+    ) : IKanbanService
     {
-        private readonly IKanbanBoardRepository _boardRepo;
-        private readonly IGenericRepository<KanbanColumn> _columnRepo;
-        private readonly IGenericRepository<KanbanTask> _taskRepo;
-        private readonly ICatalogRepository<TaskPriority> _priorityRepo;
-        private readonly ITestExecutionRepository _execRepo;
-        private readonly ICatalogRepository<ExecutionStatus> _execStatusRepo;
-        private readonly IUnitOfWork _uow;
-        private readonly IMapper _mapper;
-        private readonly ILogger<KanbanService> _logger;
-
-        public KanbanService(
-            IKanbanBoardRepository boardRepo,
-            IGenericRepository<KanbanColumn> columnRepo,
-            IGenericRepository<KanbanTask> taskRepo,
-            ICatalogRepository<TaskPriority> priorityRepo,
-            ITestExecutionRepository execRepo,
-            ICatalogRepository<ExecutionStatus> execStatusRepo,
-            IUnitOfWork uow,
-            IMapper mapper,
-            ILogger<KanbanService> logger
-        )
-        {
-            _boardRepo = boardRepo;
-            _columnRepo = columnRepo;
-            _taskRepo = taskRepo;
-            _priorityRepo = priorityRepo;
-            _execRepo = execRepo;
-            _execStatusRepo = execStatusRepo;
-            _uow = uow;
-            _mapper = mapper;
-            _logger = logger;
-        }
 
         public async Task<KanbanBoardDto> GetBoardAsync(Guid boardId)
         {
-            _logger.LogInformation("Obteniendo tablero {BoardId}.", boardId);
+            logger.LogInformation("Obteniendo tablero {BoardId}.", boardId);
             var board =
-                await _boardRepo.GetFullBoardAsync(boardId)
+                await boardRepo.GetFullBoardAsync(boardId)
                 ?? throw new EntityNotFoundException(nameof(KanbanBoard), boardId);
-            return _mapper.Map<KanbanBoardDto>(board);
+            return mapper.Map<KanbanBoardDto>(board);
         }
 
         public async Task<List<KanbanBoardDto>> GetBoardsByProjectAsync(Guid projectId)
         {
-            _logger.LogInformation("Obteniendo tableros del proyecto {ProjectId}.", projectId);
-            var boards = await _boardRepo.GetByProjectAsync(projectId);
-            return _mapper.Map<List<KanbanBoardDto>>(boards);
+            logger.LogInformation("Obteniendo tableros del proyecto {ProjectId}.", projectId);
+            var boards = await boardRepo.GetByProjectAsync(projectId);
+            return mapper.Map<List<KanbanBoardDto>>(boards);
         }
 
         /// <summary>
@@ -71,7 +49,7 @@ namespace QAMS.Application.Services
         /// </summary>
         public async Task<KanbanBoardDto> CreateBoardAsync(Guid projectId, string name)
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Creando tablero '{Name}' para proyecto {ProjectId}.",
                 name,
                 projectId
@@ -109,17 +87,17 @@ namespace QAMS.Application.Services
                 );
             }
 
-            await _boardRepo.AddAsync(board);
-            await _uow.SaveChangesAsync();
+            await boardRepo.AddAsync(board);
+            await uow.SaveChangesAsync();
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Tablero '{Name}' creado con {ColCount} columnas.",
                 name,
                 board.Columns.Count
             );
 
-            var created = await _boardRepo.GetFullBoardAsync(board.Id);
-            return _mapper.Map<KanbanBoardDto>(created);
+            var created = await boardRepo.GetFullBoardAsync(board.Id);
+            return mapper.Map<KanbanBoardDto>(created);
         }
 
         /// <summary>
@@ -127,21 +105,21 @@ namespace QAMS.Application.Services
         /// </summary>
         public async Task<KanbanTaskDto> CreateTaskAsync(CreateKanbanTaskDto dto)
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Creando tarea '{Title}' en columna {ColumnId}.",
                 dto.Title,
                 dto.KanbanColumnId
             );
 
             // Validar que la prioridad del catálogo existe
-            _ = await _priorityRepo.GetByIdAsync(dto.PriorityId)
+            _ = await priorityRepo.GetByIdAsync(dto.PriorityId)
                 ?? throw new EntityNotFoundException(nameof(TaskPriority), dto.PriorityId);
 
             // Obtener el mayor OrderIndex de la columna para colocar al final
-            var existingTasks = await _taskRepo.FindAsync(t =>
+            var existingTasks = await taskRepo.FindAsync(t =>
                 t.KanbanColumnId == dto.KanbanColumnId
             );
-            var maxOrder = existingTasks.Any() ? existingTasks.Max(t => t.OrderIndex) + 1 : 0;
+            var maxOrder = existingTasks.Count > 0 ? existingTasks.Max(t => t.OrderIndex) + 1 : 0;
 
             var task = new KanbanTask
             {
@@ -157,12 +135,12 @@ namespace QAMS.Application.Services
                 CreatedAt = DateTime.UtcNow,
             };
 
-            await _taskRepo.AddAsync(task);
-            await _uow.SaveChangesAsync();
+            await taskRepo.AddAsync(task);
+            await uow.SaveChangesAsync();
 
-            _logger.LogInformation("Tarea '{Title}' creada con ID {TaskId}.", task.Title, task.Id);
+            logger.LogInformation("Tarea '{Title}' creada con ID {TaskId}.", task.Title, task.Id);
 
-            return _mapper.Map<KanbanTaskDto>(task);
+            return mapper.Map<KanbanTaskDto>(task);
         }
 
         /// <summary>
@@ -170,15 +148,15 @@ namespace QAMS.Application.Services
         /// </summary>
         public async Task<KanbanTaskDto> UpdateTaskAsync(Guid taskId, UpdateKanbanTaskDto dto)
         {
-            _logger.LogInformation("Actualizando tarea Kanban {TaskId}.", taskId);
+            logger.LogInformation("Actualizando tarea Kanban {TaskId}.", taskId);
 
-            var task = await _taskRepo.GetByIdAsync(taskId)
+            var task = await taskRepo.GetByIdAsync(taskId)
                 ?? throw new EntityNotFoundException(nameof(KanbanTask), taskId);
 
             // Validar prioridad si cambió
             if (task.PriorityId != dto.PriorityId)
             {
-                _ = await _priorityRepo.GetByIdAsync(dto.PriorityId)
+                _ = await priorityRepo.GetByIdAsync(dto.PriorityId)
                     ?? throw new EntityNotFoundException(nameof(TaskPriority), dto.PriorityId);
                 task.PriorityId = dto.PriorityId;
             }
@@ -189,10 +167,10 @@ namespace QAMS.Application.Services
             task.DueDate = dto.DueDate;
             task.UpdatedAt = DateTime.UtcNow;
 
-            _taskRepo.Update(task);
-            await _uow.SaveChangesAsync();
+            taskRepo.Update(task);
+            await uow.SaveChangesAsync();
 
-            return _mapper.Map<KanbanTaskDto>(task);
+            return mapper.Map<KanbanTaskDto>(task);
         }
 
         /// <summary>
@@ -201,7 +179,7 @@ namespace QAMS.Application.Services
         /// </summary>
         public async Task<KanbanTaskDto> MoveTaskAsync(Guid taskId, MoveTaskDto dto)
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Moviendo tarea {TaskId} a columna {ColumnId}, posición {Order}.",
                 taskId,
                 dto.TargetColumnId,
@@ -209,11 +187,11 @@ namespace QAMS.Application.Services
             );
 
             var task =
-                await _taskRepo.GetByIdAsync(taskId)
+                await taskRepo.GetByIdAsync(taskId)
                 ?? throw new EntityNotFoundException(nameof(KanbanTask), taskId);
 
             // Obtener información de la columna destino para sincronización
-            var targetColumn = await _columnRepo.GetByIdAsync(dto.TargetColumnId)
+            var targetColumn = await columnRepo.GetByIdAsync(dto.TargetColumnId)
                 ?? throw new EntityNotFoundException(nameof(KanbanColumn), dto.TargetColumnId);
 
             // Actualizar columna y orden
@@ -224,12 +202,12 @@ namespace QAMS.Application.Services
             // --- LÓGICA DE SINCRONIZACIÓN CON EJECUCIONES ---
             if (task.TestCaseId.HasValue)
             {
-                await SyncExecutionStatusAsync(task.TestCaseId.Value, targetColumn.Name, task.AssigneeId);
+                await SyncExecutionStatusAsync(task.TestCaseId.Value, targetColumn.Name);
             }
             // ------------------------------------------------
 
             // Reordenar tareas existentes en la columna destino
-            var tasksInColumn = await _taskRepo.FindAsync(t =>
+            var tasksInColumn = await taskRepo.FindAsync(t =>
                 t.KanbanColumnId == dto.TargetColumnId && t.Id != taskId
             );
 
@@ -238,32 +216,32 @@ namespace QAMS.Application.Services
             )
             {
                 existingTask.OrderIndex++;
-                _taskRepo.Update(existingTask);
+                taskRepo.Update(existingTask);
             }
 
-            _taskRepo.Update(task);
-            await _uow.SaveChangesAsync();
+            taskRepo.Update(task);
+            await uow.SaveChangesAsync();
 
-            _logger.LogInformation("Tarea {TaskId} movida exitosamente.", taskId);
-            return _mapper.Map<KanbanTaskDto>(task);
+            logger.LogInformation("Tarea {TaskId} movida exitosamente.", taskId);
+            return mapper.Map<KanbanTaskDto>(task);
         }
 
         public async Task DeleteTaskAsync(Guid taskId)
         {
-            _logger.LogInformation("Eliminando tarea {TaskId}.", taskId);
+            logger.LogInformation("Eliminando tarea {TaskId}.", taskId);
             var task =
-                await _taskRepo.GetByIdAsync(taskId)
+                await taskRepo.GetByIdAsync(taskId)
                 ?? throw new EntityNotFoundException(nameof(KanbanTask), taskId);
 
-            _taskRepo.Delete(task);
-            await _uow.SaveChangesAsync();
+            taskRepo.Delete(task);
+            await uow.SaveChangesAsync();
         }
 
         /// <summary>
         /// Sincroniza el estado de las ejecuciones basándose en la columna Kanban destino.
         /// Usa una query con tracking para que EF Core pueda persistir los cambios.
         /// </summary>
-        private async Task SyncExecutionStatusAsync(Guid testCaseId, string columnName, Guid? testerId)
+        private async Task SyncExecutionStatusAsync(Guid testCaseId, string columnName)
         {
             if (string.IsNullOrWhiteSpace(columnName)) return;
 
@@ -279,22 +257,22 @@ namespace QAMS.Application.Services
 
             if (statusCode == null) return;
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Sincronizando ejecuciones de TestCase {TestCaseId} a estado {Status} por movimiento a columna '{Column}'.",
                 testCaseId, statusCode, columnName);
 
             // Usar el método tracked para que EF Core pueda persistir los cambios
-            var executions = await _execRepo.GetByTestCaseTrackedAsync(testCaseId);
-            if (!executions.Any())
+            var executions = await execRepo.GetByTestCaseTrackedAsync(testCaseId);
+            if (executions.Count == 0)
             {
-                _logger.LogWarning("No se encontraron ejecuciones para el TestCase {TestCaseId}. No se sincronizó.", testCaseId);
+                logger.LogWarning("No se encontraron ejecuciones para el TestCase {TestCaseId}. No se sincronizó.", testCaseId);
                 return;
             }
 
-            var status = await _execStatusRepo.GetByCodeAsync(statusCode);
+            var status = await execStatusRepo.GetByCodeAsync(statusCode);
             if (status == null)
             {
-                _logger.LogWarning("Estado con código '{Code}' no encontrado en catálogo. No se sincronizó.", statusCode);
+                logger.LogWarning("Estado con código '{Code}' no encontrado en catálogo. No se sincronizó.", statusCode);
                 return;
             }
 
@@ -306,8 +284,8 @@ namespace QAMS.Application.Services
                 {
                     latestExec.StatusId = status.Id;
                     latestExec.CompletedAt = DateTime.UtcNow;
-                    _execRepo.Update(latestExec);
-                    _logger.LogInformation("Ejecución {ExecId} marcada como PASSED.", latestExec.Id);
+                    execRepo.Update(latestExec);
+                    logger.LogInformation("Ejecución {ExecId} marcada como PASSED.", latestExec.Id);
                 }
             }
             else
@@ -323,8 +301,8 @@ namespace QAMS.Application.Services
                     {
                         exec.StatusId = status.Id;
                         exec.CompletedAt = null;
-                        _execRepo.Update(exec);
-                        _logger.LogInformation("Ejecución {ExecId} actualizada a {Status}.", exec.Id, statusCode);
+                        execRepo.Update(exec);
+                        logger.LogInformation("Ejecución {ExecId} actualizada a {Status}.", exec.Id, statusCode);
                     }
                 }
             }

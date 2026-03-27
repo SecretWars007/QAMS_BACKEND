@@ -5,16 +5,10 @@ using QAMS.Infrastructure.Persistence.Configurations;
 
 namespace QAMS.Infrastructure.Repositories
 {
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWork(QamsDbContext context, ILogger<UnitOfWork> logger) : IUnitOfWork
     {
-        private readonly QamsDbContext _context;
-        private readonly ILogger<UnitOfWork> _logger;
-
-        public UnitOfWork(QamsDbContext context, ILogger<UnitOfWork> logger)
-        {
-            _context = context;
-            _logger = logger;
-        }
+        private readonly QamsDbContext _context = context;
+        private readonly ILogger<UnitOfWork> _logger = logger;
 
         public async Task<int> SaveChangesAsync()
         {
@@ -24,6 +18,10 @@ namespace QAMS.Infrastructure.Repositories
             return result;
         }
 
-        public void Dispose() => _context.Dispose();
+        public void Dispose()
+        {
+            _context.Dispose();
+            GC.SuppressFinalize(this);
+        }
     }
 }

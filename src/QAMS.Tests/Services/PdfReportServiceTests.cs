@@ -23,7 +23,7 @@ public class PdfReportServiceTests
     private readonly Mock<IEvidenceRepository> _mockEvidenceRepo = new();
     private readonly Mock<ILogger<PdfReportService>> _mockLogger = new();
 
-    private PdfReportService CreateService() => new PdfReportService(
+    private PdfReportService CreateService() => new(
         _mockProjectRepo.Object,
         _mockExecRepo.Object,
         _mockObservationRepo.Object,
@@ -39,9 +39,9 @@ public class PdfReportServiceTests
         var project = new Project { Id = projectId, Name = "Test Project" };
         
         _mockProjectRepo.Setup(r => r.FindWithDetailsAsync(It.IsAny<Expression<Func<Project, bool>>>()))
-            .ReturnsAsync(new List<Project> { project });
+            .ReturnsAsync([project]);
         _mockExecRepo.Setup(r => r.GetByProjectAsync(projectId))
-            .ReturnsAsync(new List<TestExecution>());
+            .ReturnsAsync([]);
 
         var service = CreateService();
 
@@ -61,13 +61,13 @@ public class PdfReportServiceTests
         var project = new Project { Id = projectId, Name = "Test Project" };
         
         _mockProjectRepo.Setup(r => r.FindWithDetailsAsync(It.IsAny<Expression<Func<Project, bool>>>()))
-            .ReturnsAsync(new List<Project> { project });
+            .ReturnsAsync([project]);
         _mockExecRepo.Setup(r => r.GetByProjectAsync(projectId))
-            .ReturnsAsync(new List<TestExecution>());
+            .ReturnsAsync([]);
         _mockObservationRepo.Setup(r => r.GetByProjectAsync(It.IsAny<List<Guid>>()))
-            .ReturnsAsync(new List<ExecutionStepObservation>());
+            .ReturnsAsync([]);
         _mockEvidenceRepo.Setup(r => r.GetByStepResultsAsync(It.IsAny<List<Guid>>()))
-            .ReturnsAsync(new List<Evidence>());
+            .ReturnsAsync([]);
 
         var service = CreateService();
 

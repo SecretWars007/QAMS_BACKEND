@@ -8,6 +8,6 @@ namespace QAMS.Domain.Entities.Catalogs
     public class TestCasePriority : CatalogBase
     {
         /// <summary>Casos de prueba con esta prioridad</summary>
-        public ICollection<TestCase> TestCases { get; set; } = new List<TestCase>();
+        public ICollection<TestCase> TestCases { get; set; } = [];
     }
 }

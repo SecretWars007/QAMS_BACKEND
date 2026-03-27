@@ -38,6 +38,7 @@ public class UserServiceTests
     private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
     private readonly Mock<IMapper> _mockMapper = new();
     private readonly Mock<ILogger<UserService>> _mockLogger = new();
+    private readonly Mock<IEmailService> _mockEmailService = new();
 
     /// <summary>
     /// Factory method for creating UserService instance.
@@ -50,6 +51,7 @@ public class UserServiceTests
         currentUserService: _mockCurrentUserService.Object,
         uow: _mockUnitOfWork.Object,
         mapper: _mockMapper.Object,
+        emailService: _mockEmailService.Object,
         logger: _mockLogger.Object
     );
 
@@ -61,8 +63,8 @@ public class UserServiceTests
         var roleId = Guid.NewGuid();
 
         _mockUserRepository
-            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
-            .ReturnsAsync(true);
+            .Setup(r => r.GetByIdAsync(userId))
+            .ReturnsAsync(new User { Id = userId, IsActive = true });
 
         _mockRoleRepository
             .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Role, bool>>>()))
@@ -89,8 +91,8 @@ public class UserServiceTests
         var roleId = Guid.NewGuid();
 
         _mockUserRepository
-            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
-            .ReturnsAsync(false);
+            .Setup(r => r.GetByIdAsync(userId))
+            .ReturnsAsync((User)null);
 
         var service = CreateService();
 
@@ -110,8 +112,8 @@ public class UserServiceTests
         var roleId = Guid.NewGuid();
 
         _mockUserRepository
-            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
-            .ReturnsAsync(true);
+            .Setup(r => r.GetByIdAsync(userId))
+            .ReturnsAsync(new User { Id = userId, IsActive = true });
 
         _mockRoleRepository
             .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Role, bool>>>()))
@@ -265,8 +267,8 @@ public class UserServiceTests
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
     }
 
-    [Fact(DisplayName = "GetAllAsync_DebeRetornarSoloUsuariosActivos")]
-    public async Task GetAllAsync_ShouldReturnOnlyActiveUsers()
+    [Fact(DisplayName = "GetAllAsync_DebeRetornarTodosLosUsuarios")]
+    public async Task GetAllAsync_ShouldReturnAllUsers()
     {
         // ARRANGE
         var users = new List<User>
@@ -277,7 +279,7 @@ public class UserServiceTests
 
         _mockUserRepository.Setup(r => r.GetAllWithRolesAsync()).ReturnsAsync(users);
         _mockMapper.Setup(m => m.Map<List<UserDto>>(It.IsAny<List<User>>()))
-                   .Returns((List<User> src) => src.Select(u => new UserDto { Username = u.Username }).ToList());
+                   .Returns((List<User> src) => [.. src.Select(u => new UserDto { Username = u.Username })]);
 
         var service = CreateService();
 
@@ -285,8 +287,9 @@ public class UserServiceTests
         var result = await service.GetAllAsync();
 
         // ASSERT
-        result.Should().HaveCount(1);
+        result.Should().HaveCount(2);
         result[0].Username.Should().Be("active");
+        result[1].Username.Should().Be("inactive");
     }
 
     [Fact(DisplayName = "UpdateAsync_EmailYaEnUso_DebeLanzarDomainException")]
@@ -313,7 +316,7 @@ public class UserServiceTests
     {
         // ARRANGE
         var userId = Guid.NewGuid();
-        var user = new User { Id = userId };
+        var user = new User { Id = userId, Email = "test@example.com", FullName = "Test User" };
         var newPassword = "newPassword123";
         var hashedPass = "hashedValue";
 
@@ -329,5 +332,6 @@ public class UserServiceTests
         user.PasswordHash.Should().Be(hashedPass);
         _mockUserRepository.Verify(r => r.Update(user), Times.Once);
         _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+        _mockEmailService.Verify(e => e.SendEmailAsync("test@example.com", It.IsAny<string>(), It.IsAny<string>()), Times.Once);
     }
 }

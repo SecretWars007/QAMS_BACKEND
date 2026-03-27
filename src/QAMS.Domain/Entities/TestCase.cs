@@ -10,11 +10,11 @@ namespace QAMS.Domain.Entities
     public class TestCase
     {
         public Guid Id { get; set; }
-        
+
         // Asociación con Proyecto
         public Guid ProjectId { get; set; }
         public Project Project { get; set; } = null!;
-        
+
         public Guid TestSuiteId { get; set; }
         public TestSuite TestSuite { get; set; } = null!;
         public string Title { get; set; } = string.Empty;
@@ -40,10 +40,10 @@ namespace QAMS.Domain.Entities
         public int TestTypeId { get; set; }
         public TestType TestType { get; set; } = null!;
 
-        public ICollection<TestStep> TestSteps { get; set; } = new List<TestStep>();
-        public ICollection<TestExecution> TestExecutions { get; set; } = new List<TestExecution>();
-        
+        public ICollection<TestStep> TestSteps { get; set; } = [];
+        public ICollection<TestExecution> TestExecutions { get; set; } = [];
+
         // Certificadores asignados al test case
-        public ICollection<TestCaseCertifier> Certifiers { get; set; } = new List<TestCaseCertifier>();
+        public ICollection<TestCaseCertifier> Certifiers { get; set; } = [];
     }
 }

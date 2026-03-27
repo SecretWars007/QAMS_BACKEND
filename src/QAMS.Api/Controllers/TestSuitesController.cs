@@ -11,16 +11,10 @@ namespace QAMS.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class TestSuitesController : ControllerBase
+    public class TestSuitesController(ITestSuiteService service, ILogger<TestSuitesController> logger) : ControllerBase
     {
-        private readonly ITestSuiteService _service;
-        private readonly ILogger<TestSuitesController> _logger;
-
-        public TestSuitesController(ITestSuiteService service, ILogger<TestSuitesController> logger)
-        {
-            _service = service;
-            _logger = logger;
-        }
+        private readonly ITestSuiteService _service = service;
+        private readonly ILogger<TestSuitesController> _logger = logger;
 
         [HttpPost]
         [HasPermission("PROJECTS_CREATE")]

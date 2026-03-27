@@ -1,4 +1,7 @@
 // src/QAMS.Application/Interfaces/IProjectService.cs
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using QAMS.Application.DTOs.Projects;
 namespace QAMS.Application.Interfaces
 {

@@ -10,31 +10,13 @@ namespace QAMS.Application.Services
     /// <summary>
     /// Servicio de dashboard: métricas y resúmenes para gráficos.
     /// </summary>
-    public class DashboardService : IDashboardService
+    public class DashboardService(
+        IProjectRepository projectRepo,
+        ITestExecutionRepository execRepo,
+        ICatalogRepository<ExecutionStatus> statusRepo,
+        ILogger<DashboardService> logger
+    ) : IDashboardService
     {
-        private readonly IProjectRepository _projectRepo;
-        private readonly ITestCaseRepository _testCaseRepo;
-        private readonly ITestExecutionRepository _execRepo;
-        private readonly IKanbanBoardRepository _boardRepo;
-        private readonly ICatalogRepository<ExecutionStatus> _statusRepo;
-        private readonly ILogger<DashboardService> _logger;
-
-        public DashboardService(
-            IProjectRepository projectRepo,
-            ITestCaseRepository testCaseRepo,
-            ITestExecutionRepository execRepo,
-            IKanbanBoardRepository boardRepo,
-            ICatalogRepository<ExecutionStatus> statusRepo,
-            ILogger<DashboardService> logger
-        )
-        {
-            _projectRepo = projectRepo;
-            _testCaseRepo = testCaseRepo;
-            _execRepo = execRepo;
-            _boardRepo = boardRepo;
-            _statusRepo = statusRepo;
-            _logger = logger;
-        }
 
         /// <summary>
         /// Genera un resumen de métricas para un usuario específico.
@@ -42,30 +24,30 @@ namespace QAMS.Application.Services
         /// </summary>
         public async Task<DashboardSummaryDto> GetSummaryAsync(Guid userId)
         {
-            _logger.LogInformation("Generando dashboard para el usuario: {UserId}.", userId);
+            logger.LogInformation("Generando dashboard para el usuario: {UserId}.", userId);
 
             var summary = new DashboardSummaryDto();
 
             try
             {
                 // 1. Proyectos donde el usuario participa: como tester O si fue el creador
-                var userProjects = await _projectRepo.FindWithDetailsAsync(p =>
+                var userProjects = await projectRepo.FindWithDetailsAsync(p =>
                     p.IsActive && (p.ProjectTesters.Any(pt => pt.UserId == userId) || p.CreatedByUserId == userId));
 
                 // Si no hay proyectos específicos, pero el usuario es admin/etc (opcional), mantenemos fallback o retornamos lo encontrado
-                if (!userProjects.Any())
+                if (userProjects.Count == 0)
                 {
-                    _logger.LogInformation("Usuario {UserId} no tiene proyectos asignados ni creados. Trayendo todos los activos como fallback.", userId);
-                    userProjects = await _projectRepo.FindWithDetailsAsync(p => p.IsActive);
+                    logger.LogInformation("Usuario {UserId} no tiene proyectos asignados ni creados. Trayendo todos los activos como fallback.", userId);
+                    userProjects = await projectRepo.FindWithDetailsAsync(p => p.IsActive);
                 }
 
                 summary.TotalProjects = userProjects.Count;
-                var allTestCases = userProjects.SelectMany(p => p.TestCases ?? new List<QAMS.Domain.Entities.TestCase>()).ToList();
+                var allTestCases = userProjects.SelectMany(p => p.TestCases ?? []).ToList();
                 summary.TotalTestCases = allTestCases.Count;
 
                 // Casos de prueba pendientes: No tienen ninguna ejecución exitosa (PASSED, ID=3)
                 var allTestCaseIds = allTestCases.Select(tc => tc.Id).ToList();
-                var passedTestCaseIds = (await _execRepo.FindAsync(e => 
+                var passedTestCaseIds = (await execRepo.FindAsync(e => 
                     allTestCaseIds.Contains(e.TestCaseId)))
                     .Where(e => e.IsSuccessful())
                     .Select(e => e.TestCaseId)
@@ -75,10 +57,10 @@ namespace QAMS.Application.Services
                 summary.PendingTestCases = summary.TotalTestCases - passedTestCaseIds.Count;
 
                 // 3. Métricas de Ejecución (Globales para los proyectos del usuario)
-                var allExecutionsForProjects = await _execRepo.FindAsync(e => allTestCaseIds.Contains(e.TestCaseId));
+                var allExecutionsForProjects = await execRepo.FindAsync(e => allTestCaseIds.Contains(e.TestCaseId));
                 summary.TotalExecutions = allExecutionsForProjects.Count;
 
-                var allStatuses = await _statusRepo.GetAllActiveAsync();
+                var allStatuses = await statusRepo.GetAllActiveAsync();
                 var passedStatus = allStatuses.FirstOrDefault(s => s.Code == "PASSED");
                 var failedStatus = allStatuses.FirstOrDefault(s => s.Code == "FAILED");
                 var pendingStatus = allStatuses.FirstOrDefault(s => s.Code == "PENDING");
@@ -117,8 +99,8 @@ namespace QAMS.Application.Services
                 }
 
                 var userTasks = userProjects
-                    .SelectMany(p => p.KanbanBoards ?? new List<QAMS.Domain.Entities.KanbanBoard>())
-                    .SelectMany(b => b.Columns ?? new List<QAMS.Domain.Entities.KanbanColumn>())
+                    .SelectMany(p => p.KanbanBoards ?? [])
+                    .SelectMany(b => b.Columns ?? [])
                     .GroupBy(c => c.Name)
                     .Select(g => new TaskProgressDto
                     {
@@ -131,11 +113,11 @@ namespace QAMS.Application.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generando dashboard para el usuario: {UserId}.", userId);
+                logger.LogError(ex, "Error generando dashboard para el usuario: {UserId}.", userId);
             }
 
-            _logger.LogInformation(
-                "Dashboard generado para {UserId}: {Total} ejecuciones, {Rate}% aprobación.",
+            logger.LogInformation(
+                "Dashboard generado for {UserId}: {Total} ejecuciones, {Rate}% aprobación.",
                 userId, summary.TotalExecutions, summary.PassRate
             );
 
@@ -144,14 +126,14 @@ namespace QAMS.Application.Services
 
         public async Task<List<TimelineEventDto>> GetProjectTimelineAsync(Guid projectId)
         {
-            _logger.LogInformation("Obteniendo timeline para el proyecto: {ProjectId}.", projectId);
+            logger.LogInformation("Obteniendo timeline para el proyecto: {ProjectId}.", projectId);
 
             // Obtenemos el proyecto para tener la fecha de inicio basica
-            var project = await _projectRepo.GetByIdAsync(projectId);
+            var project = await projectRepo.GetByIdAsync(projectId);
             var startDate = project?.CreatedAt.Date ?? DateTime.MinValue.Date;
 
             // Obtenemos las ejecuciones del proyecto con detalles de estados y resultados de pasos
-            var projectExecutions = await _execRepo.GetByProjectAsync(projectId);
+            var projectExecutions = await execRepo.GetByProjectAsync(projectId);
             
             // Ordenamos por fecha de ejecución
             var sortedExecs = projectExecutions
@@ -220,17 +202,16 @@ namespace QAMS.Application.Services
                 Events = events
             };
 
-            if (events.Any())
+            if (events.Count > 0)
             {
                 result.MinHour = events.Min(e => e.Hour);
                 result.MaxHour = events.Max(e => e.Hour);
                 
                 // Generamos etiquetas de días únicos DD/MM
-                result.DayLabels = events
+                result.DayLabels = [.. events
                     .OrderBy(e => e.ExecutionDate)
                     .Select(e => e.ExecutionDate.ToString("dd/MM"))
-                    .Distinct()
-                    .ToList();
+                    .Distinct()];
             }
 
             return result;
@@ -238,14 +219,14 @@ namespace QAMS.Application.Services
 
         public async Task<List<BurndownPointDto>> GetBurndownDataAsync(Guid projectId)
         {
-            _logger.LogInformation("Calculando burndown (horas) para el proyecto: {ProjectId}.", projectId);
+            logger.LogInformation("Calculando burndown (horas) para el proyecto: {ProjectId}.", projectId);
 
-            var project = await _projectRepo.FindWithDetailsAsync(p => p.Id == projectId);
+            var project = await projectRepo.FindWithDetailsAsync(p => p.Id == projectId);
             var projectEntity = project.FirstOrDefault();
-            if (projectEntity == null) return new List<BurndownPointDto>();
+            if (projectEntity == null) return [];
 
             var totalHours = projectEntity.GetCalculatedTotalHours();
-            var executions = await _execRepo.GetByProjectAsync(projectId);
+            var executions = await execRepo.GetByProjectAsync(projectId);
             
             // Determinar rango de fechas
             var startDate = projectEntity.StartDate ?? projectEntity.CreatedAt;
@@ -300,13 +281,13 @@ namespace QAMS.Application.Services
 
         public async Task<List<DrawdownPointDto>> GetDrawdownDataAsync(Guid projectId)
         {
-            _logger.LogInformation("Calculando drawdown para el proyecto: {ProjectId}.", projectId);
+            logger.LogInformation("Calculando drawdown para el proyecto: {ProjectId}.", projectId);
 
-            var project = await _projectRepo.GetByIdAsync(projectId);
-            if (project == null) return new List<DrawdownPointDto>();
+            var project = await projectRepo.GetByIdAsync(projectId);
+            if (project == null) return [];
 
             var totalCases = project.TestCases.Count;
-            var executions = await _execRepo.GetByProjectAsync(projectId);
+            var executions = await execRepo.GetByProjectAsync(projectId);
             
             // Agrupar por fecha (solo fecha, sin hora)
             var execsByDay = executions
@@ -318,7 +299,7 @@ namespace QAMS.Application.Services
             var passedTestCases = new HashSet<Guid>();
 
             // Si no hay ejecuciones, punto inicial con todo pendiente
-            if (!execsByDay.Any())
+            if (execsByDay.Count == 0)
             {
                 drawdown.Add(new DrawdownPointDto
                 {

@@ -1,4 +1,7 @@
 // src/QAMS.Domain/Ports/Repositories/IUserRepository.cs
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using QAMS.Domain.Entities;
 
 namespace QAMS.Domain.Ports.Repositories

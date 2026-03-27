@@ -14,29 +14,23 @@ using Microsoft.Extensions.Logging;
 
 namespace QAMS.Infrastructure.Services
 {
-    public class PdfReportService : QAMS.Application.Interfaces.IReportService
+    public class PdfReportService(
+        IProjectRepository projectRepo,
+        ITestExecutionRepository execRepo,
+        IObservationRepository observationRepo,
+        IEvidenceRepository evidenceRepo,
+        ILogger<PdfReportService> logger) : IReportService
     {
-        private readonly IProjectRepository _projectRepo;
-        private readonly ITestExecutionRepository _execRepo;
-        private readonly IObservationRepository _observationRepo;
-        private readonly IEvidenceRepository _evidenceRepo;
-        private readonly ILogger<PdfReportService> _logger;
-        private readonly string _uploadsPath;
+        private readonly IProjectRepository _projectRepo = projectRepo;
+        private readonly ITestExecutionRepository _execRepo = execRepo;
+        private readonly IObservationRepository _observationRepo = observationRepo;
+        private readonly IEvidenceRepository _evidenceRepo = evidenceRepo;
+        private readonly ILogger<PdfReportService> _logger = logger;
+        private readonly string _uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
 
-        public PdfReportService(
-            IProjectRepository projectRepo,
-            ITestExecutionRepository execRepo,
-            IObservationRepository observationRepo,
-            IEvidenceRepository evidenceRepo,
-            ILogger<PdfReportService> logger)
+        static PdfReportService()
         {
             QuestPDF.Settings.License = LicenseType.Community;
-            _projectRepo = projectRepo;
-            _execRepo = execRepo;
-            _observationRepo = observationRepo;
-            _evidenceRepo = evidenceRepo;
-            _logger = logger;
-            _uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
         }
 
         public async System.Threading.Tasks.Task<byte[]> GenerateProjectReportAsync(ProjectReportFilterDto filter)
@@ -57,7 +51,7 @@ namespace QAMS.Infrastructure.Services
             
             var projectList = await _projectRepo.FindWithDetailsAsync(p => p.Id == projectId);
             var project = projectList.FirstOrDefault();
-            if (project == null) return Array.Empty<byte>();
+            if (project == null) return [];
 
             // Obtener ejecuciones y sus IDs
             var executions = await _execRepo.GetByProjectAsync(projectId);
@@ -121,7 +115,7 @@ namespace QAMS.Infrastructure.Services
                         // SECCIÓN 2: HISTÓRICO DE DEVOLUCIONES
                         col.Item().PaddingTop(25).BorderBottom(2).BorderColor("#1A237E").PaddingBottom(5).Text("2. HISTORIAL DE DEVOLUCIONES").FontSize(14).Bold().FontColor("#1A237E");
                         
-                        if (project.HistoricDevolutions == null || !project.HistoricDevolutions.Any())
+                        if (project.HistoricDevolutions == null || project.HistoricDevolutions.Count == 0)
                         {
                             col.Item().PaddingTop(10).Text("No existen registros históricos de devoluciones.").Italic().FontColor(Colors.Grey.Darken1);
                         }
@@ -162,7 +156,7 @@ namespace QAMS.Infrastructure.Services
 
                         col.Item().BorderBottom(2).BorderColor("#1A237E").PaddingBottom(5).Text("3. DETALLE DE OBSERVACIONES Y EVIDENCIAS").FontSize(14).Bold().FontColor("#1A237E");
 
-                        if (!allObservations.Any())
+                        if (allObservations.Count == 0)
                         {
                             col.Item().PaddingTop(20).AlignCenter().Text("--- NO SE REGISTRARON HALLAZGOS DURANTE LAS EJECUCIONES ---").FontSize(12).SemiBold().FontColor(Colors.Grey.Darken1);
                         }
@@ -206,7 +200,7 @@ namespace QAMS.Infrastructure.Services
                                         var evidences = allEvidences.Where(e => e.ExecutionStepResultId == obs.ExecutionStepResultId && 
                                             (e.FileType.Code == "IMAGE" || e.FileType.Code == "VIDEO")).ToList();
 
-                                        if (evidences.Any())
+                                        if (evidences.Count > 0)
                                         {
                                             inner.Item().PaddingTop(10).Text("EVIDENCIAS ADJUNTAS:").Bold().FontSize(9);
                                             inner.Item().PaddingTop(5).Table(table =>
@@ -270,7 +264,7 @@ namespace QAMS.Infrastructure.Services
             _logger.LogInformation("Generando reporte de cumplimiento final para el proyecto {ProjectId}.", projectId);
             
             var project = await _projectRepo.GetFullProjectForComplianceReportAsync(projectId);
-            if (project == null) return Array.Empty<byte>();
+            if (project == null) return [];
 
             var document = Document.Create(container =>
             {
@@ -355,8 +349,8 @@ namespace QAMS.Infrastructure.Services
                                     tcBox.Item().PaddingTop(2).Text(tc.Description).FontSize(8).Italic().FontColor(Colors.Grey.Darken1);
 
                                 // Evidencias del último resultado
-                                var lastExecResults = tc.TestExecutions.OrderByDescending(e => (e as QAMS.Domain.Entities.TestExecution).ExecutionDate).FirstOrDefault() as QAMS.Domain.Entities.TestExecution;
-                                if (lastExecResults != null && lastExecResults.Evidences != null && lastExecResults.Evidences.Any(e => e.FileType != null && e.FileType.Code == "IMAGE"))
+                                if (tc.TestExecutions.OrderByDescending(e => (e as TestExecution).ExecutionDate).FirstOrDefault() is TestExecution { Evidences.Count: > 0 } lastExecResults && 
+                                    lastExecResults.Evidences.Any(e => e.FileType is { Code: "IMAGE" }))
                                 {
                                     tcBox.Item().PaddingTop(8).Table(table =>
                                     {
@@ -384,7 +378,7 @@ namespace QAMS.Infrastructure.Services
                         }
 
                         // 4. HISTORIAL DE DEVOLUCIONES
-                        if (project.HistoricDevolutions.Any())
+                        if (project.HistoricDevolutions.Count > 0)
                         {
                             col.Item().PageBreak();
                             col.Item().Text("3. TRAZABILIDAD DE DEVOLUCIONES Y REPORTE DE HALLAZGOS").FontSize(14).Bold().FontColor("#2E7D32");
@@ -434,7 +428,7 @@ namespace QAMS.Infrastructure.Services
             var projectList = await _projectRepo.FindWithDetailsAsync(p => p.Id == projectId);
             var project = projectList.FirstOrDefault();
             
-            if (project == null) return Array.Empty<byte>();
+            if (project == null) return [];
 
             var executions = await _execRepo.GetByProjectAsync(projectId);
             var executionList = executions.ToList();
@@ -583,7 +577,7 @@ namespace QAMS.Infrastructure.Services
                                         });
 
                                         // Pasos Definidos del Caso
-                                        if (testCase.TestSteps != null && testCase.TestSteps.Any())
+                                        if (testCase.TestSteps is { Count: > 0 })
                                         {
                                             caseCol.Item().PaddingTop(5).PaddingLeft(5).Text("Pasos del Caso de Prueba:").FontSize(9).SemiBold();
                                             caseCol.Item().PaddingLeft(5).Table(stepTable =>
@@ -613,7 +607,7 @@ namespace QAMS.Infrastructure.Services
 
                                         // Historial de Ejecuciones del Caso
                                         var caseExecs = executionList.Where(e => e.TestCaseId == testCase.Id).OrderByDescending(e => e.ExecutionDate).ToList();
-                                        if (caseExecs.Any())
+                                        if (caseExecs.Count > 0)
                                         {
                                             caseCol.Item().PaddingTop(8).PaddingLeft(5).Text("EJECUCIONES REGISTRADAS:").FontSize(9).SemiBold().FontColor("#455A64");
                                             foreach (var exec in caseExecs)
@@ -622,7 +616,7 @@ namespace QAMS.Infrastructure.Services
                                                 {
                                                     execCol.Item().Row(row => 
                                                     {
-                                                        row.RelativeItem().Text($"Ejecución #{exec.Id.ToString().Substring(0, 8).ToUpper()}").FontSize(9).SemiBold();
+                                                        row.RelativeItem().Text($"Ejecución #{exec.Id.ToString()[..8].ToUpper()}").FontSize(9).SemiBold();
                                                         row.AutoItem().Text(exec.ExecutionDate.ToString("dd/MM/yyyy HH:mm")).FontSize(9).Italic();
                                                     });
 
@@ -644,7 +638,7 @@ namespace QAMS.Infrastructure.Services
                                                     });
 
                                                     // Resultados por Paso en esta Ejecución
-                                                    if (exec.StepResults != null && exec.StepResults.Any())
+                                                    if (exec.StepResults is { Count: > 0 })
                                                     {
                                                         execCol.Item().PaddingTop(3).Text("Resultados de Pasos:").FontSize(8).SemiBold();
                                                         execCol.Item().Table(resTable => 
@@ -670,12 +664,12 @@ namespace QAMS.Infrastructure.Services
                                                                 resTable.Cell().Element(CellStyle).Text(sName).FontSize(7).Bold().FontColor(sColor);
 
                                                                 // Evidencias del PASO de ejecución específica
-                                                                if (res.Evidences != null && res.Evidences.Any())
+                                                                if (res.Evidences is { Count: > 0 })
                                                                 {
                                                                     foreach (var ev in res.Evidences)
                                                                     {
                                                                         var p = Path.Combine(_uploadsPath, ev.FilePath);
-                                                                        if (File.Exists(p) && (ev.ContentType.StartsWith("image/") || IsImageExtension(ev.FileName)))
+                                                                        if (File.Exists(p) && (ev.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) || IsImageExtension(ev.FileName)))
                                                                         {
                                                                             resTable.Cell().ColumnSpan(3).PaddingTop(5).Column(evCol => 
                                                                             {
@@ -691,13 +685,13 @@ namespace QAMS.Infrastructure.Services
                                                     }
 
                                                     // Evidencias generales de la Ejecución (Si las hay directas)
-                                                    if (exec.Evidences != null && exec.Evidences.Any())
+                                                    if (exec.Evidences is { Count: > 0 })
                                                     {
                                                         execCol.Item().PaddingTop(5).Text("Evidencias Generales de la Ejecución:").FontSize(8).SemiBold();
                                                         foreach (var evidence in exec.Evidences)
                                                         {
                                                             var fullPath = Path.Combine(_uploadsPath, evidence.FilePath);
-                                                            if (File.Exists(fullPath) && (evidence.ContentType.StartsWith("image/") || IsImageExtension(evidence.FileName)))
+                                                            if (File.Exists(fullPath) && (evidence.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) || IsImageExtension(evidence.FileName)))
                                                             {
                                                                 execCol.Item().PaddingVertical(5).Column(evCol => 
                                                                 {
@@ -776,10 +770,14 @@ namespace QAMS.Infrastructure.Services
                 .BorderColor("#E0E0E0");
         }
 
-        private bool IsImageExtension(string fileName)
+        private static bool IsImageExtension(string fileName)
         {
-            var ext = Path.GetExtension(fileName).ToLower();
-            return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" || ext == ".bmp";
+            var ext = Path.GetExtension(fileName);
+            return string.Equals(ext, ".jpg", StringComparison.OrdinalIgnoreCase) || 
+                   string.Equals(ext, ".jpeg", StringComparison.OrdinalIgnoreCase) || 
+                   string.Equals(ext, ".png", StringComparison.OrdinalIgnoreCase) || 
+                   string.Equals(ext, ".gif", StringComparison.OrdinalIgnoreCase) || 
+                   string.Equals(ext, ".bmp", StringComparison.OrdinalIgnoreCase);
         }
 
         private static IContainer Block(IContainer container)
@@ -809,9 +807,9 @@ namespace QAMS.Infrastructure.Services
                 .AlignCenter();
         }
 
-        private void DrawTimeline(IContainer container, List<TestExecution> executions)
+        private static void DrawTimeline(IContainer container, List<TestExecution> executions)
         {
-            if (executions == null || !executions.Any())
+            if (executions == null || executions.Count == 0)
             {
                 container.Text("Sin histórico de ejecuciones para mostrar en la línea de tiempo.").Italic().FontSize(9).FontColor("#757575");
                 return;
@@ -864,7 +862,7 @@ namespace QAMS.Infrastructure.Services
                             
                             var cell = table.Cell().Element(MatrixCellStyle);
                             
-                            if (cellExecs.Any())
+                            if (cellExecs.Count > 0)
                             {
                                 cell.Row(row => 
                                 {
@@ -913,7 +911,7 @@ namespace QAMS.Infrastructure.Services
                 .AlignMiddle();
         }
 
-        private void DrawDrawdownChart(IContainer container, Project project, List<QAMS.Domain.Entities.TestExecution> executions)
+        private static void DrawDrawdownChart(IContainer container, Project project, List<QAMS.Domain.Entities.TestExecution> executions)
         {
             var totalCases = project.TestCases.Count;
             if (totalCases == 0) return;
@@ -923,7 +921,7 @@ namespace QAMS.Infrastructure.Services
                 .GroupBy(e => e.ExecutionDate.Date)
                 .ToList();
 
-            if (!dayGroups.Any())
+            if (dayGroups.Count == 0)
             {
                 container.Text("Sin datos de progreso para mostrar.").Italic().FontSize(9);
                 return;
@@ -987,7 +985,7 @@ namespace QAMS.Infrastructure.Services
             });
         }
 
-        private void DrawBurndownChart(IContainer container, Project project, List<QAMS.Domain.Entities.TestExecution> executions)
+        private static void DrawBurndownChart(IContainer container, Project project, List<QAMS.Domain.Entities.TestExecution> executions)
         {
             var totalHours = project.GetCalculatedTotalHours();
             if (totalHours == 0) 
@@ -997,7 +995,7 @@ namespace QAMS.Infrastructure.Services
             }
 
             var startDate = project.StartDate ?? project.CreatedAt;
-            var endDate = project.EndDate ?? (executions.Any() ? executions.Max(e => e.ExecutionDate) : DateTime.Now);
+            var endDate = project.EndDate ?? (executions.Count > 0 ? executions.Max(e => e.ExecutionDate) : DateTime.Now);
             if (endDate < startDate) endDate = startDate.AddDays(7);
 
             var burnRate = project.WorkHoursPerDay > 0 ? project.WorkHoursPerDay : 7;
@@ -1085,7 +1083,7 @@ namespace QAMS.Infrastructure.Services
             });
         }
 
-        private string GetStatusColor(QAMS.Domain.Entities.TestExecution exec)
+        private static string GetStatusColor(QAMS.Domain.Entities.TestExecution exec)
         {
             if (exec.StatusId == 3) return "#4CAF50"; // Aprobado
             if (exec.StatusId == 4) return "#F44336"; // Fallido

@@ -31,6 +31,6 @@ namespace QAMS.Domain.Entities
         public User? RespondedBy { get; set; }
         public DateTime? RespondedAt { get; set; }
 
-        public virtual ICollection<ExecutionStepObservationResponse> Responses { get; set; } = new List<ExecutionStepObservationResponse>();
+        public virtual ICollection<ExecutionStepObservationResponse> Responses { get; set; } = [];
     }
 }

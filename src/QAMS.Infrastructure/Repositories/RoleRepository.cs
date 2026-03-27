@@ -11,10 +11,9 @@ namespace QAMS.Infrastructure.Repositories
     /// Extiende GenericRepository con consultas que incluyen eager loading
     /// de permisos asociados al rol.
     /// </summary>
-    public class RoleRepository : GenericRepository<Role>, IRoleRepository
+    public class RoleRepository(QamsDbContext context)
+        : GenericRepository<Role>(context), IRoleRepository
     {
-        public RoleRepository(QamsDbContext context)
-            : base(context) { }
 
         /// <summary>
         /// Obtiene un rol con todos sus permisos cargados.
@@ -34,7 +33,7 @@ namespace QAMS.Infrastructure.Repositories
         /// </summary>
         public async Task<Role?> GetByNameAsync(string name)
         {
-            return await _dbSet.FirstOrDefaultAsync(r => r.Name.ToLower() == name.ToLower());
+            return await _dbSet.FirstOrDefaultAsync(r => string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>

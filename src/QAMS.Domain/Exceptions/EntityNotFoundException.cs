@@ -2,16 +2,9 @@
 namespace QAMS.Domain.Exceptions
 {
     /// <summary>Excepción cuando una entidad no existe.</summary>
-    public class EntityNotFoundException : DomainException
+    public class EntityNotFoundException(string entityName, object entityId) : DomainException($"'{entityName}' con ID '{entityId}' no fue encontrada.")
     {
-        public string EntityName { get; }
-        public object EntityId { get; }
-
-        public EntityNotFoundException(string entityName, object entityId)
-            : base($"'{entityName}' con ID '{entityId}' no fue encontrada.")
-        {
-            EntityName = entityName;
-            EntityId = entityId;
-        }
+        public string EntityName { get; } = entityName;
+        public object EntityId { get; } = entityId;
     }
 }

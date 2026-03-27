@@ -1,4 +1,6 @@
 // src/QAMS.Application/Services/AuthService.cs
+using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using QAMS.Application.DTOs.Auth;
 using QAMS.Application.Interfaces;
@@ -14,26 +16,19 @@ namespace QAMS.Application.Services
     /// recuperación y cambio de contraseña.
     /// SRP: solo autenticación. DIP: todas las dependencias son interfaces.
     /// </summary>
-    public class AuthService : IAuthService
+    public class AuthService(
+        IUserRepository userRepo, IRbacService rbacService,
+        IPasswordHasher hasher, IJwtTokenGenerator jwt,
+        IUnitOfWork uow, IEmailService emailService,
+        ILogger<AuthService> logger) : IAuthService
     {
-        private readonly IUserRepository _userRepo;
-        private readonly IRbacService _rbacService;
-        private readonly IPasswordHasher _hasher;
-        private readonly IJwtTokenGenerator _jwt;
-        private readonly IUnitOfWork _uow;
-        private readonly IEmailService _emailService;
-        private readonly ILogger<AuthService> _logger;
-
-        public AuthService(
-            IUserRepository userRepo, IRbacService rbacService,
-            IPasswordHasher hasher, IJwtTokenGenerator jwt,
-            IUnitOfWork uow, IEmailService emailService,
-            ILogger<AuthService> logger)
-        {
-            _userRepo = userRepo; _rbacService = rbacService;
-            _hasher = hasher; _jwt = jwt; _uow = uow;
-            _emailService = emailService; _logger = logger;
-        }
+        private readonly IUserRepository _userRepo = userRepo;
+        private readonly IRbacService _rbacService = rbacService;
+        private readonly IPasswordHasher _hasher = hasher;
+        private readonly IJwtTokenGenerator _jwt = jwt;
+        private readonly IUnitOfWork _uow = uow;
+        private readonly IEmailService _emailService = emailService;
+        private readonly ILogger<AuthService> _logger = logger;
 
         public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
         {
@@ -43,13 +38,13 @@ namespace QAMS.Application.Services
             if (user is null || !user.IsActive)
             {
                 _logger.LogWarning("Login fallido para '{Username}'.", request.Username);
-                throw new DomainException("Credenciales inválidas.");
+                throw new UnauthorizedException("Credenciales inválidas.");
             }
 
             if (!_hasher.VerifyPassword(request.Password, user.PasswordHash))
             {
                 _logger.LogWarning("Contraseña incorrecta para '{Username}'.", request.Username);
-                throw new DomainException("Credenciales inválidas.");
+                throw new UnauthorizedException("Credenciales inválidas.");
             }
 
             var permissions = await _rbacService.GetUserPermissionsAsync(user.Id);
@@ -70,7 +65,7 @@ namespace QAMS.Application.Services
                 RefreshToken = refreshToken,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(60),
                 FullName = user.FullName,
-                Permissions = permissions.ToList()
+                Permissions = [.. permissions]
             };
         }
 
@@ -119,7 +114,7 @@ namespace QAMS.Application.Services
             _logger.LogInformation("Renovación de token solicitada.");
 
             var users = await _userRepo.FindAsync(u => u.RefreshToken == request.RefreshToken);
-            var user = users.FirstOrDefault();
+            var user = users.Count > 0 ? users[0] : null;
 
             if (user is null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
                 throw new DomainException("Refresh token inválido o expirado.");
@@ -139,7 +134,7 @@ namespace QAMS.Application.Services
             {
                 AccessToken = newAccess, RefreshToken = newRefresh,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(60),
-                FullName = user.FullName, Permissions = permissions.ToList()
+                FullName = user.FullName, Permissions = [.. permissions]
             };
         }
 

@@ -1,4 +1,7 @@
 // src/QAMS.Application/Interfaces/IRoleService.cs
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using QAMS.Application.DTOs.Roles;
 namespace QAMS.Application.Interfaces
 {

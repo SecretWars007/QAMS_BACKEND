@@ -11,6 +11,6 @@ namespace QAMS.Application.DTOs.TestExecutions
         public string StatusName { get; set; } = string.Empty;
         public string? ActualResult { get; set; }
         public string? Notes { get; set; }
-        public List<EvidenceDto> Evidences { get; set; } = new();
+        public List<EvidenceDto> Evidences { get; set; } = [];
     }
 }

@@ -8,6 +8,6 @@ namespace QAMS.Domain.Entities.Catalogs
     public class ExecutionStatus : CatalogBase
     {
         /// <summary>Ejecuciones con este estado (navegación inversa)</summary>
-        public ICollection<TestExecution> TestExecutions { get; set; } = new List<TestExecution>();
+        public ICollection<TestExecution> TestExecutions { get; set; } = [];
     }
 }

@@ -33,7 +33,7 @@ public class ProjectServiceTests
     private readonly Mock<IEmailService> _mockEmailService = new();
     private readonly Mock<ILogger<ProjectService>> _mockLogger = new();
 
-    private ProjectService CreateService() => new ProjectService(
+    private ProjectService CreateService() => new(
         _mockProjectRepo.Object,
         _mockUserRepo.Object,
         _mockCurrentUserService.Object,
@@ -103,14 +103,14 @@ public class ProjectServiceTests
         { 
             Name = "New Project", 
             Description = "Test Description",
-            TesterIds = new List<Guid> { Guid.NewGuid() }
+            TesterIds = [Guid.NewGuid()]
         };
         
         var tester = new User { Id = dto.TesterIds[0], FullName = "John Tester" };
         tester.UserRoles.Add(new UserRole { UserId = tester.Id, RoleId = QAMS.Domain.Constants.SystemRoles.TesterRoleId });
 
         _mockProjectRepo.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Project, bool>>>())).ReturnsAsync(false);
-        _mockUserRepo.Setup(r => r.GetByIdsWithRolesAsync(It.IsAny<List<Guid>>())).ReturnsAsync(new List<User> { tester });
+        _mockUserRepo.Setup(r => r.GetByIdsWithRolesAsync(It.IsAny<List<Guid>>())).ReturnsAsync([tester]);
         _mockCurrentUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
         _mockMapper.Setup(m => m.Map<ProjectDto>(It.IsAny<Project>())).Returns(new ProjectDto { Name = dto.Name });
 
@@ -135,14 +135,14 @@ public class ProjectServiceTests
         var dto = new CreateProjectDto 
         { 
             Name = "New Project", 
-            TesterIds = new List<Guid> { testerId }
+            TesterIds = [testerId]
         };
         
         var user = new User { Id = testerId, FullName = "Not A Tester" };
         // No Tester role added
 
         _mockProjectRepo.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Project, bool>>>())).ReturnsAsync(false);
-        _mockUserRepo.Setup(r => r.GetByIdsWithRolesAsync(It.IsAny<List<Guid>>())).ReturnsAsync(new List<User> { user });
+        _mockUserRepo.Setup(r => r.GetByIdsWithRolesAsync(It.IsAny<List<Guid>>())).ReturnsAsync([user]);
 
         var service = CreateService();
 
@@ -161,7 +161,7 @@ public class ProjectServiceTests
         var dto = new RegisterDevolutionDto { Notes = "Devolution notes" };
 
         _mockProjectRepo.Setup(r => r.GetByIdAsync(projectId)).ReturnsAsync(project);
-        _mockExecRepo.Setup(r => r.GetByProjectAsync(projectId)).ReturnsAsync(new List<TestExecution>());
+        _mockExecRepo.Setup(r => r.GetByProjectAsync(projectId)).ReturnsAsync([]);
         _mockObservationRepo.Setup(r => r.CountAsync(It.IsAny<Expression<Func<ExecutionStepObservation, bool>>>())).ReturnsAsync(0);
         _mockMapper.Setup(m => m.Map<ProjectDevolutionDto>(It.IsAny<ProjectDevolution>())).Returns(new ProjectDevolutionDto());
 

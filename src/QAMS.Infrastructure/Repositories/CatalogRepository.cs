@@ -7,24 +7,16 @@ using QAMS.Infrastructure.Persistence.Configurations;
 
 namespace QAMS.Infrastructure.Repositories
 {
-    public class CatalogRepository<T> : ICatalogRepository<T>
+    public class CatalogRepository<T>(QamsDbContext context)
+        : ICatalogRepository<T>
         where T : CatalogBase
     {
-        private readonly QamsDbContext _context;
-        private readonly DbSet<T> _dbSet;
-        private readonly ILogger<CatalogRepository<T>> _logger;
-
-        public CatalogRepository(QamsDbContext context, ILogger<CatalogRepository<T>> logger)
-        {
-            _context = context;
-            _dbSet = context.Set<T>();
-            _logger = logger;
-        }
+        private readonly DbSet<T> _dbSet = context.Set<T>();
 
         public async Task<T?> GetByIdAsync(int id) => await _dbSet.FindAsync(id);
 
         public async Task<T?> GetByCodeAsync(string code) =>
-            await _dbSet.FirstOrDefaultAsync(c => c.Code.ToLower() == code.ToLower());
+            await _dbSet.FirstOrDefaultAsync(c => string.Equals(c.Code, code, StringComparison.OrdinalIgnoreCase));
 
         public async Task<IReadOnlyList<T>> GetAllActiveAsync() =>
             await _dbSet
@@ -45,6 +37,6 @@ namespace QAMS.Infrastructure.Repositories
         public void Update(T entity) => _dbSet.Update(entity);
 
         public async Task<bool> ExistsByCodeAsync(string code) =>
-            await _dbSet.AnyAsync(c => c.Code.ToLower() == code.ToLower());
+            await _dbSet.AnyAsync(c => string.Equals(c.Code, code, StringComparison.OrdinalIgnoreCase));
     }
 }

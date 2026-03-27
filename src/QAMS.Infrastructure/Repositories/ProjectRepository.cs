@@ -10,9 +10,9 @@ namespace QAMS.Infrastructure.Repositories
     /// Repositorio específico para Project.
     /// Proporciona consultas con eager loading de suites y tableros.
     /// </summary>
-    public class ProjectRepository : GenericRepository<Project>, IProjectRepository
+    public class ProjectRepository(QamsDbContext context)
+        : GenericRepository<Project>(context), IProjectRepository
     {
-        public ProjectRepository(QamsDbContext context) : base(context) { }
 
         /// <summary>
         /// Obtiene un proyecto con todas sus suites de prueba.

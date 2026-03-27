@@ -11,16 +11,10 @@ namespace QAMS.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class ProjectsController : ControllerBase
+    public class ProjectsController(IProjectService projectService, ILogger<ProjectsController> logger) : ControllerBase
     {
-        private readonly IProjectService _projectService;
-        private readonly ILogger<ProjectsController> _logger;
-
-        public ProjectsController(IProjectService projectService, ILogger<ProjectsController> logger)
-        {
-            _projectService = projectService;
-            _logger = logger;
-        }
+        private readonly IProjectService _projectService = projectService;
+        private readonly ILogger<ProjectsController> _logger = logger;
 
         [HttpGet]
         [HasPermission("PROJECTS_VIEW")]

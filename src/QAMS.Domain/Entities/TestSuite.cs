@@ -15,6 +15,6 @@ namespace QAMS.Domain.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public ICollection<TestCase> TestCases { get; set; } = new List<TestCase>();
+        public ICollection<TestCase> TestCases { get; set; } = [];
     }
 }

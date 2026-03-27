@@ -11,25 +11,20 @@ using QAMS.Domain.Ports.Services;
 namespace QAMS.Infrastructure.Security
 {
     /// <summary>Genera Access Token JWT y Refresh Token.</summary>
-    public class JwtTokenGenerator : IJwtTokenGenerator
+    public class JwtTokenGenerator(IOptions<JwtSettings> settings) : IJwtTokenGenerator
     {
-        private readonly JwtSettings _settings;
-
-        public JwtTokenGenerator(IOptions<JwtSettings> settings)
-        {
-            _settings = settings.Value;
-        }
+        private readonly JwtSettings _settings = settings.Value;
 
         public string GenerateAccessToken(User user, IEnumerable<string> permissions)
         {
             // Crear claims del usuario
-            var claims = new List<Claim>
-            {
+            List<Claim> claims =
+            [
                 new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new(ClaimTypes.Name, user.Username),
                 new(ClaimTypes.Email, user.Email),
                 new("FullName", user.FullName)
-            };
+            ];
 
             // Agregar cada permiso como claim individual
             foreach (var permission in permissions)

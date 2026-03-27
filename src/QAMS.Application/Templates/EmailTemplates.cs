@@ -204,6 +204,41 @@ namespace QAMS.Application.Templates
             return GetPasswordResetSuccessEmailHtml(fullName); // Reutilizar la misma plantilla por ahora
         }
 
+        public static string GetAdminPasswordResetEmailHtml(string fullName, string newPassword)
+        {
+            return $@"
+<!DOCTYPE html>
+<html lang=""es"">
+<body style=""margin:0;padding:0;background-color:#0f0f23;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;"">
+    <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" width=""100%"" style=""padding:40px 20px;"">
+        <tr>
+            <td align=""center"">
+                <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" width=""600"" style=""background-color:#1a1a2e;border:1px solid rgba(59,130,246,0.5);border-radius:16px;"">
+                    <tr>
+                        <td style=""padding:40px;text-align:center;"">
+                            <h2 style=""color:#60a5fa;margin-top:0;"">Contraseña Restablecida Exitosamente</h2>
+                            <p style=""color:#94a3b8;font-size:16px;line-height:1.6;text-align:left;"">
+                                Hola {fullName},<br><br>
+                                Un administrador ha restablecido tu contraseña en QAMS. A continuación encontrarás tus nuevas credenciales de acceso:
+                            </p>
+                            <div style=""background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:20px;margin:20px 0;"">
+                                <p style=""margin:0;color:#93c5fd;font-size:12px;font-weight:bold;text-transform:uppercase;"">Nueva Contraseña</p>
+                                <p style=""margin:5px 0 0;color:#ffffff;font-size:24px;font-weight:bold;letter-spacing:1px;"">{newPassword}</p>
+                            </div>
+                            <p style=""color:#94a3b8;font-size:14px;text-align:left;margin-top:20px;"">
+                                Te sugerimos ingresar al sistema e iniciar sesión de inmediato con tu nueva contraseña.
+                            </p>
+                            <a href=""https://qams-web.onrender.com/"" style=""display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;padding:12px 30px;border-radius:8px;font-weight:bold;margin:20px 0;"">Ir al Sistema</a>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+        }
+
         public static string GetProjectCreatedEmailHtml(string fullName, string projectName, string projectKey)
         {
             return $@"

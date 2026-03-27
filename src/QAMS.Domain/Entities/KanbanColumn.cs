@@ -9,6 +9,6 @@ namespace QAMS.Domain.Entities
         public string Name { get; set; } = string.Empty;
         public int OrderIndex { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public ICollection<KanbanTask> Tasks { get; set; } = new List<KanbanTask>();
+        public ICollection<KanbanTask> Tasks { get; set; } = [];
     }
 }

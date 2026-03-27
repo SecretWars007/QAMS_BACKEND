@@ -10,18 +10,11 @@ namespace QAMS.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public class AuthController(IAuthService authService, IUserService userService, ILogger<AuthController> logger) : ControllerBase
     {
-        private readonly IAuthService _authService;
-        private readonly IUserService _userService;
-        private readonly ILogger<AuthController> _logger;
-
-        public AuthController(IAuthService authService, IUserService userService, ILogger<AuthController> logger)
-        {
-            _authService = authService;
-            _userService = userService;
-            _logger = logger;
-        }
+        private readonly IAuthService _authService = authService;
+        private readonly IUserService _userService = userService;
+        private readonly ILogger<AuthController> _logger = logger;
 
         /// <summary>POST api/auth/login</summary>
         [HttpPost("login")]

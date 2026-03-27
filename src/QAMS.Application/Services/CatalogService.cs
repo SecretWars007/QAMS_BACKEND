@@ -13,39 +13,29 @@ namespace QAMS.Application.Services
     /// Servicio de administración de tablas catálogo.
     /// OCP: agregar catálogos sin modificar lógica existente.
     /// </summary>
-    public class CatalogService : ICatalogService
+    public class CatalogService(
+        IServiceProvider serviceProvider,
+        IUnitOfWork uow,
+        ILogger<CatalogService> logger) : ICatalogService
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly IUnitOfWork _uow;
-        private readonly ILogger<CatalogService> _logger;
-
-        public CatalogService(
-            IServiceProvider serviceProvider,
-            IUnitOfWork uow, 
-            ILogger<CatalogService> logger)
-        {
-            _serviceProvider = serviceProvider;
-            _uow = uow;
-            _logger = logger;
-        }
 
         public async Task<List<CatalogItemDto>> GetActiveByCatalogNameAsync(string catalogName)
         {
-            _logger.LogInformation("Obteniendo activos del catálogo '{Name}'.", catalogName);
+            logger.LogInformation("Obteniendo activos del catálogo '{Name}'.", catalogName);
             var items = await ResolveRepo<IReadOnlyList<CatalogBase>>(catalogName, async repo => await repo.GetAllActiveAsync());
             return Map(items);
         }
 
         public async Task<List<CatalogItemDto>> GetAllByCatalogNameAsync(string catalogName)
         {
-            _logger.LogInformation("Obteniendo todos del catálogo '{Name}'.", catalogName);
+            logger.LogInformation("Obteniendo todos del catálogo '{Name}'.", catalogName);
             var items = await ResolveRepo<IReadOnlyList<CatalogBase>>(catalogName, async repo => await repo.GetAllAsync());
             return Map(items);
         }
 
         public async Task<CatalogItemDto> CreateAsync(string catalogName, CreateCatalogItemDto dto)
         {
-            _logger.LogInformation("Creando valor en catálogo '{Name}': {Code}.", catalogName, dto.Code);
+            logger.LogInformation("Creando valor en catálogo '{Name}': {Code}.", catalogName, dto.Code);
             var result = await ResolveRepo<CatalogBase>(catalogName, async repo => 
             {
                 if (await repo.ExistsByCodeAsync(dto.Code))
@@ -62,13 +52,13 @@ namespace QAMS.Application.Services
                 return (CatalogBase)entity;
             });
 
-            await _uow.SaveChangesAsync();
+            await uow.SaveChangesAsync();
             return MapSingle(result);
         }
 
         public async Task<CatalogItemDto> UpdateAsync(string catalogName, int id, CreateCatalogItemDto dto)
         {
-            _logger.LogInformation("Actualizando ID={Id} en catálogo '{Name}'.", id, catalogName);
+            logger.LogInformation("Actualizando ID={Id} en catálogo '{Name}'.", id, catalogName);
             var result = await ResolveRepo<CatalogBase>(catalogName, async repo => 
             {
                 var entity = await repo.GetByIdAsync(id)
@@ -84,7 +74,7 @@ namespace QAMS.Application.Services
                 return (CatalogBase)entity;
             });
 
-            await _uow.SaveChangesAsync();
+            await uow.SaveChangesAsync();
             return MapSingle(result);
         }
 
@@ -104,11 +94,11 @@ namespace QAMS.Application.Services
             };
 
             var repoType = typeof(ICatalogRepository<>).MakeGenericType(type);
-            var repo = _serviceProvider.GetRequiredService(repoType);
+            var repo = serviceProvider.GetRequiredService(repoType);
             return await action(repo);
         }
 
-        private CatalogBase CreateEntityInstance(string catalogName)
+        private static CatalogBase CreateEntityInstance(string catalogName)
         {
             return catalogName.ToLower() switch
             {
@@ -124,7 +114,7 @@ namespace QAMS.Application.Services
             };
         }
 
-        private List<CatalogItemDto> Map(IEnumerable<CatalogBase> items)
+        private static List<CatalogItemDto> Map(IEnumerable<CatalogBase> items)
         {
             var dtos = new List<CatalogItemDto>();
             foreach (var e in items)
@@ -134,7 +124,7 @@ namespace QAMS.Application.Services
             return dtos;
         }
 
-        private CatalogItemDto MapSingle(CatalogBase e)
+        private static CatalogItemDto MapSingle(CatalogBase e)
         {
             return new CatalogItemDto
             {

@@ -8,6 +8,6 @@ namespace QAMS.Domain.Entities.Catalogs
     public class TaskPriority : CatalogBase
     {
         /// <summary>Tareas con esta prioridad</summary>
-        public ICollection<KanbanTask> KanbanTasks { get; set; } = new List<KanbanTask>();
+        public ICollection<KanbanTask> KanbanTasks { get; set; } = [];
     }
 }

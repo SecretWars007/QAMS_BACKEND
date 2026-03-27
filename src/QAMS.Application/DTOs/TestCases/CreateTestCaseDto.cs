@@ -37,8 +37,8 @@ namespace QAMS.Application.DTOs.TestCases
         [Required(ErrorMessage = "El tipo de prueba es obligatorio.")]
         public int TestTypeId { get; set; }
 
-        public List<Guid> CertifierUserIds { get; set; } = new();
-        public List<CreateTestStepDto> Steps { get; set; } = new();
+        public List<Guid> CertifierUserIds { get; set; } = [];
+        public List<CreateTestStepDto> Steps { get; set; } = [];
     }
 
     public class CreateTestStepDto

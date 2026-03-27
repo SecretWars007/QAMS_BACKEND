@@ -35,7 +35,7 @@ public class TestExecutionServiceTests
     private readonly Mock<IMapper> _mockMapper = new();
     private readonly Mock<ILogger<TestExecutionService>> _mockLogger = new();
 
-    private TestExecutionService CreateService() => new TestExecutionService(
+    private TestExecutionService CreateService() => new(
         _mockExecRepo.Object,
         _mockTestCaseRepo.Object,
         _mockProjectRepo.Object,
@@ -59,7 +59,7 @@ public class TestExecutionServiceTests
         var testCase = new TestCase 
         { 
             Id = testCaseId, 
-            TestSteps = new List<TestStep> { new TestStep { Id = Guid.NewGuid() } } 
+            TestSteps = [new() { Id = Guid.NewGuid() }] 
         };
         
         var pendingStatus = new ExecutionStatus { Id = 1, Code = "PENDING" };
@@ -95,7 +95,7 @@ public class TestExecutionServiceTests
         { 
             Id = testCaseId, 
             ProjectId = Guid.NewGuid(),
-            TestSteps = new List<TestStep> { new TestStep { Id = stepId } } 
+            TestSteps = [new() { Id = stepId }] 
         };
         
         var passedStepStatus = new StepResultStatus { Id = 2, Code = "PASSED" };
@@ -105,10 +105,10 @@ public class TestExecutionServiceTests
         var dto = new CreateCompleteExecutionDto
         {
             TestCaseId = testCaseId,
-            StepResults = new List<StepResultInput> 
-            { 
-                new StepResultInput { TestStepId = stepId, StatusId = passedStepStatus.Id } 
-            }
+            StepResults = 
+            [ 
+                new() { TestStepId = stepId, StatusId = passedStepStatus.Id } 
+            ]
         };
 
         _mockTestCaseRepo.Setup(r => r.GetWithStepsAsync(testCaseId)).ReturnsAsync(testCase);
@@ -145,7 +145,7 @@ public class TestExecutionServiceTests
         { 
             Id = execId, 
             StatusId = pendingStatus.Id,
-            StepResults = new List<ExecutionStepResult> { new ExecutionStepResult { TestStepId = stepId } }
+            StepResults = [new() { TestStepId = stepId }]
         };
 
         _mockExecRepo.Setup(r => r.GetFullExecutionAsync(execId)).ReturnsAsync(execution);
@@ -168,7 +168,7 @@ public class TestExecutionServiceTests
     {
         // Arrange
         var execId = Guid.NewGuid();
-        var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+        var stream = new MemoryStream([1, 2, 3]);
         var evidenceType = new EvidenceType { Id = 1, Code = "IMAGE" };
 
         _mockExecRepo.Setup(r => r.GetByIdAsync(execId)).ReturnsAsync(new TestExecution { Id = execId });

@@ -15,63 +15,35 @@ namespace QAMS.Application.Services
     /// Servicio completo de ejecución de pruebas: crear ejecución,
     /// registrar resultados por paso, subir evidencias y completar ejecución.
     /// </summary>
-    public class TestExecutionService : ITestExecutionService
+    public class TestExecutionService(
+        ITestExecutionRepository execRepo,
+        ITestCaseRepository testCaseRepo,
+        IProjectRepository projectRepo,
+        IEvidenceRepository evidenceRepo,
+        ICatalogRepository<ExecutionStatus> execStatusRepo,
+        ICatalogRepository<StepResultStatus> stepStatusRepo,
+        ICatalogRepository<EvidenceType> evidenceTypeRepo,
+        IObservationRepository observationRepo,
+        IFileStorageService fileStorage,
+        IUnitOfWork uow,
+        IMapper mapper,
+        ILogger<TestExecutionService> logger
+    ) : ITestExecutionService
     {
-        private readonly ITestExecutionRepository _execRepo;
-        private readonly ITestCaseRepository _testCaseRepo;
-        private readonly IProjectRepository _projectRepo;
-        private readonly IEvidenceRepository _evidenceRepo;
-        private readonly ICatalogRepository<ExecutionStatus> _execStatusRepo;
-        private readonly ICatalogRepository<StepResultStatus> _stepStatusRepo;
-        private readonly ICatalogRepository<EvidenceType> _evidenceTypeRepo;
-        private readonly IObservationRepository _observationRepo;
-        private readonly IFileStorageService _fileStorage;
-        private readonly IUnitOfWork _uow;
-        private readonly IMapper _mapper;
-        private readonly ILogger<TestExecutionService> _logger;
-
-        public TestExecutionService(
-            ITestExecutionRepository execRepo,
-            ITestCaseRepository testCaseRepo,
-            IProjectRepository projectRepo,
-            IEvidenceRepository evidenceRepo,
-            ICatalogRepository<ExecutionStatus> execStatusRepo,
-            ICatalogRepository<StepResultStatus> stepStatusRepo,
-            ICatalogRepository<EvidenceType> evidenceTypeRepo,
-            IObservationRepository observationRepo,
-            IFileStorageService fileStorage,
-            IUnitOfWork uow,
-            IMapper mapper,
-            ILogger<TestExecutionService> logger
-        )
-        {
-            _execRepo = execRepo;
-            _testCaseRepo = testCaseRepo;
-            _projectRepo = projectRepo;
-            _evidenceRepo = evidenceRepo;
-            _execStatusRepo = execStatusRepo;
-            _stepStatusRepo = stepStatusRepo;
-            _evidenceTypeRepo = evidenceTypeRepo;
-            _observationRepo = observationRepo;
-            _fileStorage = fileStorage;
-            _uow = uow;
-            _mapper = mapper;
-            _logger = logger;
-        }
 
         public async Task<TestExecutionDto> GetByIdAsync(Guid id)
         {
-            _logger.LogInformation("Obteniendo ejecución {Id}.", id);
+            logger.LogInformation("Obteniendo ejecución {Id}.", id);
             var execution =
-                await _execRepo.GetFullExecutionAsync(id)
+                await execRepo.GetFullExecutionAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestExecution), id);
 
-            var dto = _mapper.Map<TestExecutionDto>(execution);
+            var dto = mapper.Map<TestExecutionDto>(execution);
             // Asignar URLs de evidencias globales
             foreach (var evidence in dto.Evidences)
             {
                 var entity = execution.Evidences.First(e => e.Id == evidence.Id);
-                evidence.FileUrl = _fileStorage.GetFileUrl(entity.FilePath);
+                evidence.FileUrl = fileStorage.GetFileUrl(entity.FilePath);
             }
 
             // Asignar URLs de evidencias por paso
@@ -81,7 +53,7 @@ namespace QAMS.Application.Services
                 foreach (var evidence in stepResult.Evidences)
                 {
                     var entityEv = entityStep.Evidences.First(e => e.Id == evidence.Id);
-                    evidence.FileUrl = _fileStorage.GetFileUrl(entityEv.FilePath);
+                    evidence.FileUrl = fileStorage.GetFileUrl(entityEv.FilePath);
                 }
             }
             return dto;
@@ -89,16 +61,16 @@ namespace QAMS.Application.Services
 
         public async Task<List<TestExecutionDto>> GetByTestCaseAsync(Guid testCaseId)
         {
-            _logger.LogInformation("Obteniendo ejecuciones del caso {TestCaseId}.", testCaseId);
-            var executions = await _execRepo.GetByTestCaseAsync(testCaseId);
-            return _mapper.Map<List<TestExecutionDto>>(executions);
+            logger.LogInformation("Obteniendo ejecuciones del caso {TestCaseId}.", testCaseId);
+            var executions = await execRepo.GetByTestCaseAsync(testCaseId);
+            return mapper.Map<List<TestExecutionDto>>(executions);
         }
 
         public async Task<List<TestExecutionDto>> GetByTesterAsync(Guid testerId)
         {
-            _logger.LogInformation("Obteniendo ejecuciones del tester {TesterId}.", testerId);
-            var executions = await _execRepo.GetByTesterAsync(testerId);
-            return _mapper.Map<List<TestExecutionDto>>(executions);
+            logger.LogInformation("Obteniendo ejecuciones del tester {TesterId}.", testerId);
+            var executions = await execRepo.GetByTesterAsync(testerId);
+            return mapper.Map<List<TestExecutionDto>>(executions);
         }
 
         /// <summary>
@@ -107,7 +79,7 @@ namespace QAMS.Application.Services
         /// </summary>
         public async Task<TestExecutionDto> CreateAsync(Guid testerId, CreateTestExecutionDto dto)
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Creando ejecución para caso {TestCaseId} por tester {TesterId}.",
                 dto.TestCaseId,
                 testerId
@@ -115,17 +87,17 @@ namespace QAMS.Application.Services
 
             // Obtener el caso de prueba con sus pasos
             var testCase =
-                await _testCaseRepo.GetWithStepsAsync(dto.TestCaseId)
+                await testCaseRepo.GetWithStepsAsync(dto.TestCaseId)
                 ?? throw new EntityNotFoundException(nameof(TestCase), dto.TestCaseId);
 
             // Obtener el estado PENDING del catálogo
             var pendingStatus =
-                await _execStatusRepo.GetByCodeAsync("PENDING")
+                await execStatusRepo.GetByCodeAsync("PENDING")
                 ?? throw new DomainException("Estado 'PENDING' no encontrado en catálogo.");
 
             // Obtener el estado NOT_EXECUTED para los pasos
             var notExecutedStatus =
-                await _stepStatusRepo.GetByCodeAsync("NOT_EXECUTED")
+                await stepStatusRepo.GetByCodeAsync("NOT_EXECUTED")
                 ?? throw new DomainException("Estado 'NOT_EXECUTED' no encontrado en catálogo.");
 
             var execution = new TestExecution
@@ -140,8 +112,8 @@ namespace QAMS.Application.Services
             };
 
             // Determinar si hay resultados proporcionados y su influencia en el estado
-            var hasInputResults = dto.StepResults != null && dto.StepResults.Any();
-            var inputStepResults = dto.StepResults?.ToDictionary(sr => sr.TestStepId) ?? new();
+            var hasInputResults = dto.StepResults != null && dto.StepResults.Count > 0;
+            var inputStepResults = dto.StepResults?.ToDictionary(sr => sr.TestStepId) ?? [];
 
             // Pre-crear resultado de cada paso
             foreach (var step in testCase.TestSteps)
@@ -165,7 +137,7 @@ namespace QAMS.Application.Services
             // Si se pasaron resultados, cambiar el estado global a IN_PROGRESS (mínimo)
             if (hasInputResults)
             {
-                var inProgressStatus = await _execStatusRepo.GetByCodeAsync("IN_PROGRESS");
+                var inProgressStatus = await execStatusRepo.GetByCodeAsync("IN_PROGRESS");
                 execution.StatusId = inProgressStatus!.Id;
 
                 // Opcional: Podríamos re-evaluar si ya terminó (PASSED/FAILED) 
@@ -173,20 +145,20 @@ namespace QAMS.Application.Services
                 // El endpoint /complete es el que hace la evaluación exhaustiva.
             }
 
-            await _execRepo.AddAsync(execution);
-            await _uow.SaveChangesAsync();
+            await execRepo.AddAsync(execution);
+            await uow.SaveChangesAsync();
 
             // Sincronizar estado con el TestCase
             await SyncTestCaseStatusAsync(execution.TestCaseId, execution.StatusId);
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Ejecución {ExecId} creada con {StepCount} pasos.",
                 execution.Id,
                 execution.StepResults.Count
             );
 
-            var created = await _execRepo.GetFullExecutionAsync(execution.Id);
-            return _mapper.Map<TestExecutionDto>(created);
+            var created = await execRepo.GetFullExecutionAsync(execution.Id);
+            return mapper.Map<TestExecutionDto>(created);
         }
 
         /// <summary>
@@ -195,7 +167,7 @@ namespace QAMS.Application.Services
         /// </summary>
         public async Task<TestExecutionDto> CreateCompleteAsync(Guid testerId, CreateCompleteExecutionDto dto)
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Creando ejecución completa para caso {TestCaseId} por tester {TesterId} con {StepCount} resultados.",
                 dto.TestCaseId,
                 testerId,
@@ -204,7 +176,7 @@ namespace QAMS.Application.Services
 
             // Obtener el caso de prueba con sus pasos
             var testCase =
-                await _testCaseRepo.GetWithStepsAsync(dto.TestCaseId)
+                await testCaseRepo.GetWithStepsAsync(dto.TestCaseId)
                 ?? throw new EntityNotFoundException(nameof(TestCase), dto.TestCaseId);
 
             // Validar que todos los TestStepId proporcionados existen en el TestCase
@@ -214,7 +186,7 @@ namespace QAMS.Application.Services
                 .Where(id => !testStepIds.Contains(id))
                 .ToList();
 
-            if (invalidStepIds.Any())
+            if (invalidStepIds.Count > 0)
             {
                 throw new DomainException(
                     $"Los siguientes TestStepId no pertenecen al caso de prueba: {string.Join(", ", invalidStepIds)}"
@@ -225,13 +197,13 @@ namespace QAMS.Application.Services
             var uniqueStatusIds = dto.StepResults.Select(sr => sr.StatusId).Distinct().ToList();
             foreach (var statusId in uniqueStatusIds)
             {
-                _ = await _stepStatusRepo.GetByIdAsync(statusId)
+                _ = await stepStatusRepo.GetByIdAsync(statusId)
                     ?? throw new EntityNotFoundException(nameof(StepResultStatus), statusId);
             }
 
             // Determinar el estado de la ejecución basado en los resultados de los pasos
-            var passedStatus = await _stepStatusRepo.GetByCodeAsync("PASSED");
-            var failedStatus = await _stepStatusRepo.GetByCodeAsync("FAILED");
+            var passedStatus = await stepStatusRepo.GetByCodeAsync("PASSED");
+            var failedStatus = await stepStatusRepo.GetByCodeAsync("FAILED");
             
             var allPassed = dto.StepResults.All(sr => sr.StatusId == passedStatus!.Id);
             var anyFailed = dto.StepResults.Any(sr => sr.StatusId == failedStatus!.Id);
@@ -242,7 +214,7 @@ namespace QAMS.Application.Services
                 "IN_PROGRESS";
 
             var executionStatus =
-                await _execStatusRepo.GetByCodeAsync(executionStatusCode)
+                await execStatusRepo.GetByCodeAsync(executionStatusCode)
                 ?? throw new DomainException($"Estado '{executionStatusCode}' no encontrado en catálogo.");
 
             var execution = new TestExecution
@@ -280,21 +252,21 @@ namespace QAMS.Application.Services
                 );
             }
 
-            await _execRepo.AddAsync(execution);
-            await _uow.SaveChangesAsync();
+            await execRepo.AddAsync(execution);
+            await uow.SaveChangesAsync();
 
             // Sincronizar estado con el TestCase
             await SyncTestCaseStatusAsync(execution.TestCaseId, execution.StatusId);
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Ejecución completa {ExecId} creada con estado {Status} y {StepCount} resultados.",
                 execution.Id,
                 executionStatusCode,
                 execution.StepResults.Count
             );
 
-            var created = await _execRepo.GetFullExecutionAsync(execution.Id);
-            return _mapper.Map<TestExecutionDto>(created);
+            var created = await execRepo.GetFullExecutionAsync(execution.Id);
+            return mapper.Map<TestExecutionDto>(created);
         }
 
         /// <summary>
@@ -306,18 +278,18 @@ namespace QAMS.Application.Services
             UpdateStepResultDto dto
         )
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Actualizando paso {StepId} de ejecución {ExecId}.",
                 dto.TestStepId,
                 executionId
             );
 
             var execution =
-                await _execRepo.GetFullExecutionAsync(executionId)
+                await execRepo.GetFullExecutionAsync(executionId)
                 ?? throw new EntityNotFoundException(nameof(TestExecution), executionId);
 
             // Validar que el estado del catálogo existe
-            _ = await _stepStatusRepo.GetByIdAsync(dto.StatusId)
+            _ = await stepStatusRepo.GetByIdAsync(dto.StatusId)
                 ?? throw new EntityNotFoundException(nameof(StepResultStatus), dto.StatusId);
 
             // Buscar el resultado del paso en la ejecución
@@ -334,34 +306,34 @@ namespace QAMS.Application.Services
             stepResult.EvaluatedAt = DateTime.UtcNow;
 
             // Si la ejecución estaba PENDING, cambiarla a IN_PROGRESS
-            var pendingStatus = await _execStatusRepo.GetByCodeAsync("PENDING");
+            var pendingStatus = await execStatusRepo.GetByCodeAsync("PENDING");
             if (execution.StatusId == pendingStatus!.Id)
             {
-                var inProgressStatus = await _execStatusRepo.GetByCodeAsync("IN_PROGRESS");
+                var inProgressStatus = await execStatusRepo.GetByCodeAsync("IN_PROGRESS");
                 execution.StatusId = inProgressStatus!.Id;
             }
 
-            _execRepo.Update(execution);
-            await _uow.SaveChangesAsync();
+            execRepo.Update(execution);
+            await uow.SaveChangesAsync();
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Paso {StepId} actualizado en ejecución {ExecId}.",
                 dto.TestStepId,
                 executionId
             );
 
-            var updated = await _execRepo.GetFullExecutionAsync(executionId);
-            return _mapper.Map<TestExecutionDto>(updated);
+            var updated = await execRepo.GetFullExecutionAsync(executionId);
+            return mapper.Map<TestExecutionDto>(updated);
         }
 
         public async Task<TestExecutionDto> UpdateStatusAsync(Guid id, int statusId)
         {
-            _logger.LogInformation("Actualizando estado de ejecución {ExecId} a {StatusId}.", id, statusId);
+            logger.LogInformation("Actualizando estado de ejecución {ExecId} a {StatusId}.", id, statusId);
 
-            var execution = await _execRepo.GetFullExecutionAsync(id)
+            var execution = await execRepo.GetFullExecutionAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestExecution), id);
 
-            var status = await _execStatusRepo.GetByIdAsync(statusId)
+            var status = await execStatusRepo.GetByIdAsync(statusId)
                 ?? throw new EntityNotFoundException(nameof(ExecutionStatus), statusId);
 
             execution.StatusId = statusId;
@@ -376,8 +348,8 @@ namespace QAMS.Application.Services
                 execution.CompletedAt = null;
             }
 
-            _execRepo.Update(execution);
-            await _uow.SaveChangesAsync();
+            execRepo.Update(execution);
+            await uow.SaveChangesAsync();
 
             // Sincronizar estado con el TestCase
             await SyncTestCaseStatusAsync(execution.TestCaseId, execution.StatusId);
@@ -387,7 +359,7 @@ namespace QAMS.Application.Services
                 await SyncProjectHoursAsync(execution.TestCase.ProjectId);
             }
 
-            return _mapper.Map<TestExecutionDto>(execution);
+            return mapper.Map<TestExecutionDto>(execution);
         }
 
         /// <summary>
@@ -398,24 +370,24 @@ namespace QAMS.Application.Services
             int finalStatusId
         )
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Completando ejecución {ExecId} con status {StatusId}.",
                 executionId,
                 finalStatusId
             );
 
             var execution =
-                await _execRepo.GetFullExecutionAsync(executionId)
+                await execRepo.GetFullExecutionAsync(executionId)
                 ?? throw new EntityNotFoundException(nameof(TestExecution), executionId);
 
-            _ = await _execStatusRepo.GetByIdAsync(finalStatusId)
+            _ = await execStatusRepo.GetByIdAsync(finalStatusId)
                 ?? throw new EntityNotFoundException(nameof(ExecutionStatus), finalStatusId);
 
             execution.StatusId = finalStatusId;
             execution.CompletedAt = DateTime.UtcNow;
 
-            _execRepo.Update(execution);
-            await _uow.SaveChangesAsync();
+            execRepo.Update(execution);
+            await uow.SaveChangesAsync();
 
             // Sincronizar estado con el TestCase
             await SyncTestCaseStatusAsync(execution.TestCaseId, execution.StatusId);
@@ -423,10 +395,10 @@ namespace QAMS.Application.Services
             // Sincronizar horas del proyecto
             await SyncProjectHoursAsync(execution.TestCase.ProjectId);
 
-            _logger.LogInformation("Ejecución {ExecId} completada.", executionId);
+            logger.LogInformation("Ejecución {ExecId} completada.", executionId);
 
-            var completed = await _execRepo.GetFullExecutionAsync(executionId);
-            return _mapper.Map<TestExecutionDto>(completed);
+            var completed = await execRepo.GetFullExecutionAsync(executionId);
+            return mapper.Map<TestExecutionDto>(completed);
         }
 
         /// <summary>
@@ -442,7 +414,7 @@ namespace QAMS.Application.Services
             Guid? stepResultId = null
         )
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Subiendo evidencia '{FileName}' a ejecución {ExecId}.",
                 fileName,
                 executionId
@@ -450,7 +422,7 @@ namespace QAMS.Application.Services
 
             // Verificar que la ejecución existe
             var execution =
-                await _execRepo.GetByIdAsync(executionId)
+                await execRepo.GetByIdAsync(executionId)
                 ?? throw new EntityNotFoundException(nameof(TestExecution), executionId);
 
             // Determinar tipo de evidencia por content type
@@ -461,13 +433,13 @@ namespace QAMS.Application.Services
                 : "LOG_FILE";
 
             var evidenceType =
-                await _evidenceTypeRepo.GetByCodeAsync(typeCode)
+                await evidenceTypeRepo.GetByCodeAsync(typeCode)
                 ?? throw new DomainException(
                     $"Tipo de evidencia '{typeCode}' no encontrado en catálogo."
                 );
 
             // Guardar archivo en el sistema de archivos
-            var filePath = await _fileStorage.SaveFileAsync(
+            var filePath = await fileStorage.SaveFileAsync(
                 fileStream,
                 fileName,
                 $"evidences/{executionId}"
@@ -490,25 +462,25 @@ namespace QAMS.Application.Services
                 UploadedAt = DateTime.UtcNow,
             };
 
-            await _evidenceRepo.AddAsync(evidence);
-            await _uow.SaveChangesAsync();
+            await evidenceRepo.AddAsync(evidence);
+            await uow.SaveChangesAsync();
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Evidencia '{FileName}' guardada con ID {EvidenceId}.",
                 fileName,
                 evidence.Id
             );
 
-            var dto = _mapper.Map<EvidenceDto>(evidence);
-            dto.FileUrl = _fileStorage.GetFileUrl(evidence.FilePath);
+            var dto = mapper.Map<EvidenceDto>(evidence);
+            dto.FileUrl = fileStorage.GetFileUrl(evidence.FilePath);
             return dto;
         }
 
         public async Task<TestExecutionDto> UpdateCompleteAsync(Guid id, UpdateCompleteExecutionDto dto)
         {
-            _logger.LogInformation("Actualización completa de la ejecución {Id}.", id);
+            logger.LogInformation("Actualización completa de la ejecución {Id}.", id);
             
-            var execution = await _execRepo.GetFullExecutionAsync(id)
+            var execution = await execRepo.GetFullExecutionAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestExecution), id);
 
             // 1. Actualizar datos generales
@@ -531,13 +503,13 @@ namespace QAMS.Application.Services
             // 3. Re-evaluar estado global automáticamente
             await ReEvaluateExecutionStatusAsync(execution);
 
-            _execRepo.Update(execution);
-            await _uow.SaveChangesAsync();
+            execRepo.Update(execution);
+            await uow.SaveChangesAsync();
 
             // Sincronizar estado con el TestCase y horas del proyecto si terminó
             await SyncTestCaseStatusAsync(execution.TestCaseId, execution.StatusId);
             
-            var status = await _execStatusRepo.GetByIdAsync(execution.StatusId);
+            var status = await execStatusRepo.GetByIdAsync(execution.StatusId);
             if (status?.Code == "PASSED" || status?.Code == "FAILED")
             {
                 await SyncProjectHoursAsync(execution.TestCase.ProjectId);
@@ -548,14 +520,14 @@ namespace QAMS.Application.Services
 
         private async Task ReEvaluateExecutionStatusAsync(TestExecution execution)
         {
-            var pasoPassed = await _stepStatusRepo.GetByCodeAsync("PASSED");
-            var pasoFailed = await _stepStatusRepo.GetByCodeAsync("FAILED");
-            var pasoBlocked = await _stepStatusRepo.GetByCodeAsync("BLOCKED");
+            var pasoPassed = await stepStatusRepo.GetByCodeAsync("PASSED");
+            var pasoFailed = await stepStatusRepo.GetByCodeAsync("FAILED");
+            var pasoBlocked = await stepStatusRepo.GetByCodeAsync("BLOCKED");
 
             // Si no existen los códigos, la re-evaluación no puede continuar de forma segura
             if (pasoPassed == null || pasoFailed == null) 
             {
-                _logger.LogWarning("Cólogos de estado 'PASSED' o 'FAILED' no encontrados en catálogo de pasos.");
+                logger.LogWarning("Cólogos de estado 'PASSED' o 'FAILED' no encontrados en catálogo de pasos.");
                 return;
             }
 
@@ -569,7 +541,7 @@ namespace QAMS.Application.Services
             else if (allPassed) newExecStatusCode = "PASSED";
             else newExecStatusCode = "IN_PROGRESS";
 
-            var newStatus = await _execStatusRepo.GetByCodeAsync(newExecStatusCode);
+            var newStatus = await execStatusRepo.GetByCodeAsync(newExecStatusCode);
             if (newStatus != null)
             {
                 execution.StatusId = newStatus.Id;
@@ -587,7 +559,7 @@ namespace QAMS.Application.Services
 
         public async Task<ObservationDto> AddObservationAsync(Guid createdByUserId, CreateObservationDto dto, Stream? fileStream = null, string? fileName = null, string? contentType = null)
         {
-            _logger.LogInformation("Agregando observación al resultado de paso {StepResultId}.", dto.ExecutionStepResultId);
+            logger.LogInformation("Agregando observación al resultado de paso {StepResultId}.", dto.ExecutionStepResultId);
 
             var observation = new ExecutionStepObservation
             {
@@ -607,10 +579,10 @@ namespace QAMS.Application.Services
                     : contentType.StartsWith("application/pdf") ? "DOCUMENT"
                     : "LOG_FILE";
 
-                var evidenceType = await _evidenceTypeRepo.GetByCodeAsync(typeCode);
+                var evidenceType = await evidenceTypeRepo.GetByCodeAsync(typeCode);
                 
                 // Guardar archivo
-                var filePath = await _fileStorage.SaveFileAsync(
+                var filePath = await fileStorage.SaveFileAsync(
                     fileStream,
                     fileName,
                     $"observations/{dto.ExecutionStepResultId}"
@@ -623,37 +595,37 @@ namespace QAMS.Application.Services
                 observation.ContentType = contentType;
             }
 
-            await _observationRepo.AddAsync(observation);
-            await _uow.SaveChangesAsync();
+            await observationRepo.AddAsync(observation);
+            await uow.SaveChangesAsync();
 
             // Cargar con navegación para el DTO
-            var created = await _observationRepo.GetByIdAsync(observation.Id);
-            return _mapper.Map<ObservationDto>(created);
+            var created = await observationRepo.GetByIdAsync(observation.Id);
+            return mapper.Map<ObservationDto>(created);
         }
 
         public async Task<ObservationDto> AddResponseToObservationAsync(Guid responderUserId, Guid observationId, ResponseObservationDto dto)
         {
-            _logger.LogInformation("Respondiendo a observación {ObservationId}.", observationId);
+            logger.LogInformation("Respondiendo a observación {ObservationId}.", observationId);
 
-            var observation = await _observationRepo.GetByIdAsync(observationId)
+            var observation = await observationRepo.GetByIdAsync(observationId)
                 ?? throw new EntityNotFoundException(nameof(ExecutionStepObservation), observationId);
 
             observation.Response = dto.Response;
             observation.RespondedByUserId = responderUserId;
             observation.RespondedAt = DateTime.UtcNow;
 
-            _observationRepo.Update(observation);
-            await _uow.SaveChangesAsync();
+            observationRepo.Update(observation);
+            await uow.SaveChangesAsync();
 
-            return _mapper.Map<ObservationDto>(observation);
+            return mapper.Map<ObservationDto>(observation);
         }
 
         private async Task SyncTestCaseStatusAsync(Guid testCaseId, int executionStatusId)
         {
-            var testCase = await _testCaseRepo.GetByIdAsync(testCaseId);
+            var testCase = await testCaseRepo.GetByIdAsync(testCaseId);
             if (testCase == null) return;
 
-            var status = await _execStatusRepo.GetByIdAsync(executionStatusId);
+            var status = await execStatusRepo.GetByIdAsync(executionStatusId);
             if (status == null) return;
 
             // Lógica: Si la ejecución pasó o falló, podemos considerar el caso como 'afectado'
@@ -662,14 +634,14 @@ namespace QAMS.Application.Services
             // lo cual implica que TestCase debería tener un StatusId.
             
             // por ahora solo registramos la intención
-            _logger.LogInformation("Sincronizando estado de TestCase {TestCaseId} con ejecución {Status}.", testCaseId, status.Code);
+            logger.LogInformation("Sincronizando estado de TestCase {TestCaseId} con ejecución {Status}.", testCaseId, status.Code);
         }
 
         private async Task SyncProjectHoursAsync(Guid projectId)
         {
-            _logger.LogInformation("Sincronizando horas del proyecto {ProjectId}.", projectId);
+            logger.LogInformation("Sincronizando horas del proyecto {ProjectId}.", projectId);
             
-            var project = await _projectRepo.GetByIdTrackedAsync(projectId);
+            var project = await projectRepo.GetByIdTrackedAsync(projectId);
             if (project == null) return;
 
             // 1. Horas Ejecutadas (Suma de ActualTimeHours de ejecuciones PASSED/FAILED)
@@ -702,10 +674,10 @@ namespace QAMS.Application.Services
             // El remanente es lo que falta por completar exitosamente
             project.RemainingHours = totalEstimated - alreadyPassedEstimation;
 
-            _projectRepo.Update(project);
-            await _uow.SaveChangesAsync();
+            projectRepo.Update(project);
+            await uow.SaveChangesAsync();
             
-            _logger.LogInformation("Proyecto {ProjectId} actualizado: Ejecutadas {Executed}, Remanentes {Remaining}.", 
+            logger.LogInformation("Proyecto {ProjectId} actualizado: Ejecutadas {Executed}, Remanentes {Remaining}.", 
                 projectId, project.ExecutedHours, project.RemainingHours);
         }
     }

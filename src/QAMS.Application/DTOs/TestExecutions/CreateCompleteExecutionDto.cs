@@ -26,6 +26,6 @@ namespace QAMS.Application.DTOs.TestExecutions
         /// </summary>
         [Required(ErrorMessage = "Los resultados de pasos son obligatorios.")]
         [MinLength(1, ErrorMessage = "Debe incluir al menos un resultado de paso.")]
-        public List<StepResultInput> StepResults { get; set; } = new();
+        public List<StepResultInput> StepResults { get; set; } = [];
     }
 }

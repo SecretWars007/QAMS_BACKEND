@@ -32,14 +32,14 @@ namespace QAMS.Domain.Entities
         public int ProjectStatusId { get; set; }
         public QAMS.Domain.Entities.Catalogs.ProjectStatus? ProjectStatus { get; set; }
 
-        public virtual ICollection<TestSuite> TestSuites { get; set; } = new List<TestSuite>();
-        public virtual ICollection<KanbanBoard> KanbanBoards { get; set; } = new List<KanbanBoard>();
-        public virtual ICollection<TestCase> TestCases { get; set; } = new List<TestCase>();
-        
+        public virtual ICollection<TestSuite> TestSuites { get; set; } = [];
+        public virtual ICollection<KanbanBoard> KanbanBoards { get; set; } = [];
+        public virtual ICollection<TestCase> TestCases { get; set; } = [];
+
         // Testers asignados al proyecto
-        public virtual ICollection<ProjectTester> ProjectTesters { get; set; } = new List<ProjectTester>();
-        public virtual ICollection<ProjectDevolution> HistoricDevolutions { get; set; } = new List<ProjectDevolution>();
-        public virtual ICollection<ProjectObservation> Observations { get; set; } = new List<ProjectObservation>();
+        public virtual ICollection<ProjectTester> ProjectTesters { get; set; } = [];
+        public virtual ICollection<ProjectDevolution> HistoricDevolutions { get; set; } = [];
+        public virtual ICollection<ProjectObservation> Observations { get; set; } = [];
 
         /// <summary>Calcula las horas totales estimadas basadas en días hábiles (L-V) y WorkHoursPerDay.</summary>
         public decimal GetCalculatedTotalHours()
@@ -51,7 +51,7 @@ namespace QAMS.Domain.Entities
         public int GetCalculatedTotalDays()
         {
             if (!StartDate.HasValue || !EndDate.HasValue) return 0;
-            
+
             int workingDays = 0;
             for (var date = StartDate.Value.Date; date <= EndDate.Value.Date; date = date.AddDays(1))
             {

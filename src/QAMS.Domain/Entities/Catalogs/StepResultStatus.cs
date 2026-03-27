@@ -9,6 +9,6 @@ namespace QAMS.Domain.Entities.Catalogs
     {
         /// <summary>Resultados de pasos con este estado</summary>
         public ICollection<ExecutionStepResult> ExecutionStepResults { get; set; } =
-            new List<ExecutionStepResult>();
+            [];
     }
 }

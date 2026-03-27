@@ -9,16 +9,10 @@ namespace QAMS.Api.Middleware
     /// Middleware global de manejo de excepciones.
     /// Convierte excepciones de dominio en respuestas HTTP apropiadas.
     /// </summary>
-    public class ExceptionHandlingMiddleware
+    public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
     {
-        private readonly RequestDelegate _next;
-        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
-
-        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
-        {
-            _next = next;
-            _logger = logger;
-        }
+        private readonly RequestDelegate _next = next;
+        private readonly ILogger<ExceptionHandlingMiddleware> _logger = logger;
 
         public async Task InvokeAsync(HttpContext context)
         {
@@ -35,6 +29,11 @@ namespace QAMS.Api.Middleware
             {
                 _logger.LogWarning(ex, "Error de dominio: {Message}", ex.Message);
                 await WriteResponse(context, HttpStatusCode.BadRequest, ex.Message);
+            }
+            catch (UnauthorizedException ex)
+            {
+                _logger.LogWarning(ex, "Intento de acceso no autorizado: {Message}", ex.Message);
+                await WriteResponse(context, HttpStatusCode.Unauthorized, ex.Message);
             }
             catch (Exception ex)
             {

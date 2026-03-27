@@ -1,4 +1,7 @@
 // src/QAMS.Application/Interfaces/IUserService.cs
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using QAMS.Application.DTOs.Users;
 namespace QAMS.Application.Interfaces
 {

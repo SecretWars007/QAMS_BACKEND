@@ -16,34 +16,26 @@ namespace QAMS.Application.Services
     /// creación, actualización, eliminación (soft-delete) y asignación de roles.
     /// Coordina UserRepo, RoleRepo y generadores de hash para seguridad.
     /// </summary>
-    public class UserService : IUserService
+    public class UserService(
+        IUserRepository userRepo,
+        IRoleRepository roleRepo,
+        IPasswordHasher hasher,
+        ICurrentUserService currentUserService,
+        IUnitOfWork uow,
+        IMapper mapper,
+        IEmailService emailService,
+        ILogger<UserService> logger)
+        : IUserService
     {
-        private readonly IUserRepository _userRepo;
-        private readonly IRoleRepository _roleRepo;
-        private readonly IPasswordHasher _hasher;
-        private readonly ICurrentUserService _currentUserService;
-        private readonly IUnitOfWork _uow;
-        private readonly IMapper _mapper;
-        private readonly ILogger<UserService> _logger;
+        private readonly IUserRepository _userRepo = userRepo;
+        private readonly IRoleRepository _roleRepo = roleRepo;
+        private readonly IPasswordHasher _hasher = hasher;
+        private readonly ICurrentUserService _currentUserService = currentUserService;
+        private readonly IUnitOfWork _uow = uow;
+        private readonly IMapper _mapper = mapper;
+        private readonly IEmailService _emailService = emailService;
+        private readonly ILogger<UserService> _logger = logger;
 
-        public UserService(
-            IUserRepository userRepo,
-            IRoleRepository roleRepo,
-            IPasswordHasher hasher,
-            ICurrentUserService currentUserService,
-            IUnitOfWork uow,
-            IMapper mapper,
-            ILogger<UserService> logger
-        )
-        {
-            _userRepo = userRepo;
-            _roleRepo = roleRepo;
-            _hasher = hasher;
-            _currentUserService = currentUserService;
-            _uow = uow;
-            _mapper = mapper;
-            _logger = logger;
-        }
 
         /// <summary>
         /// Obtiene un usuario específico por su ID junto con sus roles cargados.
@@ -72,14 +64,13 @@ namespace QAMS.Application.Services
         public async Task<List<UserDto>> GetAllAsync()
         {
             // Registrar que se solicitó listar todos los usuarios con sus roles
-            _logger.LogInformation("Obteniendo todos los usuarios activos con sus roles.");
+            _logger.LogInformation("Obteniendo todos los usuarios activos y inactivos con sus roles.");
 
-            // Obtener todos los usuarios activos de la BD con roles incluidos
+            // Obtener todos los usuarios de la BD con roles incluidos
             var allUsers = await _userRepo.GetAllWithRolesAsync();
-            var users = allUsers.Where(u => u.IsActive).ToList();
 
             // Mapear cada usuario a su DTO correspondiente
-            return _mapper.Map<List<UserDto>>(users);
+            return _mapper.Map<List<UserDto>>(allUsers);
         }
         /// <summary>
         /// Crea un nuevo usuario validando que el correo y nombre de usuario no existan.
@@ -155,24 +146,28 @@ namespace QAMS.Application.Services
             if (user.Email != dto.Email && await _userRepo.AnyAsync(u => u.Email == dto.Email && u.Id != id))
                 throw new DomainException($"El email '{dto.Email}' ya está siendo usado por otro usuario.");
 
-            // VALIDACIÓN: No permitir auto-desactivación (similar a self-delete)
-            if (id == _currentUserService.UserId && !dto.IsActive && user.IsActive)
+            if (dto.IsActive.HasValue)
             {
-                _logger.LogWarning("Intento de auto-desactivación bloqueado para el usuario {UserId}.", id);
-                throw new DomainException("No puedes desactivar tu propio usuario desde este endpoint. Usa la configuración de perfil si está disponible.");
-            }
+                // VALIDACIÓN: No permitir auto-desactivación (similar a self-delete)
+                if (id == _currentUserService.UserId && !dto.IsActive.Value && user.IsActive)
+                {
+                    _logger.LogWarning("Intento de auto-desactivación bloqueado para el usuario {UserId}.", id);
+                    throw new DomainException("No puedes desactivar tu propio usuario desde este endpoint. Usa la configuración de perfil si está disponible.");
+                }
 
-            // VALIDACIÓN: No permitir inactivar si tiene roles asignados
-            if (!dto.IsActive && user.IsActive && user.UserRoles != null && user.UserRoles.Any())
-            {
-                _logger.LogWarning("Intento de inactivación fallido: El usuario {UserId} tiene roles asignados.", id);
-                throw new DomainException("No se puede inactivar al usuario si tiene roles asignados. Primero remueve sus roles.");
+                // VALIDACIÓN: No permitir inactivar si tiene roles asignados
+                if (!dto.IsActive.Value && user.IsActive && user.UserRoles != null && user.UserRoles.Count > 0)
+                {
+                    _logger.LogWarning("Intento de inactivación fallido: El usuario {UserId} tiene roles asignados.", id);
+                    throw new DomainException("No se puede inactivar al usuario si tiene roles asignados. Primero remueve sus roles.");
+                }
+
+                user.IsActive = dto.IsActive.Value;
             }
 
             // Actualizar campos
             user.Email = dto.Email;
             user.FullName = dto.FullName;
-            user.IsActive = dto.IsActive;
             user.UpdatedAt = DateTime.UtcNow;
 
             // PERSISTENCIA 1: Guardar cambios básicos
@@ -213,10 +208,12 @@ namespace QAMS.Application.Services
         /// </summary>
         public async Task AssignRoleAsync(Guid userId, Guid roleId)
         {
-            // VALIDACIÓN 1: Verificar que el usuario existe
-            // AnyAsync retorna false si no existe, causando excepción
-            if (!await _userRepo.AnyAsync(u => u.Id == userId))
-                throw new EntityNotFoundException(nameof(User), userId);
+            // VALIDACIÓN 1: Verificar que el usuario existe y está activo
+            var user = await _userRepo.GetByIdAsync(userId)
+                ?? throw new EntityNotFoundException(nameof(User), userId);
+
+            if (!user.IsActive)
+                throw new DomainException("No se pueden asignar roles a un usuario inactivo.");
 
             // VALIDACIÓN 2: Verificar que el rol existe
             if (!await _roleRepo.AnyAsync(r => r.Id == roleId))
@@ -288,15 +285,16 @@ namespace QAMS.Application.Services
                 ?? throw new EntityNotFoundException(nameof(User), id);
 
             // VALIDACIÓN 3: No permitir borrar si tiene roles asignados
-            if (user.UserRoles != null && user.UserRoles.Any())
+            if (user.UserRoles != null && user.UserRoles.Count > 0)
             {
                 _logger.LogWarning("Intento de eliminación fallido: El usuario {UserId} tiene {RoleCount} roles asignados.", id, user.UserRoles.Count);
                 throw new DomainException($"No se puede eliminar el usuario porque tiene roles asignados. Primero remueve sus roles.");
             }
 
-            // SOFT DELETE: Marcar como inactivo en lugar de eliminar
-            // Esto preserva integridad referencial y auditoría
+            // SOFT DELETE: Marcar como eliminado e inactivo
+            // Esto preserva integridad referencial y oculta al usuario gracias al Global Query Filter
             user.IsActive = false;
+            user.LogicallyDeleted = true;
             
             // Timestamp de última actualización
             user.UpdatedAt = DateTime.UtcNow;
@@ -326,6 +324,16 @@ namespace QAMS.Application.Services
             await _uow.SaveChangesAsync();
 
             _logger.LogInformation("Contraseña restablecida exitosamente para {UserId}.", userId);
+
+            try 
+            {
+                var body = QAMS.Application.Templates.EmailTemplates.GetAdminPasswordResetEmailHtml(user.FullName, newPassword);
+                await _emailService.SendEmailAsync(user.Email, "Contraseña actualizada por administrador", body);
+            }
+            catch(Exception emailEx) 
+            {
+                _logger.LogWarning(emailEx, "No se pudo enviar el correo de confirmación de Reset Password a '{Email}'.", user.Email);
+            }
         }
     }
 }

@@ -11,7 +11,7 @@ namespace QAMS.Application.DTOs.Dashboard
         public int FailedExecutions { get; set; }
         public int PendingExecutions { get; set; }
         public double PassRate { get; set; }
-        public List<TaskProgressDto> TaskProgress { get; set; } = new();
-        public List<ExecutionsByStatusDto> ExecutionsByStatus { get; set; } = new();
+        public List<TaskProgressDto> TaskProgress { get; set; } = [];
+        public List<ExecutionsByStatusDto> ExecutionsByStatus { get; set; } = [];
     }
 }

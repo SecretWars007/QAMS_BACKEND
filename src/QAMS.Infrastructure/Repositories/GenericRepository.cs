@@ -6,17 +6,11 @@ using QAMS.Infrastructure.Persistence.Configurations;
 
 namespace QAMS.Infrastructure.Repositories
 {
-    public class GenericRepository<T> : IGenericRepository<T>
+    public class GenericRepository<T>(QamsDbContext context) : IGenericRepository<T>
         where T : class
     {
-        protected readonly QamsDbContext _context;
-        protected readonly DbSet<T> _dbSet;
-
-        public GenericRepository(QamsDbContext context)
-        {
-            _context = context;
-            _dbSet = context.Set<T>();
-        }
+        protected readonly QamsDbContext _context = context;
+        protected readonly DbSet<T> _dbSet = context.Set<T>();
 
         public virtual async Task<T?> GetByIdAsync(Guid id) => await _dbSet.FindAsync(id);
         

@@ -1,4 +1,7 @@
 // src/QAMS.Application/Interfaces/IDashboardService.cs
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using QAMS.Application.DTOs.Dashboard;
 
 namespace QAMS.Application.Interfaces

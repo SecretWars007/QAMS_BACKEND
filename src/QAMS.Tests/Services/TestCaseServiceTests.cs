@@ -22,7 +22,6 @@ public class TestCaseServiceTests
 {
     private readonly Mock<ITestCaseRepository> _mockTestCaseRepo = new();
     private readonly Mock<ICatalogRepository<TestCasePriority>> _mockPriorityRepo = new();
-    private readonly Mock<ICatalogRepository<TestType>> _mockTestTypeRepo = new();
     private readonly Mock<ICurrentUserService> _mockCurrentUserService = new();
     private readonly Mock<IKanbanService> _mockKanbanService = new();
     private readonly Mock<ITestExecutionService> _mockExecService = new();
@@ -31,10 +30,9 @@ public class TestCaseServiceTests
     private readonly Mock<IMapper> _mockMapper = new();
     private readonly Mock<ILogger<TestCaseService>> _mockLogger = new();
 
-    private TestCaseService CreateService() => new TestCaseService(
+    private TestCaseService CreateService() => new(
         _mockTestCaseRepo.Object,
         _mockPriorityRepo.Object,
-        _mockTestTypeRepo.Object,
         _mockCurrentUserService.Object,
         _mockKanbanService.Object,
         _mockExecService.Object,
@@ -76,8 +74,8 @@ public class TestCaseServiceTests
             ProjectId = projectId, 
             Title = "New Case", 
             PriorityId = 1,
-            Steps = new List<CreateTestStepDto> { new CreateTestStepDto { Action = "Action", StepOrder = 1 } },
-            CertifierUserIds = new List<Guid> { Guid.NewGuid() }
+            Steps = [new() { Action = "Action", StepOrder = 1 }],
+            CertifierUserIds = [Guid.NewGuid()]
         };
 
         _mockPriorityRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new TestCasePriority());
@@ -85,8 +83,8 @@ public class TestCaseServiceTests
         
         // Mock Kanban Logic
         var boardId = Guid.NewGuid();
-        var boards = new List<KanbanBoard> { new KanbanBoard { Id = boardId } };
-        var fullBoard = new KanbanBoard { Id = boardId, Columns = new List<KanbanColumn> { new KanbanColumn { Id = Guid.NewGuid(), Name = "Por Hacer" } } };
+        var boards = new List<KanbanBoard> { new() { Id = boardId } };
+        var fullBoard = new KanbanBoard { Id = boardId, Columns = [new() { Id = Guid.NewGuid(), Name = "Por Hacer" }] };
         
         _mockKanbanBoardRepo.Setup(r => r.GetByProjectAsync(projectId)).ReturnsAsync(boards);
         _mockKanbanBoardRepo.Setup(r => r.GetFullBoardAsync(boardId)).ReturnsAsync(fullBoard);
@@ -118,20 +116,20 @@ public class TestCaseServiceTests
         var testCase = new TestCase 
         { 
             Id = id, 
-            TestSteps = new List<TestStep> { new TestStep { Id = existingStepId, StepOrder = 1, Action = "Old Action" } },
-            Certifiers = new List<TestCaseCertifier> { new TestCaseCertifier { UserId = Guid.NewGuid() } }
+            TestSteps = [new() { Id = existingStepId, StepOrder = 1, Action = "Old Action" }],
+            Certifiers = [new() { UserId = Guid.NewGuid() }]
         };
         
         var dto = new CreateTestCaseDto 
         { 
             Title = "Updated Title",
             PriorityId = 1,
-            Steps = new List<CreateTestStepDto> 
-            { 
-                new CreateTestStepDto { Action = "Updated Action", StepOrder = 1 }, // Update existing
-                new CreateTestStepDto { Action = "New Action", StepOrder = 2 }     // Add new
-            },
-            CertifierUserIds = new List<Guid> { Guid.NewGuid() } // One new certifier (total 1, removes old)
+            Steps = 
+            [ 
+                new() { Action = "Updated Action", StepOrder = 1 }, // Update existing
+                new() { Action = "New Action", StepOrder = 2 }     // Add new
+            ],
+            CertifierUserIds = [Guid.NewGuid()] // One new certifier (total 1, removes old)
         };
 
         _mockTestCaseRepo.Setup(r => r.GetWithStepsAsync(id)).ReturnsAsync(testCase);

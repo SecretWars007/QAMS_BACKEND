@@ -28,7 +28,7 @@ public class AuthServiceTests
     private readonly Mock<IEmailService> _mockEmailService = new();
     private readonly Mock<ILogger<AuthService>> _mockLogger = new();
 
-    private AuthService CreateService() => new AuthService(
+    private AuthService CreateService() => new(
         _mockUserRepo.Object,
         _mockRbacService.Object,
         _mockHasher.Object,
@@ -44,7 +44,7 @@ public class AuthServiceTests
         // Arrange
         var request = new LoginRequestDto { Username = "user", Password = "password" };
         var user = new User { Id = Guid.NewGuid(), Username = "user", PasswordHash = "hash", IsActive = true };
-        IReadOnlyList<string> permissions = new List<string> { "Perm1" };
+        IReadOnlyList<string> permissions = ["Perm1"];
 
         _mockUserRepo.Setup(r => r.GetWithRolesAndPermissionsAsync(request.Username)).ReturnsAsync(user);
         _mockHasher.Setup(h => h.VerifyPassword(request.Password, user.PasswordHash)).Returns(true);
@@ -64,7 +64,7 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task LoginAsync_WhenUserNotFound_ShouldThrowDomainException()
+    public async Task LoginAsync_WhenUserNotFound_ShouldThrowUnauthorizedException()
     {
         // Arrange
         var request = new LoginRequestDto { Username = "unknown", Password = "password" };
@@ -73,7 +73,7 @@ public class AuthServiceTests
         var service = CreateService();
 
         // Act & Assert
-        await Assert.ThrowsAsync<DomainException>(() => service.LoginAsync(request));
+        await Assert.ThrowsAsync<UnauthorizedException>(() => service.LoginAsync(request));
     }
 
     [Fact]

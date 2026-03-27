@@ -6,9 +6,9 @@ using QAMS.Infrastructure.Persistence.Configurations;
 
 namespace QAMS.Infrastructure.Repositories
 {
-    public class PermissionRepository : GenericRepository<Permission>, IPermissionRepository
+    public class PermissionRepository(QamsDbContext context)
+        : GenericRepository<Permission>(context), IPermissionRepository
     {
-        public PermissionRepository(QamsDbContext context) : base(context) { }
 
         public async Task<Permission?> GetByCodeAsync(string code)
             => await _dbSet.FirstOrDefaultAsync(p => p.Code == code);

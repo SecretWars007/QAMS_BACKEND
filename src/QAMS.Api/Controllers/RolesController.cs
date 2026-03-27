@@ -11,16 +11,10 @@ namespace QAMS.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class RolesController : ControllerBase
+    public class RolesController(IRoleService roleService, ILogger<RolesController> logger) : ControllerBase
     {
-        private readonly IRoleService _roleService;
-        private readonly ILogger<RolesController> _logger;
-
-        public RolesController(IRoleService roleService, ILogger<RolesController> logger)
-        {
-            _roleService = roleService;
-            _logger = logger;
-        }
+        private readonly IRoleService _roleService = roleService;
+        private readonly ILogger<RolesController> _logger = logger;
 
         [HttpGet]
         [HasPermission("ROLES_VIEW")]

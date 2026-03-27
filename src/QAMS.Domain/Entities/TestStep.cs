@@ -11,7 +11,7 @@ namespace QAMS.Domain.Entities
         public string Action { get; set; } = string.Empty;
         public string ExpectedResult { get; set; } = string.Empty;
 
-        public ICollection<ExecutionStepResult> StepResults { get; set; } = new List<ExecutionStepResult>();
+        public ICollection<ExecutionStepResult> StepResults { get; set; } = [];
 
         // Auditoría: Quién creó el paso
         public Guid? CreatedByUserId { get; set; }

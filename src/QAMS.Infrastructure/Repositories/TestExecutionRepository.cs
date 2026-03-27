@@ -10,9 +10,9 @@ namespace QAMS.Infrastructure.Repositories
     /// Repositorio específico para TestExecution.
     /// Proporciona consultas complejas con eager loading profundo.
     /// </summary>
-    public class TestExecutionRepository : GenericRepository<TestExecution>, ITestExecutionRepository
+    public class TestExecutionRepository(QamsDbContext context)
+        : GenericRepository<TestExecution>(context), ITestExecutionRepository
     {
-        public TestExecutionRepository(QamsDbContext context) : base(context) { }
 
         /// <summary>
         /// Obtiene una ejecución completa con resultados de pasos,

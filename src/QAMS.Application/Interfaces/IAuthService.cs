@@ -1,4 +1,6 @@
 // src/QAMS.Application/Interfaces/IAuthService.cs
+using System;
+using System.Threading.Tasks;
 using QAMS.Application.DTOs.Auth;
 
 namespace QAMS.Application.Interfaces

@@ -11,16 +11,10 @@ namespace QAMS.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class TestCasesController : ControllerBase
+    public class TestCasesController(ITestCaseService service, ILogger<TestCasesController> logger) : ControllerBase
     {
-        private readonly ITestCaseService _service;
-        private readonly ILogger<TestCasesController> _logger;
-
-        public TestCasesController(ITestCaseService service, ILogger<TestCasesController> logger)
-        {
-            _service = service;
-            _logger = logger;
-        }
+        private readonly ITestCaseService _service = service;
+        private readonly ILogger<TestCasesController> _logger = logger;
 
         [HttpGet("{id:guid}")]
         [HasPermission("TEST_CASES_VIEW")]

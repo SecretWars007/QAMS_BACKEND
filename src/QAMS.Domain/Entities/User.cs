@@ -12,6 +12,7 @@ namespace QAMS.Domain.Entities
         public string PasswordHash { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
+        public bool LogicallyDeleted { get; set; } = false;
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
         public string? PasswordResetToken { get; set; }
@@ -19,20 +20,20 @@ namespace QAMS.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 
-        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
-        public ICollection<TestExecution> TestExecutions { get; set; } = new List<TestExecution>();
-        public ICollection<KanbanTask> AssignedTasks { get; set; } = new List<KanbanTask>();
+        public ICollection<UserRole> UserRoles { get; set; } = [];
+        public ICollection<TestExecution> TestExecutions { get; set; } = [];
+        public ICollection<KanbanTask> AssignedTasks { get; set; } = [];
         
         // Proyectos a los que está asignado el usuario
-        public ICollection<ProjectTester> ProjectAssignments { get; set; } = new List<ProjectTester>();
+        public ICollection<ProjectTester> ProjectAssignments { get; set; } = [];
 
         // Proyectos creados por el usuario
-        public ICollection<Project> CreatedProjects { get; set; } = new List<Project>();
+        public ICollection<Project> CreatedProjects { get; set; } = [];
 
         // Test cases creados por el usuario
-        public ICollection<TestCase> CreatedTestCases { get; set; } = new List<TestCase>();
+        public ICollection<TestCase> CreatedTestCases { get; set; } = [];
 
         // Test cases que el usuario está certificando
-        public ICollection<TestCaseCertifier> CertifyingTestCases { get; set; } = new List<TestCaseCertifier>();
+        public ICollection<TestCaseCertifier> CertifyingTestCases { get; set; } = [];
     }
 }

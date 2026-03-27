@@ -1,4 +1,6 @@
 // src/QAMS.Application/Interfaces/ICatalogService.cs
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using QAMS.Application.DTOs.Catalogs;
 
 namespace QAMS.Application.Interfaces

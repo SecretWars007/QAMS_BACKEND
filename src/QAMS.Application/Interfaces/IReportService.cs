@@ -1,4 +1,6 @@
 // src/QAMS.Application/Interfaces/IReportService.cs
+using System;
+using System.Threading.Tasks;
 using QAMS.Application.DTOs.Reports;
 
 namespace QAMS.Application.Interfaces

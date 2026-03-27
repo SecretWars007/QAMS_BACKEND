@@ -7,6 +7,6 @@ namespace QAMS.Domain.Entities.Catalogs
     /// </summary>
     public class TestSuiteStatus : CatalogBase
     {
-        public ICollection<TestSuite> TestSuites { get; set; } = new List<TestSuite>();
+        public ICollection<TestSuite> TestSuites { get; set; } = [];
     }
 }

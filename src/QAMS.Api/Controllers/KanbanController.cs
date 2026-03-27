@@ -11,16 +11,10 @@ namespace QAMS.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class KanbanController : ControllerBase
+    public class KanbanController(IKanbanService service, ILogger<KanbanController> logger) : ControllerBase
     {
-        private readonly IKanbanService _service;
-        private readonly ILogger<KanbanController> _logger;
-
-        public KanbanController(IKanbanService service, ILogger<KanbanController> logger)
-        {
-            _service = service;
-            _logger = logger;
-        }
+        private readonly IKanbanService _service = service;
+        private readonly ILogger<KanbanController> _logger = logger;
 
         [HttpGet("board/{boardId:guid}")]
         [HasPermission("PROJECTS_VIEW")]

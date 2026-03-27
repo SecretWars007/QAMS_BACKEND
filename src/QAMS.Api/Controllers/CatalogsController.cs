@@ -11,16 +11,10 @@ namespace QAMS.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class CatalogsController : ControllerBase
+    public class CatalogsController(ICatalogService catalogService, ILogger<CatalogsController> logger) : ControllerBase
     {
-        private readonly ICatalogService _catalogService;
-        private readonly ILogger<CatalogsController> _logger;
-
-        public CatalogsController(ICatalogService catalogService, ILogger<CatalogsController> logger)
-        {
-            _catalogService = catalogService;
-            _logger = logger;
-        }
+        private readonly ICatalogService _catalogService = catalogService;
+        private readonly ILogger<CatalogsController> _logger = logger;
 
         /// <summary>GET api/catalogs/{catalogName}/active</summary>
         [HttpGet("{catalogName}/active")]

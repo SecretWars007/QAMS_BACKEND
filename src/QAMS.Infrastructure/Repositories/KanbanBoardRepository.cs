@@ -9,10 +9,9 @@ namespace QAMS.Infrastructure.Repositories
     /// <summary>
     /// Repositorio específico para KanbanBoard.
     /// </summary>
-    public class KanbanBoardRepository : GenericRepository<KanbanBoard>, IKanbanBoardRepository
+    public class KanbanBoardRepository(QamsDbContext context)
+        : GenericRepository<KanbanBoard>(context), IKanbanBoardRepository
     {
-        public KanbanBoardRepository(QamsDbContext context)
-            : base(context) { }
 
         /// <summary>
         /// Obtiene un tablero completo con columnas, tareas,

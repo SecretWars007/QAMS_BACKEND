@@ -18,6 +18,6 @@ namespace QAMS.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Respuestas en modo hilo
-        public virtual ICollection<ProjectObservationResponse> Responses { get; set; } = new List<ProjectObservationResponse>();
+        public virtual ICollection<ProjectObservationResponse> Responses { get; set; } = [];
     }
 }

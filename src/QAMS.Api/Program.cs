@@ -315,3 +315,5 @@ app.MapControllers();
 
 app.Logger.LogInformation("QAMS API iniciada en {Env}.", app.Environment.EnvironmentName);
 app.Run();
+
+public partial class Program { }

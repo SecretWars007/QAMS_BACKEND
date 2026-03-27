@@ -7,6 +7,6 @@ namespace QAMS.Domain.Entities.Catalogs
     /// </summary>
     public class TestType : CatalogBase
     {
-        public ICollection<TestCase> TestCases { get; set; } = new List<TestCase>();
+        public ICollection<TestCase> TestCases { get; set; } = [];
     }
 }

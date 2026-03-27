@@ -1,4 +1,7 @@
 // src/QAMS.Application/Interfaces/IKanbanService.cs
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using QAMS.Application.DTOs.Kanban;
 namespace QAMS.Application.Interfaces
 {

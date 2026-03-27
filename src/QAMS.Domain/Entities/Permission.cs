@@ -10,6 +10,6 @@ namespace QAMS.Domain.Entities
         public string Module { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+        public ICollection<RolePermission> RolePermissions { get; set; } = [];
     }
 }

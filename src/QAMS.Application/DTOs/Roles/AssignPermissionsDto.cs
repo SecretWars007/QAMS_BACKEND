@@ -3,6 +3,6 @@ namespace QAMS.Application.DTOs.Roles
 {
     public class AssignPermissionsDto
     {
-        public List<Guid> PermissionIds { get; set; } = new();
+        public List<Guid> PermissionIds { get; set; } = [];
     }
 }

@@ -84,8 +84,8 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             };
         }
 
-        public static readonly string[] AllPermissionCodes = new[]
-        {
+        public static readonly string[] AllPermissionCodes =
+        [
             "USERS_VIEW", "USERS_CREATE", "USERS_UPDATE", "USERS_DELETE", "USERS_ASSIGN_ROLES",
             "ROLES_VIEW", "ROLES_CREATE", "ROLES_UPDATE", "ROLES_DELETE", "ROLES_ASSIGN_PERMISSIONS",
             "CATALOGS_VIEW", "CATALOGS_MANAGE",
@@ -94,6 +94,6 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             "EXECUTIONS_VIEW", "EXECUTIONS_CREATE", "EXECUTIONS_UPDATE", "EXECUTIONS_UPLOAD_EVIDENCE",
             "KANBAN_VIEW", "KANBAN_CREATE", "KANBAN_UPDATE", "KANBAN_DELETE",
             "DASHBOARD_VIEW"
-        };
+        ];
     }
 }

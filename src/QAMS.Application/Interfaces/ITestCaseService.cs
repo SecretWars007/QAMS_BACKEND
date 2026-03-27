@@ -1,4 +1,7 @@
 // src/QAMS.Application/Interfaces/ITestCaseService.cs
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using QAMS.Application.DTOs.TestCases;
 
 namespace QAMS.Application.Interfaces

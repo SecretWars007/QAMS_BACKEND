@@ -60,4 +60,4 @@ volumes:
 
 networks:
   qams-network:
-    driver: bridge
+    external: true

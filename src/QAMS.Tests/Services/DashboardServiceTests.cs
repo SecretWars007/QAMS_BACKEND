@@ -19,17 +19,13 @@ namespace QAMS.Tests.Services;
 public class DashboardServiceTests
 {
     private readonly Mock<IProjectRepository> _mockProjectRepo = new();
-    private readonly Mock<ITestCaseRepository> _mockTestCaseRepo = new();
     private readonly Mock<ITestExecutionRepository> _mockExecRepo = new();
-    private readonly Mock<IKanbanBoardRepository> _mockBoardRepo = new();
     private readonly Mock<ICatalogRepository<ExecutionStatus>> _mockStatusRepo = new();
     private readonly Mock<ILogger<DashboardService>> _mockLogger = new();
 
-    private DashboardService CreateService() => new DashboardService(
+    private DashboardService CreateService() => new(
         _mockProjectRepo.Object,
-        _mockTestCaseRepo.Object,
         _mockExecRepo.Object,
-        _mockBoardRepo.Object,
         _mockStatusRepo.Object,
         _mockLogger.Object
     );
@@ -42,27 +38,27 @@ public class DashboardServiceTests
         var projectId = Guid.NewGuid();
         var testCaseId = Guid.NewGuid();
         
-        var project = new Project { Id = projectId, IsActive = true };
-        var testCase = new TestCase { Id = testCaseId, ProjectId = projectId };
+        Project project = new() { Id = projectId, IsActive = true };
+        TestCase testCase = new() { Id = testCaseId, ProjectId = projectId };
         project.TestCases.Add(testCase);
         
         var executions = new List<TestExecution> 
         { 
-            new TestExecution { TestCaseId = testCaseId, StatusId = 3, Status = new ExecutionStatus { Code = "PASSED", Name = "Aprobado" } } 
+            new() { TestCaseId = testCaseId, StatusId = 3, Status = new() { Code = "PASSED", Name = "Aprobado" } } 
         };
 
         _mockProjectRepo.Setup(r => r.FindWithDetailsAsync(It.IsAny<Expression<Func<Project, bool>>>()))
-            .ReturnsAsync(new List<Project> { project });
+            .ReturnsAsync([project]);
         
         _mockExecRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<TestExecution, bool>>>()))
             .ReturnsAsync(executions);
         
         _mockStatusRepo.Setup(r => r.GetAllActiveAsync())
-            .ReturnsAsync(new List<ExecutionStatus> 
-            { 
-                new ExecutionStatus { Id = 3, Code = "PASSED", Name = "Aprobado" },
-                new ExecutionStatus { Id = 4, Code = "FAILED", Name = "Fallido" }
-            });
+            .ReturnsAsync(
+            [ 
+                new() { Id = 3, Code = "PASSED", Name = "Aprobado" },
+                new() { Id = 4, Code = "FAILED", Name = "Fallido" }
+            ]);
 
         var service = CreateService();
 
@@ -85,21 +81,21 @@ public class DashboardServiceTests
         var projectId = Guid.NewGuid();
         var execs = new List<TestExecution>
         {
-            new TestExecution 
+            new() 
             { 
                 Id = Guid.NewGuid(), 
                 ExecutionDate = DateTime.Now, 
                 StatusId = 3, 
-                Status = new ExecutionStatus { Code = "PASSED" },
-                TestCase = new TestCase { Title = "T1" }
+                Status = new() { Code = "PASSED" },
+                TestCase = new() { Title = "T1" }
             },
-            new TestExecution 
+            new() 
             { 
                 Id = Guid.NewGuid(), 
                 ExecutionDate = DateTime.Now.AddHours(1), 
                 StatusId = 4, 
-                Status = new ExecutionStatus { Code = "FAILED" },
-                TestCase = new TestCase { Title = "T2" }
+                Status = new() { Code = "FAILED" },
+                TestCase = new() { Title = "T2" }
             }
         };
 
@@ -125,7 +121,7 @@ public class DashboardServiceTests
         var monday = DateTime.Now.Date;
         while (monday.DayOfWeek != DayOfWeek.Monday) monday = monday.AddDays(1);
         
-        var project = new Project 
+        Project project = new() 
         { 
             Id = projectId, 
             StartDate = monday, 
@@ -133,16 +129,16 @@ public class DashboardServiceTests
             WorkHoursPerDay = 8
         };
         
-        var tc1 = new TestCase { Id = Guid.NewGuid(), EstimatedTimeHours = 10 };
+        TestCase tc1 = new() { Id = Guid.NewGuid(), EstimatedTimeHours = 10 };
         project.TestCases.Add(tc1);
 
         var execs = new List<TestExecution>
         {
-            new TestExecution { TestCaseId = tc1.Id, ExecutionDate = monday, StatusId = 3, Status = new ExecutionStatus { Code = "PASSED" }, TestCase = tc1 }
+            new() { TestCaseId = tc1.Id, ExecutionDate = monday, StatusId = 3, Status = new() { Code = "PASSED" }, TestCase = tc1 }
         };
 
         _mockProjectRepo.Setup(r => r.FindWithDetailsAsync(It.IsAny<Expression<Func<Project, bool>>>()))
-            .ReturnsAsync(new List<Project> { project });
+            .ReturnsAsync([project]);
         _mockExecRepo.Setup(r => r.GetByProjectAsync(projectId)).ReturnsAsync(execs);
 
         var service = CreateService();

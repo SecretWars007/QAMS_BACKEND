@@ -10,81 +10,56 @@ using QAMS.Domain.Ports.Repositories;
 
 namespace QAMS.Application.Services
 {
-    public class TestCaseService : ITestCaseService
+    public class TestCaseService(
+        ITestCaseRepository testCaseRepo,
+        ICatalogRepository<TestCasePriority> priorityRepo,
+        ICurrentUserService currentUserService,
+        IKanbanService kanbanService,
+        ITestExecutionService execService,
+        IKanbanBoardRepository kanbanBoardRepo,
+        IUnitOfWork uow,
+        IMapper mapper,
+        ILogger<TestCaseService> logger
+    ) : ITestCaseService
     {
-        private readonly ITestCaseRepository _testCaseRepo;
-        private readonly ICatalogRepository<TestCasePriority> _priorityRepo;
-        private readonly ICatalogRepository<TestType> _testTypeRepo;
-        private readonly ICurrentUserService _currentUserService;
-        private readonly IKanbanService _kanbanService;
-        private readonly ITestExecutionService _execService;
-        private readonly IKanbanBoardRepository _kanbanBoardRepo;
-        private readonly IUnitOfWork _uow;
-        private readonly IMapper _mapper;
-        private readonly ILogger<TestCaseService> _logger;
-
-        public TestCaseService(
-            ITestCaseRepository testCaseRepo,
-            ICatalogRepository<TestCasePriority> priorityRepo,
-            ICatalogRepository<TestType> testTypeRepo,
-            ICurrentUserService currentUserService,
-            IKanbanService kanbanService,
-            ITestExecutionService execService,
-            IKanbanBoardRepository kanbanBoardRepo,
-            IUnitOfWork uow,
-            IMapper mapper,
-            ILogger<TestCaseService> logger
-        )
-        {
-            _testCaseRepo = testCaseRepo;
-            _priorityRepo = priorityRepo;
-            _testTypeRepo = testTypeRepo;
-            _currentUserService = currentUserService;
-            _kanbanService = kanbanService;
-            _execService = execService;
-            _kanbanBoardRepo = kanbanBoardRepo;
-            _uow = uow;
-            _mapper = mapper;
-            _logger = logger;
-        }
 
         public async Task<TestCaseDto> GetByIdAsync(Guid id)
         {
-            _logger.LogInformation("Obteniendo caso de prueba {Id}.", id);
+            logger.LogInformation("Obteniendo caso de prueba {Id}.", id);
             var testCase =
-                await _testCaseRepo.GetWithStepsAsync(id)
+                await testCaseRepo.GetWithStepsAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestCase), id);
-            return _mapper.Map<TestCaseDto>(testCase);
+            return mapper.Map<TestCaseDto>(testCase);
         }
 
         public async Task<List<TestCaseDto>> GetBySuiteAsync(Guid suiteId)
         {
-            _logger.LogInformation("Obteniendo casos de la suite {SuiteId}.", suiteId);
-            var cases = await _testCaseRepo.GetBySuiteWithStepsAsync(suiteId);
-            return _mapper.Map<List<TestCaseDto>>(cases);
+            logger.LogInformation("Obteniendo casos de la suite {SuiteId}.", suiteId);
+            var cases = await testCaseRepo.GetBySuiteWithStepsAsync(suiteId);
+            return mapper.Map<List<TestCaseDto>>(cases);
         }
 
         public async Task<List<TestCaseDto>> GetByProjectIdAsync(Guid projectId)
         {
-            _logger.LogInformation("Obteniendo casos del proyecto {ProjectId}.", projectId);
-            var cases = await _testCaseRepo.GetByProjectIdAsync(projectId);
-            return _mapper.Map<List<TestCaseDto>>(cases);
+            logger.LogInformation("Obteniendo casos del proyecto {ProjectId}.", projectId);
+            var cases = await testCaseRepo.GetByProjectIdAsync(projectId);
+            return mapper.Map<List<TestCaseDto>>(cases);
         }
 
         public async Task<List<TestCaseDto>> GetByProjectAndSuiteAsync(Guid projectId, Guid suiteId)
         {
-            _logger.LogInformation("Obteniendo casos del proyecto {ProjectId} y suite {SuiteId}.", projectId, suiteId);
-            var cases = await _testCaseRepo.GetByProjectAndSuiteAsync(projectId, suiteId);
-            return _mapper.Map<List<TestCaseDto>>(cases);
+            logger.LogInformation("Obteniendo casos del proyecto {ProjectId} y suite {SuiteId}.", projectId, suiteId);
+            var cases = await testCaseRepo.GetByProjectAndSuiteAsync(projectId, suiteId);
+            return mapper.Map<List<TestCaseDto>>(cases);
         }
 
         public async Task<TestCaseDto> CreateAsync(CreateTestCaseDto dto)
         {
-            _logger.LogInformation("Creando caso de prueba '{Title}'.", dto.Title);
+            logger.LogInformation("Creando caso de prueba '{Title}'.", dto.Title);
 
             // Validar que la prioridad del catálogo exista
             var priority =
-                await _priorityRepo.GetByIdAsync(dto.PriorityId)
+                await priorityRepo.GetByIdAsync(dto.PriorityId)
                 ?? throw new EntityNotFoundException(nameof(TestCasePriority), dto.PriorityId);
 
             var testCase = new TestCase
@@ -101,7 +76,7 @@ namespace QAMS.Application.Services
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
                 TestTypeId = dto.TestTypeId > 0 ? dto.TestTypeId : 1, // Default: Funcional Manual
-                CreatedByUserId = _currentUserService.UserId,
+                CreatedByUserId = currentUserService.UserId,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
             };
@@ -117,7 +92,7 @@ namespace QAMS.Application.Services
                         StepOrder = stepDto.StepOrder,
                         Action = stepDto.Action,
                         ExpectedResult = stepDto.ExpectedResult,
-                        CreatedByUserId = _currentUserService.UserId
+                        CreatedByUserId = currentUserService.UserId
                     }
                 );
             }
@@ -135,23 +110,23 @@ namespace QAMS.Application.Services
                 );
             }
 
-            await _testCaseRepo.AddAsync(testCase);
-            await _uow.SaveChangesAsync();
+            await testCaseRepo.AddAsync(testCase);
+            await uow.SaveChangesAsync();
 
             // Registrar automáticamente en Kanban como tarea
             try
             {
-                var boards = await _kanbanBoardRepo.GetByProjectAsync(testCase.ProjectId);
-                var board = boards.FirstOrDefault();
+                var boards = await kanbanBoardRepo.GetByProjectAsync(testCase.ProjectId);
+                var board = boards is { Count: > 0 } ? boards[0] : null;
                 if (board != null)
                 {
                     // Recargar tablero completo para tener las columnas
-                    var fullBoard = await _kanbanBoardRepo.GetFullBoardAsync(board.Id);
+                    var fullBoard = await kanbanBoardRepo.GetFullBoardAsync(board.Id);
                     var todoColumn = fullBoard?.Columns.FirstOrDefault(c => c.Name == "Por Hacer");
                     
                     if (todoColumn != null)
                     {
-                        await _kanbanService.CreateTaskAsync(new QAMS.Application.DTOs.Kanban.CreateKanbanTaskDto
+                        await kanbanService.CreateTaskAsync(new QAMS.Application.DTOs.Kanban.CreateKanbanTaskDto
                         {
                             KanbanColumnId = todoColumn.Id,
                             Title = testCase.Title,
@@ -164,14 +139,14 @@ namespace QAMS.Application.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear tarea Kanban automática para el caso {TestCaseId}.", testCase.Id);
+                logger.LogError(ex, "Error al crear tarea Kanban automática para el caso {TestCaseId}.", testCase.Id);
                 // No lanzamos excepción para no romper la creación del TestCase
             }
 
             // Registrar automáticamente una ejecución con estado PENDIENTE
             try
             {
-                await _execService.CreateAsync(_currentUserService.UserId ?? Guid.Empty, new QAMS.Application.DTOs.TestExecutions.CreateTestExecutionDto
+                await execService.CreateAsync(currentUserService.UserId ?? Guid.Empty, new QAMS.Application.DTOs.TestExecutions.CreateTestExecutionDto
                 {
                     TestCaseId = testCase.Id,
                     Notes = "Ejecución automática al registrar caso de prueba."
@@ -179,29 +154,29 @@ namespace QAMS.Application.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear ejecución automática para el caso {TestCaseId}.", testCase.Id);
+                logger.LogError(ex, "Error al crear ejecución automática para el caso {TestCaseId}.", testCase.Id);
             }
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Caso de prueba '{Title}' creado con {StepCount} pasos.",
                 testCase.Title,
                 testCase.TestSteps.Count
             );
 
-            var created = await _testCaseRepo.GetWithStepsAsync(testCase.Id);
-            return _mapper.Map<TestCaseDto>(created);
+            var created = await testCaseRepo.GetWithStepsAsync(testCase.Id);
+            return mapper.Map<TestCaseDto>(created);
         }
 
         public async Task<TestCaseDto> UpdateAsync(Guid id, CreateTestCaseDto dto)
         {
-            _logger.LogInformation("Actualizando caso {Id}.", id);
+            logger.LogInformation("Actualizando caso {Id}.", id);
 
             var testCase =
-                await _testCaseRepo.GetWithStepsAsync(id)
+                await testCaseRepo.GetWithStepsAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestCase), id);
 
             // Validar prioridad del catálogo
-            _ = await _priorityRepo.GetByIdAsync(dto.PriorityId)
+            _ = await priorityRepo.GetByIdAsync(dto.PriorityId)
                 ?? throw new EntityNotFoundException(nameof(TestCasePriority), dto.PriorityId);
 
             testCase.Title = dto.Title;
@@ -239,7 +214,7 @@ namespace QAMS.Application.Services
                             StepOrder = incoming.StepOrder,
                             Action = incoming.Action,
                             ExpectedResult = incoming.ExpectedResult,
-                            CreatedByUserId = _currentUserService.UserId
+                            CreatedByUserId = currentUserService.UserId
                         }
                     );
                 }
@@ -261,7 +236,7 @@ namespace QAMS.Application.Services
                 testCase.Certifiers.Remove(c);
             }
 
-            foreach (var userId in incomingCertifiersIds.Where(id => !existingCertifiersIds.Contains(id)))
+            foreach (var userId in incomingCertifiersIds.Where(uId => !existingCertifiersIds.Contains(uId)))
             {
                 testCase.Certifiers.Add(
                     new TestCaseCertifier
@@ -273,33 +248,33 @@ namespace QAMS.Application.Services
                 );
             }
 
-            _testCaseRepo.Update(testCase);
-            await _uow.SaveChangesAsync();
+            testCaseRepo.Update(testCase);
+            await uow.SaveChangesAsync();
 
-            var updated = await _testCaseRepo.GetWithStepsAsync(id);
-            return _mapper.Map<TestCaseDto>(updated);
+            var updated = await testCaseRepo.GetWithStepsAsync(id);
+            return mapper.Map<TestCaseDto>(updated);
         }
 
         public async Task<List<TestStepDto>> GetStepsAsync(Guid id)
         {
-            _logger.LogInformation("Obteniendo pasos del caso {Id}.", id);
-            var testCase = await _testCaseRepo.GetWithStepsAsync(id)
+            logger.LogInformation("Obteniendo pasos del caso {Id}.", id);
+            var testCase = await testCaseRepo.GetWithStepsAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestCase), id);
                 
-            return _mapper.Map<List<TestStepDto>>(testCase.TestSteps);
+            return mapper.Map<List<TestStepDto>>(testCase.TestSteps);
         }
 
         public async Task DeleteAsync(Guid id)
         {
-            _logger.LogInformation("Desactivando caso {Id}.", id);
+            logger.LogInformation("Desactivando caso {Id}.", id);
             var testCase =
-                await _testCaseRepo.GetByIdAsync(id)
+                await testCaseRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestCase), id);
 
             testCase.IsActive = false;
             testCase.UpdatedAt = DateTime.UtcNow;
-            _testCaseRepo.Update(testCase);
-            await _uow.SaveChangesAsync();
+            testCaseRepo.Update(testCase);
+            await uow.SaveChangesAsync();
         }
     }
 }
