@@ -1,0 +1,55 @@
+﻿  Determinando los proyectos que se van a restaurar...
+C:\diplomado\QAMS\src\QAMS.Tests\QAMS.Tests.csproj : warning NU1603: QAMS.Tests depende de Microsoft.NET.Test.Sdk (>= 17.8.2), pero no se encontr├│ Microsoft.NET.Test.Sdk 17.8.2. Microsoft.NET.Test.Sdk 17.9.0 se resolvi├│ en su lugar. [C:\diplomado\QAMS\QAMS.sln]
+  Todos los proyectos est├ín actualizados para la restauraci├│n.
+C:\diplomado\QAMS\src\QAMS.Tests\QAMS.Tests.csproj : warning NU1603: QAMS.Tests depende de Microsoft.NET.Test.Sdk (>= 17.8.2), pero no se encontr├│ Microsoft.NET.Test.Sdk 17.8.2. Microsoft.NET.Test.Sdk 17.9.0 se resolvi├│ en su lugar.
+  QAMS.Domain -> C:\diplomado\QAMS\src\QAMS.Domain\bin\Debug\net9.0\QAMS.Domain.dll
+  QAMS.Application -> C:\diplomado\QAMS\src\QAMS.Application\bin\Debug\net9.0\QAMS.Application.dll
+  QAMS.Infrastructure -> C:\diplomado\QAMS\src\QAMS.Infrastructure\bin\Debug\net9.0\QAMS.Infrastructure.dll
+  QAMS.Api -> C:\diplomado\QAMS\src\QAMS.Api\bin\Debug\net9.0\QAMS.Api.dll
+  QAMS.Tests -> C:\diplomado\QAMS\src\QAMS.Tests\bin\Debug\net9.0\QAMS.Tests.dll
+Serie de pruebas para C:\diplomado\QAMS\src\QAMS.Tests\bin\Debug\net9.0\QAMS.Tests.dll (.NETCoreApp,Version=v9.0)
+Versi├│n 18.0.1 (x64) de VSTest
+
+Iniciando la ejecuci├│n de pruebas, espere...
+1 archivos de prueba en total coincidieron con el patr├│n especificado.
+dotnet : [xUnit.net 00:00:21.62]     QAMS.Tests.IntegrationTests.Endpoin
+ts.AuthEndpointsTests.Register_WithValidData_ReturnsCreatedAndSavesToDb 
+[FAIL]
+En línea: 1 Carácter: 1
++ dotnet test QAMS.sln --filter "FullyQualifiedName~AuthEndpointsTests" 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([xUnit.net 00:0...avesTo   
+ Db [FAIL]:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  Con error QAMS.Tests.IntegrationTests.Endpoints.AuthEndpointsTests.Register_WithValidData_ReturnsCreatedAndSavesToDb [1 s]
+  Mensaje de error:
+   Expected response.StatusCode to be HttpStatusCode.Created {value: 201} because Response body: {"error":"Ocurri\u00F3 un error interno. Contacte al administrador.","statusCode":500}, but found HttpStatusCode.InternalServerError {value: 500}.
+  Seguimiento de la pila:
+     at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+   at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(String message, Object[] args)
+   at FluentAssertions.Primitives.EnumAssertions`2.Be(TEnum expected, String because, Object[] becauseArgs)
+   at QAMS.Tests.IntegrationTests.Endpoints.AuthEndpointsTests.Register_WithValidData_ReturnsCreatedAndSavesToDb() in C:\diplomado\QAMS\src\QAMS.Tests\IntegrationTests\Endpoints\AuthEndpointsTests.cs:line 37
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:21.98]     QAMS.Tests.IntegrationTests.Endpoints.AuthEn
+dpointsTests.Login_WithValidCredentials_ReturnsToken [FAIL]
+  Con error QAMS.Tests.IntegrationTests.Endpoints.AuthEndpointsTests.Login_WithValidCredentials_ReturnsToken [359 ms]
+  Mensaje de error:
+   Expected response.StatusCode to be HttpStatusCode.OK {value: 200}, but found HttpStatusCode.InternalServerError {value: 500}.
+  Seguimiento de la pila:
+     at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+   at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(String message, Object[] args)
+   at FluentAssertions.Primitives.EnumAssertions`2.Be(TEnum expected, String because, Object[] becauseArgs)
+   at QAMS.Tests.IntegrationTests.Endpoints.AuthEndpointsTests.Login_WithValidCredentials_ReturnsToken() in C:\diplomado\QAMS\src\QAMS.Tests\IntegrationTests\Endpoints\AuthEndpointsTests.cs:line 72
+--- End of stack trace from previous location ---
+
+Con error! - Con error:     2, Superado:     1, Omitido:     0, Total:     3, Duraci├│n: 2 s - QAMS.Tests.dll (net9.0)

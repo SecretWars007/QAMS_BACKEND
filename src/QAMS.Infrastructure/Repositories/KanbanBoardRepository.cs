@@ -20,9 +20,9 @@ namespace QAMS.Infrastructure.Repositories
         public async Task<KanbanBoard?> GetFullBoardAsync(Guid boardId)
         {
             return await _dbSet
-                .Include(b => b.Columns.OrderBy(c => c.OrderIndex))
-                .ThenInclude(c => c.Tasks.OrderBy(t => t.OrderIndex))
-                .ThenInclude(t => t.Assignee)
+                .Include(b => b.Columns)
+                .ThenInclude(c => c.Tasks)
+                .ThenInclude(t => t.ResponsibleUser)
                 .Include(b => b.Columns)
                 .ThenInclude(c => c.Tasks)
                 .ThenInclude(t => t.Priority)
@@ -36,9 +36,9 @@ namespace QAMS.Infrastructure.Repositories
         {
             return await _dbSet
                 .Where(b => b.ProjectId == projectId)
-                .Include(b => b.Columns.OrderBy(c => c.OrderIndex))
-                .ThenInclude(c => c.Tasks.OrderBy(t => t.OrderIndex))
-                .ThenInclude(t => t.Assignee)
+                .Include(b => b.Columns)
+                .ThenInclude(c => c.Tasks)
+                .ThenInclude(t => t.ResponsibleUser)
                 .Include(b => b.Columns)
                 .ThenInclude(c => c.Tasks)
                 .ThenInclude(t => t.Priority)

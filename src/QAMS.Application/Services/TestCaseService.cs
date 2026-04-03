@@ -69,7 +69,7 @@ namespace QAMS.Application.Services
                 TestSuiteId = dto.TestSuiteId,
                 Title = dto.Title,
                 Description = dto.Description,
-                Preconditions = dto.Preconditions,
+                Preconditions = dto.Preconditions ?? string.Empty,
                 ExpectedResult = dto.ExpectedResult,
                 PriorityId = dto.PriorityId,
                 EstimatedTimeHours = dto.EstimatedTimeHours,
@@ -181,7 +181,7 @@ namespace QAMS.Application.Services
 
             testCase.Title = dto.Title;
             testCase.Description = dto.Description;
-            testCase.Preconditions = dto.Preconditions;
+            testCase.Preconditions = dto.Preconditions ?? string.Empty;
             testCase.ExpectedResult = dto.ExpectedResult;
             testCase.PriorityId = dto.PriorityId;
             testCase.EstimatedTimeHours = dto.EstimatedTimeHours;

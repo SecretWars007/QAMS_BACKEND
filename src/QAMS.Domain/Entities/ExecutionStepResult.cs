@@ -1,4 +1,5 @@
 // src/QAMS.Domain/Entities/ExecutionStepResult.cs
+using QAMS.Domain.Common;
 using QAMS.Domain.Entities.Catalogs;
 
 namespace QAMS.Domain.Entities
@@ -7,19 +8,30 @@ namespace QAMS.Domain.Entities
     /// Resultado de un paso en una ejecución.
     /// StatusId referencia a catálogo step_result_statuses (no enum).
     /// </summary>
-    public class ExecutionStepResult
+    public class ExecutionStepResult : IAuditable, ISoftDelete
     {
         public Guid Id { get; set; }
         public Guid TestExecutionId { get; set; }
-        public TestExecution TestExecution { get; set; } = null!;
+        public TestExecution? TestExecution { get; set; }
         public Guid TestStepId { get; set; }
-        public TestStep TestStep { get; set; } = null!;
+        public TestStep? TestStep { get; set; }
         public int StatusId { get; set; }
-        public StepResultStatus Status { get; set; } = null!;
+        public StepResultStatus? Status { get; set; }
         public string? ActualResult { get; set; }
         public string? Notes { get; set; }
         public DateTime EvaluatedAt { get; set; } = DateTime.UtcNow;
         public virtual ICollection<Evidence> Evidences { get; set; } = [];
         public virtual ICollection<ExecutionStepObservation> Observations { get; set; } = [];
+
+        // ISoftDelete
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+        public Guid? DeletedByUserId { get; set; }
+
+        // IAuditable
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public Guid? CreatedByUserId { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public Guid? UpdatedByUserId { get; set; }
     }
 }

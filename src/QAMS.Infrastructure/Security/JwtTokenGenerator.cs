@@ -35,7 +35,7 @@ namespace QAMS.Infrastructure.Security
             // Agregar nombres de roles como claims
             foreach (var userRole in user.UserRoles)
             {
-                claims.Add(new Claim(ClaimTypes.Role, userRole.Role.Name));
+                claims.Add(new Claim(ClaimTypes.Role, userRole.Role!.Name));
             }
 
             // Crear clave de firma simétrica

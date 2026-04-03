@@ -1,4 +1,5 @@
 // src/QAMS.Api/Controllers/CatalogsController.cs
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QAMS.Api.Filters;
@@ -16,7 +17,11 @@ namespace QAMS.Api.Controllers
         private readonly ICatalogService _catalogService = catalogService;
         private readonly ILogger<CatalogsController> _logger = logger;
 
-        /// <summary>GET api/catalogs/{catalogName}/active</summary>
+        /// <summary>
+        /// Obtiene los elementos activos de un catálogo específico.
+        /// </summary>
+        /// <param name="catalogName">Nombre del catálogo (ej. 'Status', 'Priority').</param>
+        /// <returns>Lista de elementos activos del catálogo.</returns>
         [HttpGet("{catalogName}/active")]
         public async Task<IActionResult> GetActive(string catalogName)
         {
@@ -24,7 +29,11 @@ namespace QAMS.Api.Controllers
             return Ok(await _catalogService.GetActiveByCatalogNameAsync(catalogName));
         }
 
-        /// <summary>GET api/catalogs/{catalogName}</summary>
+        /// <summary>
+        /// Obtiene todos los elementos de un catálogo. Requiere permiso CATALOGS_VIEW.
+        /// </summary>
+        /// <param name="catalogName">Nombre del catálogo.</param>
+        /// <returns>Lista de todos los elementos del catálogo.</returns>
         [HttpGet("{catalogName}")]
         [HasPermission("CATALOGS_VIEW")]
         public async Task<IActionResult> GetAll(string catalogName)
@@ -33,7 +42,12 @@ namespace QAMS.Api.Controllers
             return Ok(await _catalogService.GetAllByCatalogNameAsync(catalogName));
         }
 
-        /// <summary>POST api/catalogs/{catalogName}</summary>
+        /// <summary>
+        /// Crea un nuevo elemento en un catálogo. Requiere permiso CATALOGS_MANAGE.
+        /// </summary>
+        /// <param name="catalogName">Nombre del catálogo.</param>
+        /// <param name="dto">Datos del nuevo elemento.</param>
+        /// <returns>El elemento creado.</returns>
         [HttpPost("{catalogName}")]
         [HasPermission("CATALOGS_MANAGE")]
         public async Task<IActionResult> Create(string catalogName, [FromBody] CreateCatalogItemDto dto)
@@ -42,7 +56,13 @@ namespace QAMS.Api.Controllers
             return Created("", await _catalogService.CreateAsync(catalogName, dto));
         }
 
-        /// <summary>PUT api/catalogs/{catalogName}/{id}</summary>
+        /// <summary>
+        /// Actualiza un elemento existente de un catálogo. Requiere permiso CATALOGS_MANAGE.
+        /// </summary>
+        /// <param name="catalogName">Nombre del catálogo.</param>
+        /// <param name="id">ID numérico del elemento.</param>
+        /// <param name="dto">Datos actualizados.</param>
+        /// <returns>El elemento actualizado.</returns>
         [HttpPut("{catalogName}/{id:int}")]
         [HasPermission("CATALOGS_MANAGE")]
         public async Task<IActionResult> Update(string catalogName, int id, [FromBody] CreateCatalogItemDto dto)

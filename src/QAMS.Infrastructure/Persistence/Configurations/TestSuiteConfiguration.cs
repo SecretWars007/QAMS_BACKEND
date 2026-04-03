@@ -16,7 +16,15 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(ts => ts.Name).HasColumnName("name").HasMaxLength(100).IsRequired();
             builder.Property(ts => ts.Description).HasColumnName("description").HasMaxLength(500);
             builder.Property(ts => ts.StatusId).HasColumnName("status_id").HasDefaultValue(1).IsRequired();
-            builder.Property(ts => ts.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+
+            // Auditoría y Borrado Lógico
+            builder.Property(ts => ts.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
+            builder.Property(ts => ts.DeletedAt).HasColumnName("deleted_at");
+            builder.Property(ts => ts.DeletedByUserId).HasColumnName("deleted_by_user_id");
+            builder.Property(ts => ts.CreatedAt).HasColumnName("created_at");
+            builder.Property(ts => ts.CreatedByUserId).HasColumnName("created_by_user_id");
+            builder.Property(ts => ts.UpdatedAt).HasColumnName("updated_at");
+            builder.Property(ts => ts.UpdatedByUserId).HasColumnName("updated_by_user_id");
 
             builder.HasOne(ts => ts.Project)
                 .WithMany(p => p.TestSuites)

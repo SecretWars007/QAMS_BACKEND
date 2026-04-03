@@ -22,7 +22,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.HasData(
                 new Role
                 {
-                    Id = QAMS.Domain.Constants.SystemRoles.AdminRoleId,
+                    Id = SystemRoles.AdminRoleId,
                     Name = "Administrator",
                     Description = "Acceso total al sistema",
                     IsActive = true,
@@ -30,9 +30,25 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 },
                 new Role
                 {
-                    Id = QAMS.Domain.Constants.SystemRoles.TesterRoleId,
+                    Id = SystemRoles.TesterRoleId,
                     Name = "Tester",
                     Description = "Ejecución y gestión de pruebas",
+                    IsActive = true,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new Role
+                {
+                    Id = SystemRoles.LeadRoleId,
+                    Name = "Líder de Pruebas (Lead)",
+                    Description = "Planifica suites, asigna tareas y genera reportes",
+                    IsActive = true,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new Role
+                {
+                    Id = SystemRoles.DeveloperRoleId,
+                    Name = "Desarrollador",
+                    Description = "Revisa defectos asignados y actualiza código",
                     IsActive = true,
                     CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
                 }

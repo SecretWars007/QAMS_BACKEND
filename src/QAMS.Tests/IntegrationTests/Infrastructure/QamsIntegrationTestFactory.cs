@@ -73,9 +73,11 @@ public class QamsIntegrationTestFactory : WebApplicationFactory<Program>, IAsync
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<QamsDbContext>();
         
-        // EnsureDeleted elimina restos si un test anterior falló gravemente, 
-        // pero con un contenedor Docker fresco usualmente no hace falta
-        await db.Database.EnsureCreatedAsync(); 
+        // EnsureCreated elimina restos si un test anterior falló gravemente, 
+        // pero con un contenedor Docker fresco usualmente no hace falta.
+        // Cambiamos a MigrateAsync() para asegurar que el esquema coincida con las migraciones,
+        // incluyendo la columna 'documento_identidad'.
+        await db.Database.MigrateAsync(); 
     }
 
     async Task IAsyncLifetime.DisposeAsync()

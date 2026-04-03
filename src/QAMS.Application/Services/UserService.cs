@@ -82,15 +82,25 @@ namespace QAMS.Application.Services
             // El valor {Username} se extrae de dto.Username
             _logger.LogInformation("Creando usuario '{Username}'.", dto.Username);
 
-            // VALIDACIÓN: Verificar que el username sea único en el sistema
-            // AnyAsync retorna true si ya existe un usuario con ese username
-            if (await _userRepo.AnyAsync(u => u.Username == dto.Username))
-                // Lanzar excepción de negocio si el username ya existe
+            // VALIDACIÓN: Verificar que el username sea único en el sistema (Incluso borrados)
+            // Usamos IgnoreQueryFilters para asegurar que el username sea único globalmente
+            if (await _userRepo.AnyWithFilterAsync(u => u.Username == dto.Username))
                 throw new DomainException($"Username '{dto.Username}' ya existe.");
 
-            // VALIDACIÓN: Verificar que el email sea único en el sistema
+            // VALIDACIÓN: Verificar que el email sea único (solo para activos)
+            // El filtro global de EF Core ya se encarga de ignorar a los borrados lógicamente
             if (await _userRepo.AnyAsync(u => u.Email == dto.Email))
-                throw new DomainException($"Email '{dto.Email}' ya existe.");
+                throw new DomainException($"Email '{dto.Email}' ya está en uso por otro usuario activo.");
+
+            // VALIDACIÓN: El usuario debe tener entre 18 y 80 años de edad
+            var age = DateTime.Today.Year - dto.FechaNacimiento.Year;
+            if (dto.FechaNacimiento.ToDateTime(TimeOnly.MinValue).Date > DateTime.Today.AddYears(-age)) age--;
+            if (age < 18 || age > 80)
+                throw new DomainException("El usuario debe tener entre 18 y 80 años de edad.");
+
+            // VALIDACIÓN: Combinación DocumentoIdentidad + FechaNacimiento única
+            if (await _userRepo.AnyAsync(u => u.DocumentoIdentidad == dto.DocumentoIdentidad && u.FechaNacimiento == dto.FechaNacimiento))
+                throw new DomainException($"Ya existe un usuario con el Documento de Identidad '{dto.DocumentoIdentidad}' y la misma Fecha de Nacimiento.");
 
             // CREAR NUEVA ENTIDAD: Instanciar User con valores iniciales
             var user = new User
@@ -100,6 +110,9 @@ namespace QAMS.Application.Services
                 Email = dto.Email,
                 PasswordHash = _hasher.HashPassword(dto.Password),
                 FullName = dto.FullName,
+                DocumentoIdentidad = dto.DocumentoIdentidad,
+                FechaNacimiento = dto.FechaNacimiento,
+                Telefono = dto.Telefono,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
             };
@@ -120,6 +133,18 @@ namespace QAMS.Application.Services
             await _uow.SaveChangesAsync();
 
             _logger.LogInformation("Usuario '{Username}' creado con ID {UserId}.", user.Username, user.Id);
+
+            // Enviar correo de bienvenida indicando que un admin creó su cuenta
+            try
+            {
+                var htmlBody = QAMS.Application.Templates.EmailTemplates.GetWelcomeEmailHtml(user.FullName, user.Username);
+                await _emailService.SendEmailAsync(user.Email, "¡Bienvenido a QAMS! Tu cuenta ha sido creada", htmlBody);
+                _logger.LogInformation("Correo de bienvenida enviado exitosamente a '{Email}'.", user.Email);
+            }
+            catch (Exception emailEx)
+            {
+                _logger.LogWarning(emailEx, "No se pudo enviar el correo de bienvenida a '{Email}'. El registro fue exitoso.", user.Email);
+            }
 
             var created = await _userRepo.GetWithRolesAsync(user.Id);
             return _mapper.Map<UserDto>(created);
@@ -165,9 +190,34 @@ namespace QAMS.Application.Services
                 user.IsActive = dto.IsActive.Value;
             }
 
-            // Actualizar campos
+            // Actualizar campos básicos
             user.Email = dto.Email;
             user.FullName = dto.FullName;
+            
+            // Validar edad si cambió la fecha
+            if (dto.FechaNacimiento.HasValue)
+            {
+                var age = DateTime.Today.Year - dto.FechaNacimiento.Value.Year;
+                if (dto.FechaNacimiento.Value.ToDateTime(TimeOnly.MinValue).Date > DateTime.Today.AddYears(-age)) age--;
+                if (age < 18 || age > 80)
+                    throw new DomainException("El usuario debe tener entre 18 y 80 años de edad.");
+            }
+
+            // Validar unicidad si el Documento o Fecha cambian
+            var doc = dto.DocumentoIdentidad ?? user.DocumentoIdentidad;
+            var fec = dto.FechaNacimiento ?? user.FechaNacimiento;
+
+            if ((dto.DocumentoIdentidad != null && dto.DocumentoIdentidad != user.DocumentoIdentidad) || 
+                (dto.FechaNacimiento.HasValue && dto.FechaNacimiento.Value != user.FechaNacimiento))
+            {
+                if (await _userRepo.AnyAsync(u => u.DocumentoIdentidad == doc && u.FechaNacimiento == fec && u.Id != id))
+                    throw new DomainException("Ya existe otro usuario con la misma combinación de Documento de Identidad y Fecha de Nacimiento.");
+            }
+
+            if (dto.DocumentoIdentidad != null) user.DocumentoIdentidad = dto.DocumentoIdentidad;
+            if (dto.FechaNacimiento.HasValue) user.FechaNacimiento = dto.FechaNacimiento.Value;
+            if (dto.Telefono != null) user.Telefono = dto.Telefono;
+            
             user.UpdatedAt = DateTime.UtcNow;
 
             // PERSISTENCIA 1: Guardar cambios básicos
@@ -291,13 +341,9 @@ namespace QAMS.Application.Services
                 throw new DomainException($"No se puede eliminar el usuario porque tiene roles asignados. Primero remueve sus roles.");
             }
 
-            // SOFT DELETE: Marcar como eliminado e inactivo
-            // Esto preserva integridad referencial y oculta al usuario gracias al Global Query Filter
+            // SOFT DELETE: El DbContext se encargará de asignar DeletedAt y DeletedByUserId
             user.IsActive = false;
-            user.LogicallyDeleted = true;
-            
-            // Timestamp de última actualización
-            user.UpdatedAt = DateTime.UtcNow;
+            user.IsDeleted = true;
 
             // PERSISTENCIA: Guardar el cambio de estado
             _userRepo.Update(user);

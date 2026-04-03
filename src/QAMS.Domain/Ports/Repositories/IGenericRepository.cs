@@ -13,6 +13,7 @@ namespace QAMS.Domain.Ports.Repositories
         void Update(T entity);
         void Delete(T entity);
         Task<bool> AnyAsync(Expression<Func<T, bool>> predicate);
+        Task<bool> AnyWithFilterAsync(Expression<Func<T, bool>> predicate);
         Task<int> CountAsync(Expression<Func<T, bool>> predicate);
     }
 }

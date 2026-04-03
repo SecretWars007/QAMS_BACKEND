@@ -356,7 +356,10 @@ namespace QAMS.Application.Services
 
             if (status.Code == "PASSED" || status.Code == "FAILED")
             {
-                await SyncProjectHoursAsync(execution.TestCase.ProjectId);
+                if (execution.TestCase != null)
+                {
+                    await SyncProjectHoursAsync(execution.TestCase.ProjectId);
+                }
             }
 
             return mapper.Map<TestExecutionDto>(execution);
@@ -393,7 +396,10 @@ namespace QAMS.Application.Services
             await SyncTestCaseStatusAsync(execution.TestCaseId, execution.StatusId);
 
             // Sincronizar horas del proyecto
-            await SyncProjectHoursAsync(execution.TestCase.ProjectId);
+            if (execution.TestCase != null)
+            {
+                await SyncProjectHoursAsync(execution.TestCase.ProjectId);
+            }
 
             logger.LogInformation("Ejecución {ExecId} completada.", executionId);
 
@@ -512,7 +518,10 @@ namespace QAMS.Application.Services
             var status = await execStatusRepo.GetByIdAsync(execution.StatusId);
             if (status?.Code == "PASSED" || status?.Code == "FAILED")
             {
-                await SyncProjectHoursAsync(execution.TestCase.ProjectId);
+                if (execution.TestCase != null)
+                {
+                    await SyncProjectHoursAsync(execution.TestCase.ProjectId);
+                }
             }
 
             return await GetByIdAsync(id);

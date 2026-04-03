@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using QAMS.Application.DTOs.Auth;
 using QAMS.Tests.IntegrationTests.Infrastructure;
+using System;
 using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -12,25 +13,29 @@ namespace QAMS.Tests.IntegrationTests.Endpoints;
 [Collection("Integration tests")]
 public class AuthEndpointsTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
-
     [Fact]
     public async Task Register_WithValidData_ReturnsCreatedAndSavesToDb()
     {
         // Arrange
+        var uniqueId = Guid.NewGuid().ToString("N")[..8];
         var request = new RegisterRequestDto
         {
-            Username = "new_integration_user",
-            Email = "integration@qams.test",
+            Username = $"user_{uniqueId}",
+            Email = $"test_{uniqueId}@qams.test",
             Password = "StrongPassword123!",
-            FullName = "Integration Test User"
+            FullName = "Integration Test User",
+            DocumentoIdentidad = $"DOC-{uniqueId}",
+            FechaNacimiento = new System.DateOnly(1995, 5, 20),
+            Telefono = "+59171234567"
         };
 
         // Act
         var response = await Client.PostAsJsonAsync("/api/auth/register", request);
 
         // Assert HTTP Response
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-        
+        var body = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.Created, $"Response body: {body}");
+
         var result = await response.Content.ReadFromJsonAsync<LoginResponseDto>();
         result.Should().NotBeNull();
         result!.AccessToken.Should().NotBeNullOrEmpty();
@@ -53,7 +58,7 @@ public class AuthEndpointsTests(QamsIntegrationTestFactory factory) : Integratio
         // Arrange
         // Usamos el helper base para inyectar un usuario directo en la BD
         var user = await CreateTestUserAsync("login_user");
-        
+
         var request = new LoginRequestDto
         {
             Username = user.Username,
@@ -65,7 +70,7 @@ public class AuthEndpointsTests(QamsIntegrationTestFactory factory) : Integratio
 
         // Assert HTTP
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         var result = await response.Content.ReadFromJsonAsync<LoginResponseDto>();
         result.Should().NotBeNull();
         result!.AccessToken.Should().NotBeNullOrEmpty();
@@ -77,7 +82,7 @@ public class AuthEndpointsTests(QamsIntegrationTestFactory factory) : Integratio
     {
         // Arrange
         await CreateTestUserAsync("invalid_login_user");
-        
+
         var request = new LoginRequestDto
         {
             Username = "invalid_login_user",

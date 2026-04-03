@@ -1,19 +1,27 @@
 // src/QAMS.Api/Program.cs
+using System;
+using System.IO;
+using System.Linq;
 using System.Text;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.HttpOverrides;
 using QAMS.Api.Middleware;
+using QAMS.Application;
 using QAMS.Application.Interfaces;
 using QAMS.Application.Services;
 using QAMS.Infrastructure;
 using QAMS.Infrastructure.Security;
 using QAMS.Infrastructure.Persistence.Configurations;
-using Microsoft.EntityFrameworkCore;
 using QAMS.Application.DTOs.Users;
 using QAMS.Application.DTOs.Roles;
 using QAMS.Domain.Entities;
-using Microsoft.AspNetCore.HttpOverrides;
 using QAMS.Application.Mappings;
 // Cargar variables de entorno desde .env si existe (Desarrollo Local)
 var dotEnv = Path.Combine(Directory.GetCurrentDirectory(), ".env");
@@ -67,6 +75,11 @@ var jwtSection = builder.Configuration.GetSection("JwtSettings");
 builder.Services.Configure<JwtSettings>(jwtSection);
 var jwt = jwtSection.Get<JwtSettings>()!;
 
+// Encryption
+var encryptionSection = builder.Configuration.GetSection("EncryptionSettings");
+builder.Services.Configure<EncryptionSettings>(encryptionSection);
+builder.Services.AddSingleton<IEncryptionService, EncryptionService>();
+
 builder
     .Services.AddAuthentication(o =>
     {
@@ -96,6 +109,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IRequirementService, RequirementService>();
 builder.Services.AddScoped<ITestCaseService, TestCaseService>();
 builder.Services.AddScoped<ITestSuiteService, TestSuiteService>();
 builder.Services.AddScoped<ITestExecutionService, TestExecutionService>();
@@ -109,7 +123,11 @@ builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 // builder.Services.AddValidatorsFromAssemblyContaining<MappingProfile>();
 
 // Controllers + API Explorer + Swagger
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => 
+{
+    // Global filter to validate all inputs across the entire application
+    options.Filters.Add<QAMS.Api.Filters.GlobalInputSanitizationFilter>();
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -124,10 +142,18 @@ builder.Services.AddSwaggerGen(c =>
             Email = "support@qams.local"
         },
         License = new Microsoft.OpenApi.Models.OpenApiLicense
+            {
+                Name = "Internal Use Only"
+            }
+        });
+
+        // Incluir comentarios XML
+        var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        if (File.Exists(xmlPath))
         {
-            Name = "Internal Use Only"
+            c.IncludeXmlComments(xmlPath);
         }
-    });
 
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
@@ -158,6 +184,14 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // CORS
+builder.Services.AddAntiforgery(options => 
+{
+    options.HeaderName = "X-XSRF-TOKEN";
+    options.Cookie.Name = "XSRF-TOKEN";
+    options.Cookie.HttpOnly = false; // Permite que Angular lo lea
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
+
 builder.Services.AddCors(o =>
 {
     o.AddPolicy(
@@ -207,6 +241,18 @@ if (!string.IsNullOrEmpty(port))
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<EncryptionMiddleware>();
+
+// Middleware para enviar Token Antiforgery (XSRF) al frontend
+app.Use((context, next) =>
+{
+    var tokens = context.RequestServices.GetRequiredService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+    var tokenSet = tokens.GetAndStoreTokens(context);
+    context.Response.Cookies.Append("XSRF-TOKEN", tokenSet.RequestToken!, 
+        new CookieOptions { HttpOnly = false, Secure = !app.Environment.IsDevelopment(), SameSite = SameSiteMode.None });
+    return next(context);
+});
+
 app.UseForwardedHeaders();
 
 // Apply EF migrations (or create DB) and seed catalogs at startup

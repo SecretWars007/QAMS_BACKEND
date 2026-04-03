@@ -33,6 +33,9 @@ namespace QAMS.Infrastructure.Repositories
         public virtual async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate) =>
             await _dbSet.AnyAsync(predicate);
 
+        public virtual async Task<bool> AnyWithFilterAsync(Expression<Func<T, bool>> predicate) =>
+            await _dbSet.IgnoreQueryFilters().AnyAsync(predicate);
+
         public virtual async Task<int> CountAsync(Expression<Func<T, bool>> predicate) =>
             await _dbSet.CountAsync(predicate);
     }

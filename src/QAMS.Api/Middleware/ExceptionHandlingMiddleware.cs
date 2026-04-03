@@ -1,6 +1,10 @@
 // src/QAMS.Api/Middleware/ExceptionHandlingMiddleware.cs
+using System;
 using System.Net;
 using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using QAMS.Domain.Exceptions;
 
 namespace QAMS.Api.Middleware
@@ -38,8 +42,10 @@ namespace QAMS.Api.Middleware
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error interno no controlado.");
-                await WriteResponse(context, HttpStatusCode.InternalServerError,
-                    "Ocurrió un error interno. Contacte al administrador.");
+                var detail = ex.ToString();
+                if (ex.InnerException != null)
+                    detail += " | INNER: " + ex.InnerException.ToString();
+                await WriteResponse(context, HttpStatusCode.InternalServerError, detail);
             }
         }
 

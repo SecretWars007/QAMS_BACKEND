@@ -90,6 +90,40 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task RegisterAsync_WhenAgeUnder18_ShouldThrowDomainException()
+    {
+        // Arrange
+        var request = new RegisterRequestDto 
+        { 
+            Username = "young", 
+            Email = "y@y.com", 
+            FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-17)) 
+        };
+        var service = CreateService();
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<DomainException>(() => service.RegisterAsync(request));
+        ex.Message.Should().Contain("18 y 80");
+    }
+
+    [Fact]
+    public async Task RegisterAsync_WhenAgeOver80_ShouldThrowDomainException()
+    {
+        // Arrange
+        var request = new RegisterRequestDto 
+        { 
+            Username = "old", 
+            Email = "o@o.com", 
+            FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-81)) 
+        };
+        var service = CreateService();
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<DomainException>(() => service.RegisterAsync(request));
+        ex.Message.Should().Contain("18 y 80");
+    }
+
+    [Fact]
     public async Task ForgotPasswordAsync_WhenEmailExists_ShouldGenerateToken()
     {
         // Arrange

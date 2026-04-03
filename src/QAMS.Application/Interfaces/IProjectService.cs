@@ -17,5 +17,6 @@ namespace QAMS.Application.Interfaces
         // Devoluciones
         Task<ProjectDevolutionDto> RegisterDevolutionAsync(Guid projectId, Guid createdByUserId, RegisterDevolutionDto dto);
         Task<ProjectDevolutionDto> RespondToDevolutionAsync(Guid devolutionId, RespondDevolutionDto dto);
+
     }
 }

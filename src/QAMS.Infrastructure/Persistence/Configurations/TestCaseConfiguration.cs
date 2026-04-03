@@ -22,14 +22,20 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(tc => tc.ExpectedResult).HasColumnName("expected_result").HasMaxLength(1000).IsRequired();
             builder.Property(tc => tc.PriorityId).HasColumnName("priority_id").IsRequired();
             builder.Property(tc => tc.IsActive).HasColumnName("is_active").HasDefaultValue(true);
-            builder.Property(tc => tc.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
-            builder.Property(tc => tc.UpdatedAt).HasColumnName("updated_at");
-
-            builder.Property(tc => tc.CreatedByUserId).HasColumnName("created_by_user_id");
+            
             builder.Property(tc => tc.EstimatedTimeHours).HasColumnName("estimated_time_hours").HasColumnType("decimal(6,2)").HasDefaultValue(0);
             builder.Property(tc => tc.StartDate).HasColumnName("start_date");
             builder.Property(tc => tc.EndDate).HasColumnName("end_date");
             builder.Property(tc => tc.TestTypeId).HasColumnName("test_type_id").HasDefaultValue(1); // Default: Funcional Manual
+
+            // Auditoría y Borrado Lógico
+            builder.Property(tc => tc.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
+            builder.Property(tc => tc.DeletedAt).HasColumnName("deleted_at");
+            builder.Property(tc => tc.DeletedByUserId).HasColumnName("deleted_by_user_id");
+            builder.Property(tc => tc.CreatedAt).HasColumnName("created_at");
+            builder.Property(tc => tc.CreatedByUserId).HasColumnName("created_by_user_id");
+            builder.Property(tc => tc.UpdatedAt).HasColumnName("updated_at");
+            builder.Property(tc => tc.UpdatedByUserId).HasColumnName("updated_by_user_id");
 
             // Relación con Project
             builder.HasOne(tc => tc.Project)
@@ -40,7 +46,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             // Relación con TestSuite
             builder.HasOne(tc => tc.TestSuite)
                 .WithMany(ts => ts.TestCases)
-                .HasForeignKey(tc => tc.TestSuiteId)
+                .HasForeignKey(ts => ts.TestSuiteId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Relación con Priority
@@ -53,6 +59,18 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.HasOne(tc => tc.CreatedBy)
                 .WithMany(u => u.CreatedTestCases)
                 .HasForeignKey(tc => tc.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Relación con UpdatedBy
+            builder.HasOne(tc => tc.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(tc => tc.UpdatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Relación con DeletedBy
+            builder.HasOne(tc => tc.DeletedBy)
+                .WithMany()
+                .HasForeignKey(tc => tc.DeletedByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             // Relación con TestType

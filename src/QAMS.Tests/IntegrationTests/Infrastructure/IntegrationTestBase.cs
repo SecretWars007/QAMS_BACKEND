@@ -15,10 +15,17 @@ using Xunit;
 
 namespace QAMS.Tests.IntegrationTests.Infrastructure;
 
-public abstract class IntegrationTestBase(QamsIntegrationTestFactory factory) : IClassFixture<QamsIntegrationTestFactory>
+public abstract class IntegrationTestBase : IClassFixture<QamsIntegrationTestFactory>
 {
-    protected readonly QamsIntegrationTestFactory Factory = factory;
-    protected readonly HttpClient Client = factory.CreateClient();
+    protected readonly QamsIntegrationTestFactory Factory;
+    protected readonly HttpClient Client;
+
+    protected IntegrationTestBase(QamsIntegrationTestFactory factory)
+    {
+        Factory = factory;
+        Client = factory.CreateClient();
+        Client.DefaultRequestHeaders.Add("X-Skip-Encryption", "true");
+    }
 
     /// <summary>
     /// Configura el HttpClient para simular autenticación con el ID de usuario proporcionado.
@@ -39,12 +46,19 @@ public abstract class IntegrationTestBase(QamsIntegrationTestFactory factory) : 
         using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<QamsDbContext>();
 
+        var testSuffix = Guid.NewGuid().ToString("N")[..6];
+        var finalUsername = $"{username}_{testSuffix}";
+
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Username = username,
-            Email = $"{username}@qams.test",
-            FullName = $"Test User {username}",
+            // Usar GUID truncado para asegurar unicidad en tests y evitar colisiones de datos
+            DocumentoIdentidad = Guid.NewGuid().ToString().Replace("-", "")[..12],
+            FechaNacimiento = new DateOnly(1990, 1, 1),
+            Telefono = "+59171234567",
+            Username = finalUsername,
+            Email = $"{finalUsername}@qams.test",
+            FullName = $"Test User {finalUsername}",
             IsActive = true,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123") // Hash correcto usando BCrypt
         };

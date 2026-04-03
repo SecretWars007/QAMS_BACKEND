@@ -1,4 +1,6 @@
 // src/QAMS.Api/Controllers/DashboardController.cs
+using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QAMS.Api.Filters;
@@ -16,6 +18,11 @@ namespace QAMS.Api.Controllers
         private readonly IDashboardService _dashboardService = dashboardService;
         private readonly ILogger<DashboardController> _logger = logger;
 
+        /// <summary>
+        /// Obtiene un resumen general de estadísticas para un usuario. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <param name="userId">Opcional. ID del usuario para filtrar el resumen. Si no se provee, usa el usuario actual.</param>
+        /// <returns>Objeto con contadores de proyectos, casos de prueba y ejecuciones.</returns>
         [HttpGet]
         [HasPermission("DASHBOARD_VIEW")]
         public async Task<IActionResult> GetSummary([FromQuery] Guid? userId = null)
@@ -30,6 +37,10 @@ namespace QAMS.Api.Controllers
             return Ok(summary);
         }
 
+        /// <summary>
+        /// Obtiene un resumen de estadísticas para el usuario autenticado actual. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <returns>Resumen del dashboard para el usuario logueado.</returns>
         [HttpGet("summary")]
         [HasPermission("DASHBOARD_VIEW")]
         public async Task<IActionResult> GetSummaryForCurrentUser()
@@ -42,6 +53,11 @@ namespace QAMS.Api.Controllers
             return Ok(summary);
         }
 
+        /// <summary>
+        /// Obtiene la línea de tiempo de eventos para un proyecto específico. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <param name="projectId">ID único del proyecto.</param>
+        /// <returns>Lista de eventos cronológicos del proyecto.</returns>
         [HttpGet("project/{projectId:guid}/timeline")]
         [HasPermission("DASHBOARD_VIEW")]
         public async Task<IActionResult> GetProjectTimeline(Guid projectId)
@@ -51,6 +67,11 @@ namespace QAMS.Api.Controllers
             return Ok(timeline);
         }
 
+        /// <summary>
+        /// Obtiene datos formateados para el gráfico de línea de tiempo de un proyecto. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <param name="projectId">ID del proyecto.</param>
+        /// <returns>Datos estructurados para gráficos de progreso temporal.</returns>
         [HttpGet("project/{projectId:guid}/chart/timeline")]
         [HasPermission("DASHBOARD_VIEW")]
         public async Task<IActionResult> GetTimelineChartData(Guid projectId)
@@ -60,6 +81,11 @@ namespace QAMS.Api.Controllers
             return Ok(data);
         }
 
+        /// <summary>
+        /// Obtiene datos para el gráfico de Drawdown (fallos acumulados) de un proyecto. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <param name="projectId">ID del proyecto.</param>
+        /// <returns>Serie de datos para gráfico de drawdown.</returns>
         [HttpGet("project/{projectId:guid}/chart/drawdown")]
         [HasPermission("DASHBOARD_VIEW")]
         public async Task<IActionResult> GetDrawdownData(Guid projectId)
@@ -69,6 +95,11 @@ namespace QAMS.Api.Controllers
             return Ok(data);
         }
 
+        /// <summary>
+        /// Obtiene datos para el gráfico de Burndown (trabajo pendiente/ejecuciones) de un proyecto. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <param name="projectId">ID del proyecto.</param>
+        /// <returns>Serie de datos para gráfico de burndown.</returns>
         [HttpGet("project/{projectId:guid}/chart/burndown")]
         [HasPermission("DASHBOARD_VIEW")]
         public async Task<IActionResult> GetBurndownData(Guid projectId)

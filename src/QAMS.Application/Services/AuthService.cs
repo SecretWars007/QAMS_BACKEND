@@ -35,18 +35,45 @@ namespace QAMS.Application.Services
             _logger.LogInformation("Intento de login: '{Username}'.", request.Username);
 
             var user = await _userRepo.GetWithRolesAndPermissionsAsync(request.Username);
+            
+            // 1. Verificar si el usuario existe y si está bloqueado
+            if (user != null && user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow)
+            {
+                var remaining = user.LockoutEnd.Value - DateTime.UtcNow;
+                _logger.LogWarning("Intento de login en cuenta bloqueada: '{Username}'. Faltan {Minutes} min.", 
+                    request.Username, (int)remaining.TotalMinutes);
+                throw new UnauthorizedException($"La cuenta está bloqueada temporalmente. Intente de nuevo en {(int)Math.Ceiling(remaining.TotalMinutes)} minutos.");
+            }
+
             if (user is null || !user.IsActive)
             {
-                _logger.LogWarning("Login fallido para '{Username}'.", request.Username);
+                _logger.LogWarning("Login fallido para '{Username}' (Inexistante o inactivo).", request.Username);
                 throw new UnauthorizedException("Credenciales inválidas.");
             }
 
+            // 2. Verificar contraseña
             if (!_hasher.VerifyPassword(request.Password, user.PasswordHash))
             {
-                _logger.LogWarning("Contraseña incorrecta para '{Username}'.", request.Username);
+                user.AccessFailedCount++;
+                _logger.LogWarning("Contraseña incorrecta para '{Username}'. Intento #{Count}.", 
+                    request.Username, user.AccessFailedCount);
+
+                if (user.AccessFailedCount >= 5)
+                {
+                    user.LockoutEnd = DateTime.UtcNow.AddMinutes(15);
+                    _logger.LogCritical("Cuenta bloqueada por seguridad: '{Username}'.", request.Username);
+                }
+
+                _userRepo.Update(user);
+                await _uow.SaveChangesAsync();
+                
                 throw new UnauthorizedException("Credenciales inválidas.");
             }
 
+            // 3. Login exitoso: Resetear contadores
+            user.AccessFailedCount = 0;
+            user.LockoutEnd = null;
+            
             var permissions = await _rbacService.GetUserPermissionsAsync(user.Id);
             var accessToken = _jwt.GenerateAccessToken(user, permissions);
             var refreshToken = _jwt.GenerateRefreshToken();
@@ -73,11 +100,21 @@ namespace QAMS.Application.Services
         {
             _logger.LogInformation("Registro: '{Username}'.", request.Username);
 
-            if (await _userRepo.GetByUsernameAsync(request.Username) is not null)
-                throw new DomainException($"Username '{request.Username}' ya existe.");
+            if (await _userRepo.GetByUsernameAsync(request.Username) is not null || 
+                await _userRepo.GetByEmailAsync(request.Email) is not null)
+            {
+                throw new DomainException("El nombre de usuario o correo electrónico ya está en uso.");
+            }
 
-            if (await _userRepo.GetByEmailAsync(request.Email) is not null)
-                throw new DomainException($"Email '{request.Email}' ya existe.");
+            // Validar edad (entre 18 y 80 años)
+            var age = DateTime.Today.Year - request.FechaNacimiento.Year;
+            if (request.FechaNacimiento.ToDateTime(TimeOnly.MinValue).Date > DateTime.Today.AddYears(-age)) age--;
+            if (age < 18 || age > 80)
+                throw new DomainException("La edad del usuario debe estar entre 18 y 80 años.");
+
+            // Validar que el Documento y Fecha no estén duplicados (Índice único compuesto)
+            if (await _userRepo.AnyAsync(u => u.DocumentoIdentidad == request.DocumentoIdentidad && u.FechaNacimiento == request.FechaNacimiento))
+                throw new DomainException($"El documento de identidad '{request.DocumentoIdentidad}' vinculado a esa fecha de nacimiento ya está registrado en el sistema.");
 
             var user = new User
             {
@@ -86,6 +123,9 @@ namespace QAMS.Application.Services
                 Email = request.Email,
                 PasswordHash = _hasher.HashPassword(request.Password),
                 FullName = request.FullName,
+                DocumentoIdentidad = request.DocumentoIdentidad,
+                FechaNacimiento = request.FechaNacimiento,
+                Telefono = request.Telefono,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };

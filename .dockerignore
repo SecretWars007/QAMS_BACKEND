@@ -1,11 +1,39 @@
-bin/
-obj/
-.git/
+# .dockerignore for QAMS (Backend)
+# Base .NET Core ignores
+**/*.user
+**/*.suo
+**/*.ips
+**/*.pdb
+**/*.ldb
+**/*.sln.docstates
+
+# Build artifacts
+**/bin/
+**/obj/
+**/publish/
+**/dist/
+
+# IDE files
 .vs/
 .vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Project specific
 logs/
-*.user
-*.suo
-publish/
-dist/
+uploads/
 node_modules/
+*.log
+
+# Docker specific
+# No ignorar Dockerfile ni docker-compose.yml si el contexto lo requiere, 
+# pero usualmente no se necesitan dentro de la imagen final.
+Dockerfile
+docker-compose*
+.dockerignore
+.env
+.env.example

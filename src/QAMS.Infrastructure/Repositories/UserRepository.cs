@@ -76,8 +76,10 @@ namespace QAMS.Infrastructure.Repositories
         /// - Usa comparación exact
         /// </summary>
         public async Task<User?> GetByUsernameAsync(string username) =>
-            // LINQ query: filtrar por username exacto y retornar el primero o null
-            await _dbSet.FirstOrDefaultAsync(u => string.Equals(u.Username, username, StringComparison.OrdinalIgnoreCase));
+            // LINQ query: filtrar por username exacto y retornar el primero o null. 
+            // Usamos IgnoreQueryFilters para encontrar también usuarios borrados lógicamente
+            // ya que el Username debe ser único a nivel global (incluso borrados).
+            await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
 
         /// <summary>
         /// OBTIENE UN USUARIO POR SU EMAIL.
@@ -101,8 +103,8 @@ namespace QAMS.Infrastructure.Repositories
         /// - No carga roles para evitar overhead
         /// </summary>
         public async Task<User?> GetByEmailAsync(string email) =>
-            // LINQ: filtrar por email exacto
-            await _dbSet.FirstOrDefaultAsync(u => string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase));
+            // LINQ: filtrar por email exacto (case-insensitive usando ToLower() para compatibilidad EF Core)
+            await _dbSet.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
 
         /// <summary>
         /// OBTIENE UN USUARIO CON TODOS SUS ROLES (EAGER LOADING).
@@ -222,13 +224,13 @@ namespace QAMS.Infrastructure.Repositories
                 // Step 2: Para cada UserRole, incluir el Role relacionado
                 .ThenInclude(ur => ur.Role)
                 // Step 3: Para cada Role, incluir sus RolePermissions
-                .ThenInclude(r => r.RolePermissions)
+                .ThenInclude(r => r!.RolePermissions)
                 // Step 4: Para cada RolePermission, incluir el Permission
                 .ThenInclude(rp => rp.Permission)
                 // Usar SplitQuery para evitar cartesian product y errores de múltiples colecciones
                 .AsSplitQuery()
                 // Filtrar por username y retornar el primero o null
-                .FirstOrDefaultAsync(u => string.Equals(u.Username, username, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
 
         // ================================================================
         // OPERACIONES DE ASIGNACIÓN DE ROLES (INSERT en tabla puente)
@@ -280,7 +282,7 @@ namespace QAMS.Infrastructure.Repositories
             // ============================================================
             // PASO 1: Verificar si la asignación ya existe (IDEMPOTENCIA)
             // ============================================================
-            
+
             // LINQ: verificar si existe un UserRole con este userId y roleId
             // AnyAsync retorna true si existe al menos un registro
             var exists = await _context.UserRoles
@@ -300,10 +302,10 @@ namespace QAMS.Infrastructure.Repositories
             {
                 // Asociar con el usuario
                 UserId = userId,
-                
+
                 // Asociar con el rol
                 RoleId = roleId,
-                
+
                 // Registrar cuándo se hizo la asignación (UTC para consistencia global)
                 AssignedAt = DateTime.UtcNow
             };

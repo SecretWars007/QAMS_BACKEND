@@ -1,33 +1,31 @@
 // src/QAMS.Domain/Entities/Catalogs/CatalogBase.cs
+using QAMS.Domain.Common;
+
 namespace QAMS.Domain.Entities.Catalogs
 {
     /// <summary>
     /// Clase base abstracta para todas las tablas catálogo.
-    /// Reemplaza los enums estáticos por tablas administrables en BD.
-    /// Principio DRY: campos comunes definidos una sola vez.
-    /// Principio OCP: extensible para nuevos catálogos sin modificar.
     /// </summary>
-    public abstract class CatalogBase
+    public abstract class CatalogBase : IAuditable, ISoftDelete
     {
-        /// <summary>PK entera secuencial, optimiza joins</summary>
         public int Id { get; set; }
-
-        /// <summary>Código único interno (ej: "PENDING")</summary>
         public string Code { get; set; } = string.Empty;
-
-        /// <summary>Nombre legible para la UI (ej: "Pendiente")</summary>
         public string Name { get; set; } = string.Empty;
-
-        /// <summary>Descripción para tooltips o ayuda contextual</summary>
         public string? Description { get; set; }
-
-        /// <summary>Orden de visualización en dropdowns</summary>
         public int SortOrder { get; set; }
 
-        /// <summary>Soft delete lógico</summary>
-        public bool IsActive { get; set; } = true;
+        // ISoftDelete
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+        public Guid? DeletedByUserId { get; set; }
 
-        /// <summary>Auditoría de creación</summary>
+        // IAuditable
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public Guid? CreatedByUserId { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public Guid? UpdatedByUserId { get; set; }
+
+        /// <summary>Soft delete lógico (antiguo, se mantiene por compatibilidad temporal si es necesario, pero usaremos IsDeleted)</summary>
+        public bool IsActive { get; set; } = true;
     }
 }

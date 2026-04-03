@@ -1,4 +1,7 @@
 // src/QAMS.Api/Controllers/ReportsController.cs
+using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QAMS.Api.Filters;
@@ -15,6 +18,11 @@ namespace QAMS.Api.Controllers
         private readonly IReportService _reportService = reportService;
         private readonly ILogger<ReportsController> _logger = logger;
 
+        /// <summary>
+        /// Genera un reporte PDF detallado de un proyecto. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <param name="filter">Filtros para el reporte (ID de proyecto, rango de fechas).</param>
+        /// <returns>Archivo PDF binario.</returns>
         [HttpGet("project")]
         [HasPermission("DASHBOARD_VIEW")] // Reutilizamos permiso de dashboard o creamos uno específico
         public async Task<IActionResult> GetProjectReport([FromQuery] ProjectReportFilterDto filter)
@@ -32,6 +40,11 @@ namespace QAMS.Api.Controllers
             return File(pdfData, "application/pdf", fileName);
         }
 
+        /// <summary>
+        /// Genera un reporte PDF de tipo Burndown para un proyecto. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <param name="projectId">ID del proyecto.</param>
+        /// <returns>Archivo PDF binario.</returns>
         [HttpGet("project/{projectId}/burndown")]
         [HasPermission("DASHBOARD_VIEW")]
         public async Task<IActionResult> GetBurndownReport(Guid projectId)
@@ -49,6 +62,11 @@ namespace QAMS.Api.Controllers
             return File(pdfData, "application/pdf", fileName);
         }
 
+        /// <summary>
+        /// Genera un reporte PDF con todas las observaciones registradas en un proyecto. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <param name="projectId">ID del proyecto.</param>
+        /// <returns>Archivo PDF binario.</returns>
         [HttpGet("project/{projectId}/observations")]
         [HasPermission("DASHBOARD_VIEW")]
         public async Task<IActionResult> GetObservationsReport(Guid projectId)
@@ -66,6 +84,11 @@ namespace QAMS.Api.Controllers
             return File(pdfData, "application/pdf", fileName);
         }
 
+        /// <summary>
+        /// Genera un Certificado de Cumplimiento Final en PDF para un proyecto. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <param name="projectId">ID del proyecto.</param>
+        /// <returns>Archivo PDF binario.</returns>
         [HttpGet("project/{projectId}/compliance")]
         [HasPermission("DASHBOARD_VIEW")]
         public async Task<IActionResult> GetComplianceReport(Guid projectId)

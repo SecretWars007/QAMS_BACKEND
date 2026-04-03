@@ -79,7 +79,7 @@ namespace QAMS.Infrastructure.Repositories
         public async Task<IReadOnlyList<TestExecution>> GetByProjectAsync(Guid projectId)
         {
             return await _dbSet
-                .Where(te => te.TestCase.ProjectId == projectId)
+                .Where(te => te.TestCase!.ProjectId == projectId)
                 .Include(te => te.TestCase)
                 .Include(te => te.Tester)
                 .Include(te => te.Status)
@@ -99,7 +99,7 @@ namespace QAMS.Infrastructure.Repositories
         {
             // Navegar: TestExecution -> TestCase -> TestSuite -> Project
             return await _dbSet
-                .Where(te => te.TestCase.TestSuite.ProjectId == projectId)
+                .Where(te => te.TestCase!.TestSuite!.ProjectId == projectId)
                 .GroupBy(te => te.StatusId)
                 .Select(g => new { StatusId = g.Key, Count = g.Count() })
                 .AsNoTracking()

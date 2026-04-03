@@ -29,8 +29,8 @@ namespace QAMS.Infrastructure.Repositories
             // Join: UserRoles -> RolePermissions -> Permissions
             var permissionCodes = await _context.UserRoles
                 .Where(ur => ur.UserId == userId)
-                .SelectMany(ur => ur.Role.RolePermissions)
-                .Select(rp => rp.Permission.Code)
+                .SelectMany(ur => ur.Role!.RolePermissions)
+                .Select(rp => rp.Permission!.Code)
                 .Distinct()
                 .AsNoTracking()
                 .ToListAsync();

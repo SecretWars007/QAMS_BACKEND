@@ -33,7 +33,7 @@ namespace QAMS.Infrastructure.Repositories
         /// </summary>
         public async Task<Role?> GetByNameAsync(string name)
         {
-            return await _dbSet.FirstOrDefaultAsync(r => string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase));
+            return await _dbSet.FirstOrDefaultAsync(r => r.Name.ToLower() == name.ToLower());
         }
 
         /// <summary>

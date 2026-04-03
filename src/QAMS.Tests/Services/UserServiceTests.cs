@@ -311,6 +311,47 @@ public class UserServiceTests
         await Assert.ThrowsAsync<DomainException>(() => service.UpdateAsync(userId, dto));
     }
 
+    [Fact(DisplayName = "CreateAsync_EdadInvalida_DebeLanzarDomainException")]
+    public async Task CreateAsync_WhenAgeIsInvalid_ShouldThrowDomainException()
+    {
+        // ARRANGE
+        var dto = new CreateUserDto 
+        { 
+            Username = "young", 
+            Email = "y@y.com", 
+            FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-17)),
+            RoleIds = []
+        };
+        
+        var service = CreateService();
+
+        // ACT & ASSERT
+        var act = () => service.CreateAsync(dto);
+        await act.Should().ThrowAsync<DomainException>().WithMessage("*entre 18 y 80*");
+    }
+
+    [Fact(DisplayName = "UpdateAsync_EdadInvalida_DebeLanzarDomainException")]
+    public async Task UpdateAsync_WhenAgeIsInvalid_ShouldThrowDomainException()
+    {
+        // ARRANGE
+        var userId = Guid.NewGuid();
+        var user = new User { Id = userId, FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-30)) };
+        var dto = new UpdateUserDto 
+        { 
+            Email = "u@u.com", 
+            FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-85)),
+            RoleIds = []
+        };
+
+        _mockUserRepository.Setup(r => r.GetWithRolesAsync(userId)).ReturnsAsync(user);
+        
+        var service = CreateService();
+
+        // ACT & ASSERT
+        var act = () => service.UpdateAsync(userId, dto);
+        await act.Should().ThrowAsync<DomainException>().WithMessage("*entre 18 y 80*");
+    }
+
     [Fact(DisplayName = "ResetPasswordAsync_UsuarioExistente_DebeActualizarHash")]
     public async Task ResetPasswordAsync_WhenUserExists_ShouldUpdateHash()
     {

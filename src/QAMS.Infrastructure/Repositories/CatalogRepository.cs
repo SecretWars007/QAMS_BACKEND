@@ -16,7 +16,7 @@ namespace QAMS.Infrastructure.Repositories
         public async Task<T?> GetByIdAsync(int id) => await _dbSet.FindAsync(id);
 
         public async Task<T?> GetByCodeAsync(string code) =>
-            await _dbSet.FirstOrDefaultAsync(c => string.Equals(c.Code, code, StringComparison.OrdinalIgnoreCase));
+            await _dbSet.FirstOrDefaultAsync(c => c.Code.ToLower() == code.ToLower());
 
         public async Task<IReadOnlyList<T>> GetAllActiveAsync() =>
             await _dbSet
@@ -37,6 +37,6 @@ namespace QAMS.Infrastructure.Repositories
         public void Update(T entity) => _dbSet.Update(entity);
 
         public async Task<bool> ExistsByCodeAsync(string code) =>
-            await _dbSet.AnyAsync(c => string.Equals(c.Code, code, StringComparison.OrdinalIgnoreCase));
+            await _dbSet.AnyAsync(c => c.Code.ToLower() == code.ToLower());
     }
 }

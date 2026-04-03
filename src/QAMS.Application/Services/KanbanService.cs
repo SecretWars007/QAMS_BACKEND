@@ -79,7 +79,7 @@ namespace QAMS.Application.Services
                     new KanbanColumn
                     {
                         Id = Guid.NewGuid(),
-                        KanbanBoardId = board.Id,
+                        BoardId = board.Id,
                         Name = columnName,
                         OrderIndex = order,
                         CreatedAt = DateTime.UtcNow,

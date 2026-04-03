@@ -1,7 +1,9 @@
 version: '3.8'
+name: qams-backend
+
 
 services:
-  # PostgreSQL Database
+  # Base de Datos PostgreSQL
   postgres:
     image: postgres:16-alpine
     container_name: qams-postgres
@@ -13,6 +15,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
@@ -21,32 +24,47 @@ services:
     networks:
       - qams-network
 
-  # QAMS API
+  # Redis para caché (Mensajería/Background)
+  redis:
+    image: redis:7-alpine
+    container_name: qams-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - qams-network
+
+  # QAMS API Backend
   api:
     build:
-      context: .
+      context: c:/diplomado/QAMS
       dockerfile: Dockerfile
-    container_name: qams-api
+    container_name: qams-backend
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=qams_db;Username=postgres;Password=postgres123"
       JwtSettings__Secret: "TuClaveSecretaSuperSeguraDe64CaracteresMinimoPorFavor!!2025QAMS"
       JwtSettings__Issuer: "QAMS.Api"
       JwtSettings__Audience: "QAMS.Client"
-      JwtSettings__AccessTokenExpirationMinutes: "60"
-      JwtSettings__RefreshTokenExpirationDays: "7"
-      SmtpSettings__Host: "smtp.gmail.com"
-      SmtpSettings__Port: "587"
-      SmtpSettings__Username: "${SMTP_USERNAME}"
-      SmtpSettings__Password: "${SMTP_PASSWORD}"
-      SmtpSettings__FromEmail: "${SMTP_USERNAME}"
-      SmtpSettings__FromName: "QAMS - Quality Assurance Management System"
-      SmtpSettings__EnableSsl: "true"
+      EncryptionSettings__Key: "12345678901234567890123456789012"
+      EncryptionSettings__IV: "1234567890123456"
+      Redis__Configuration: "redis:6379"
+      FRONTEND_URL: "http://localhost:4200"
     ports:
       - "5000:8080"
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - qams-network
     volumes:
@@ -55,9 +73,10 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
   uploads_data:
-
 
 networks:
   qams-network:
-    external: true
+    name: qams-network
+    driver: bridge

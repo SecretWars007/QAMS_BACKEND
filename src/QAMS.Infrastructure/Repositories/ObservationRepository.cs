@@ -16,11 +16,11 @@ namespace QAMS.Infrastructure.Repositories
                 .Include(o => o.CreatedBy)
                 .Include(o => o.RespondedBy)
                 .Include(o => o.ExecutionStepResult)
-                    .ThenInclude(r => r.TestStep)
+                    .ThenInclude(r => r!.TestStep)
                 .Include(o => o.ExecutionStepResult)
-                    .ThenInclude(r => r.TestExecution)
-                        .ThenInclude(e => e.TestCase)
-                .Where(o => executionIds.Contains(o.ExecutionStepResult.TestExecutionId))
+                    .ThenInclude(r => r!.TestExecution)
+                        .ThenInclude(e => e!.TestCase)
+                .Where(o => o.ExecutionStepResult != null && executionIds.Contains(o.ExecutionStepResult.TestExecutionId))
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
         }

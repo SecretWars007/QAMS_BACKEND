@@ -29,7 +29,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.HasData(
                 new UserRole
                 {
-                    UserId = UserConfiguration.AdminUserId,
+                    UserId = Guid.Parse("99999999-9999-9999-9999-999999999999"),
                     RoleId = QAMS.Domain.Constants.SystemRoles.AdminRoleId,
                     AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
                 }

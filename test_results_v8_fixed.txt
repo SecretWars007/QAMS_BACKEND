@@ -1,0 +1,72 @@
+﻿  Determinando los proyectos que se van a restaurar...
+C:\diplomado\QAMS\src\QAMS.Tests\QAMS.Tests.csproj : warning NU1603: QAMS.Tests depende de Microsoft.NET.Test.Sdk (>= 17.8.2), pero no se encontr├│ Microsoft.NET.Test.Sdk 17.8.2. Microsoft.NET.Test.Sdk 17.9.0 se resolvi├│ en su lugar. [C:\diplomado\QAMS\QAMS.sln]
+  Todos los proyectos est├ín actualizados para la restauraci├│n.
+C:\diplomado\QAMS\src\QAMS.Tests\QAMS.Tests.csproj : warning NU1603: QAMS.Tests depende de Microsoft.NET.Test.Sdk (>= 17.8.2), pero no se encontr├│ Microsoft.NET.Test.Sdk 17.8.2. Microsoft.NET.Test.Sdk 17.9.0 se resolvi├│ en su lugar.
+  QAMS.Domain -> C:\diplomado\QAMS\src\QAMS.Domain\bin\Debug\net9.0\QAMS.Domain.dll
+  QAMS.Application -> C:\diplomado\QAMS\src\QAMS.Application\bin\Debug\net9.0\QAMS.Application.dll
+  QAMS.Infrastructure -> C:\diplomado\QAMS\src\QAMS.Infrastructure\bin\Debug\net9.0\QAMS.Infrastructure.dll
+  QAMS.Api -> C:\diplomado\QAMS\src\QAMS.Api\bin\Debug\net9.0\QAMS.Api.dll
+  QAMS.Tests -> C:\diplomado\QAMS\src\QAMS.Tests\bin\Debug\net9.0\QAMS.Tests.dll
+Serie de pruebas para C:\diplomado\QAMS\src\QAMS.Tests\bin\Debug\net9.0\QAMS.Tests.dll (.NETCoreApp,Version=v9.0)
+Versi├│n 18.0.1 (x64) de VSTest
+
+Iniciando la ejecuci├│n de pruebas, espere...
+1 archivos de prueba en total coincidieron con el patr├│n especificado.
+  Con error QAMS.Tests.IntegrationTests.Endpoints.AuthEndpointsTests.Register_WithValidData_ReturnsCreatedAndSavesToDb [1 s]
+  Mensaje de error:
+   Expected response.StatusCode to be HttpStatusCode.Created {value: 201}, but found HttpStatusCode.InternalServerError {value: 500}.
+  Seguimiento de la pila:
+     at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+   at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(String message, Object[] args)
+   at FluentAssertions.Primitives.EnumAssertions`2.Be(TEnum expected, String because, Object[] becauseArgs)
+   at QAMS.Tests.IntegrationTests.Endpoints.AuthEndpointsTests.Register_WithValidData_ReturnsCreatedAndSavesToDb() in C:\diplomado\QAMS\src\QAMS.Tests\IntegrationTests\Endpoints\AuthEndpointsTests.cs:line 36
+--- End of stack trace from previous location ---
+  Con error QAMS.Tests.IntegrationTests.Endpoints.AuthEndpointsTests.Login_WithValidCredentials_ReturnsToken [978 ms]
+  Mensaje de error:
+   Expected response.StatusCode to be HttpStatusCode.OK {value: 200}, but found HttpStatusCode.InternalServerError {value: 500}.
+  Seguimiento de la pila:
+     at FluentAssertions.Execution.XUnit2TestFramework.Throw(String message)
+   at FluentAssertions.Execution.TestFrameworkProvider.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(Func`1 failReasonFunc)
+   at FluentAssertions.Execution.AssertionScope.FailWith(String message, Object[] args)
+   at FluentAssertions.Primitives.EnumAssertions`2.Be(TEnum expected, String because, Object[] becauseArgs)
+   at QAMS.Tests.IntegrationTests.Endpoints.AuthEndpointsTests.Login_WithValidCredentials_ReturnsToken() in C:\diplomado\QAMS\src\QAMS.Tests\IntegrationTests\Endpoints\AuthEndpointsTests.cs:line 71
+--- End of stack trace from previous location ---
+  Con error QAMS.Tests.IntegrationTests.Endpoints.AuthEndpointsTests.Login_WithInvalidCredentials_ReturnsUnauthorized [308 ms]
+  Mensaje de error:
+   Microsoft.EntityFrameworkCore.DbUpdateException : An error occurred while saving the entity changes. See the inner exception for details.
+---- Npgsql.PostgresException : 23505: duplicate key value violates unique constraint "IX_users_documento_identidad_fecha_nacimiento"
+
+DETAIL: Detail redacted as it may contain sensitive data. Specify 'Include Error Detail' in the connection string to include this information.
+  Seguimiento de la pila:
+     at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at QAMS.Tests.IntegrationTests.Infrastructure.IntegrationTestBase.CreateTestUserAsync(String username, String roleName) in C:\diplomado\QAMS\src\QAMS.Tests\IntegrationTests\Infrastructure\IntegrationTestBase.cs:line 80
+   at QAMS.Tests.IntegrationTests.Endpoints.AuthEndpointsTests.Login_WithInvalidCredentials_ReturnsUnauthorized() in C:\diplomado\QAMS\src\QAMS.Tests\IntegrationTests\Endpoints\AuthEndpointsTests.cs:line 83
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+
+Con error! - Con error:     3, Superado:    46, Omitido:     0, Total:    49, Duraci├│n: 36 s - QAMS.Tests.dll (net9.0)

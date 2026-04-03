@@ -1,40 +1,17 @@
 // src/QAMS.Infrastructure/Persistence/QamsDbContext.cs
-// Contexto principal de Entity Framework Core para PostgreSQL.
-// Registra TODAS las entidades del dominio, tablas catálogo y relaciones.
-// Aplica configuraciones Fluent API desde el assembly de Infrastructure.
-
 using Microsoft.EntityFrameworkCore;
+using QAMS.Application.Interfaces;
+using QAMS.Domain.Common;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Entities.Catalogs;
+using System.Linq.Expressions;
 
 namespace QAMS.Infrastructure.Persistence.Configurations
 {
-    /// <summary>
-    /// Contexto de base de datos principal del sistema QAMS.
-    /// Responsabilidades:
-    /// - Registrar todos los DbSet (tablas) del sistema.
-    /// - Aplicar configuraciones Fluent API desde IEntityTypeConfiguration.
-    /// - Gestionar la conexión con PostgreSQL.
-    /// Principio SRP: solo se encarga de la configuración del ORM.
-    /// </summary>
-    /// <remarks>
-    /// Constructor que recibe las opciones de configuración por inyección.
-    /// Las opciones incluyen la cadena de conexión a PostgreSQL
-    /// configurada en DependencyInjection.cs.
-    /// </remarks>
-    /// <param name="options">Opciones de configuración del DbContext</param>
-    public class QamsDbContext(DbContextOptions<QamsDbContext> options) : DbContext(options)
+    public class QamsDbContext(DbContextOptions<QamsDbContext> options, ICurrentUserService currentUserService) : DbContext(options)
     {
-        // =======================================================================
-        // TABLAS CATÁLOGO (Reemplazan los Enums - Administrables desde la BD)
-        // Cada catálogo hereda de CatalogBase y tiene PK int con seed data.
-        // =======================================================================
+        private readonly ICurrentUserService _currentUserService = currentUserService;
 
-        /// <summary>
-        /// Tabla catálogo de estados de ejecución de pruebas.
-        /// Valores seed: PENDING, IN_PROGRESS, PASSED, FAILED, BLOCKED, SKIPPED.
-        /// Tabla PostgreSQL: execution_statuses
-        /// </summary>
         public DbSet<ExecutionStatus> ExecutionStatuses => Set<ExecutionStatus>();
 
         /// <summary>
@@ -108,7 +85,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         /// Tabla PostgreSQL: user_roles
         /// </summary>
         public DbSet<UserRole> UserRoles => Set<UserRole>();
-        
+
         /// <summary>Testers asignados a proyectos.</summary>
         public DbSet<ProjectTester> ProjectTesters => Set<ProjectTester>();
 
@@ -133,6 +110,9 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         /// Tabla PostgreSQL: projects
         /// </summary>
         public DbSet<Project> Projects => Set<Project>();
+
+        /// <summary>Requisitos funcionales del proyecto.</summary>
+        public DbSet<Requirement> Requirements => Set<Requirement>();
 
         /// <summary>
         /// Tabla de histórico de devoluciones de proyectos.
@@ -191,8 +171,6 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         /// Tabla de observaciones y respuestas por paso de ejecución.
         /// </summary>
         public DbSet<ExecutionStepObservation> ExecutionStepObservations => Set<ExecutionStepObservation>();
-
-        public DbSet<ExecutionStepObservationResponse> ExecutionStepObservationResponses => Set<ExecutionStepObservationResponse>();
 
         /// <summary>
         /// Tabla de observaciones generales a nivel de proyecto.
@@ -270,6 +248,95 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             // Escanear y aplicar TODAS las clases que implementan
             // IEntityTypeConfiguration<T> en el assembly actual (Infrastructure).
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(QamsDbContext).Assembly);
+
+            // Aplicar Filtro Global Recursivo para Entidades Soft Delete
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var clrType = entityType.ClrType;
+
+                // 1. Filtro Soft Delete
+                if (typeof(ISoftDelete).IsAssignableFrom(clrType))
+                {
+                    var method = typeof(QamsDbContext)
+                        .GetMethod(nameof(SetSoftDeleteFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                        ?.MakeGenericMethod(clrType);
+                    method?.Invoke(this, [modelBuilder]);
+                }
+
+                // 2. Configuración Dinámica de Navigaciones de Auditoría (CreatedBy, UpdatedBy, DeletedBy)
+                // Esto resuelve el error InvalidOperationException cuando hay múltiples relaciones con User.
+                var properties = clrType.GetProperties();
+
+                // Configurar CreatedBy (Excepto para User para evitar problemas de esquema en tests)
+                if (clrType != typeof(User) && properties.Any(p => p.Name == "CreatedBy" && p.PropertyType == typeof(User)))
+                {
+                    modelBuilder.Entity(clrType)
+                        .HasOne("CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                }
+
+                // Configurar UpdatedBy (Excepto para User)
+                if (clrType != typeof(User) && properties.Any(p => p.Name == "UpdatedBy" && p.PropertyType == typeof(User)))
+                {
+                    modelBuilder.Entity(clrType)
+                        .HasOne("UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                }
+
+                // Configurar DeletedBy (Excepto para User)
+                if (clrType != typeof(User) && properties.Any(p => p.Name == "DeletedBy" && p.PropertyType == typeof(User)))
+                {
+                    modelBuilder.Entity(clrType)
+                        .HasOne("DeletedBy")
+                        .WithMany()
+                        .HasForeignKey("DeletedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                }
+            }
+        }
+
+        private static void SetSoftDeleteFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : class, ISoftDelete
+        {
+            modelBuilder.Entity<TEntity>().HasQueryFilter(e => !e.IsDeleted);
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var userId = _currentUserService.UserId;
+            var now = DateTime.UtcNow;
+
+            foreach (var entry in ChangeTracker.Entries<IAuditable>())
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        entry.Entity.CreatedAt = now;
+                        entry.Entity.CreatedByUserId = userId;
+                        break;
+
+                    case EntityState.Modified:
+                        entry.Entity.UpdatedAt = now;
+                        entry.Entity.UpdatedByUserId = userId;
+                        break;
+                }
+            }
+
+            foreach (var entry in ChangeTracker.Entries<ISoftDelete>())
+            {
+                if (entry.State == EntityState.Deleted)
+                {
+                    entry.State = EntityState.Modified;
+                    entry.Entity.IsDeleted = true;
+                    entry.Entity.DeletedAt = now;
+                    entry.Entity.DeletedByUserId = userId;
+                }
+            }
+
+            return base.SaveChangesAsync(cancellationToken);
         }
     }
 }

@@ -64,8 +64,12 @@ namespace QAMS.Application.Services
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 CreatedByUserId = currentUserService.UserId,
-                Priority = dto.Priority,
-                ProjectStatusId = dto.ProjectStatusId > 0 ? dto.ProjectStatusId : 1 // Default: Pendiente
+                ProjectPriorityId = dto.ProjectPriorityId,
+                ProjectStatusId = dto.ProjectStatusId > 0 ? dto.ProjectStatusId : 1, // Default: Pendiente
+                Version = dto.Version,
+                Budget = dto.Budget,
+                Risks = dto.Risks,
+                LeaderId = dto.LeaderId
             };
 
             if (dto.TesterIds is { Count: > 0 })
@@ -98,8 +102,12 @@ namespace QAMS.Application.Services
             project.Description = dto.Description;
             project.StartDate = dto.StartDate;
             project.EndDate = dto.EndDate;
-            project.Priority = dto.Priority;
+            project.ProjectPriorityId = dto.ProjectPriorityId;
             project.ProjectStatusId = dto.ProjectStatusId;
+            project.Version = dto.Version;
+            project.Budget = dto.Budget;
+            project.Risks = dto.Risks;
+            project.LeaderId = dto.LeaderId;
             project.UpdatedAt = DateTime.UtcNow;
 
             if (dto.TesterIds != null)
@@ -152,7 +160,7 @@ namespace QAMS.Application.Services
             var executions = await execRepo.GetByProjectAsync(projectId);
             var executionIds = executions.Select(e => e.Id).ToList();
             var observationsCount = await observationRepo.CountAsync(o => 
-                executionIds.Contains(o.ExecutionStepResult.TestExecutionId));
+                o.ExecutionStepResult != null && executionIds.Contains(o.ExecutionStepResult.TestExecutionId));
 
             var devolution = new ProjectDevolution
             {
@@ -208,7 +216,9 @@ namespace QAMS.Application.Services
             // Send response notification
             try 
             {
-                var responder = await userRepo.GetByIdAsync(devolution.CreatedByUserId);
+                var responder = devolution.CreatedByUserId.HasValue 
+                    ? await userRepo.GetByIdAsync(devolution.CreatedByUserId.Value)
+                    : null;
                 if (responder != null) 
                 {
                     var project = await projectRepo.GetByIdAsync(devolution.ProjectId);
@@ -223,6 +233,7 @@ namespace QAMS.Application.Services
 
             return mapper.Map<ProjectDevolutionDto>(devolution);
         }
+        
 
         private async Task AssignTestersAsync(Project project, List<Guid> testerIds)
         {

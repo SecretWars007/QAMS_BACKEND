@@ -17,30 +17,48 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(te => te.StatusId).HasColumnName("status_id").IsRequired();
             builder.Property(te => te.Notes).HasColumnName("notes").HasMaxLength(2000);
             builder.Property(te => te.ActualTimeHours).HasColumnName("actual_time_hours").HasColumnType("numeric(5,2)");
-            builder
-                .Property(te => te.ExecutionDate)
-                .HasColumnName("execution_date")
-                .HasDefaultValueSql("NOW()");
+            builder.Property(te => te.ExecutionDate).HasColumnName("execution_date");
             builder.Property(te => te.CompletedAt).HasColumnName("completed_at");
 
-            // FK hacia catálogo (Restrict: no eliminar status si hay ejecuciones)
-            builder
-                .HasOne(te => te.Status)
+            // Auditoría y Borrado Lógico
+            builder.Property(te => te.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
+            builder.Property(te => te.DeletedAt).HasColumnName("deleted_at");
+            builder.Property(te => te.DeletedByUserId).HasColumnName("deleted_by_user_id");
+            builder.Property(te => te.CreatedAt).HasColumnName("created_at");
+            builder.Property(te => te.CreatedByUserId).HasColumnName("created_by_user_id");
+            builder.Property(te => te.UpdatedAt).HasColumnName("updated_at");
+            builder.Property(te => te.UpdatedByUserId).HasColumnName("updated_by_user_id");
+
+            // Relationships
+            builder.HasOne(te => te.Status)
                 .WithMany(s => s.TestExecutions)
                 .HasForeignKey(te => te.StatusId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder
-                .HasOne(te => te.TestCase)
+            builder.HasOne(te => te.TestCase)
                 .WithMany(tc => tc.TestExecutions)
                 .HasForeignKey(te => te.TestCaseId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder
-                .HasOne(te => te.Tester)
+            builder.HasOne(te => te.Tester)
                 .WithMany(u => u.TestExecutions)
                 .HasForeignKey(te => te.TesterId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(te => te.CreatedBy)
+                .WithMany()
+                .HasForeignKey(te => te.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(te => te.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(te => te.UpdatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(te => te.DeletedBy)
+                .WithMany()
+                .HasForeignKey(te => te.DeletedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

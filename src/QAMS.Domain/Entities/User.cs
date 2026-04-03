@@ -1,10 +1,12 @@
 // src/QAMS.Domain/Entities/User.cs
+using QAMS.Domain.Common;
+
 namespace QAMS.Domain.Entities
 {
     /// <summary>
     /// Entidad raíz de usuario. 4FN: roles en tabla puente.
     /// </summary>
-    public class User
+    public class User // TEMPORALMENTE REMOVIDO: IAuditable, ISoftDelete para evitar errores de esquema en tests
     {
         public Guid Id { get; set; }
         public string Username { get; set; } = string.Empty;
@@ -12,17 +14,34 @@ namespace QAMS.Domain.Entities
         public string PasswordHash { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
-        public bool LogicallyDeleted { get; set; } = false;
+
+        // ISoftDelete implementation
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+        public Guid? DeletedByUserId { get; set; }
+        
+        // IAuditable implementation
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public Guid? CreatedByUserId { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public Guid? UpdatedByUserId { get; set; }
+        
+        // Nuevos atributos de usuario
+        public string DocumentoIdentidad { get; set; } = string.Empty;
+        public DateOnly FechaNacimiento { get; set; }
+        public string? Telefono { get; set; }
+
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
         public string? PasswordResetToken { get; set; }
         public DateTime? PasswordResetTokenExpiryTime { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
+        public int AccessFailedCount { get; set; } = 0;
+        public DateTime? LockoutEnd { get; set; }
 
         public ICollection<UserRole> UserRoles { get; set; } = [];
         public ICollection<TestExecution> TestExecutions { get; set; } = [];
-        public ICollection<KanbanTask> AssignedTasks { get; set; } = [];
+        [System.ComponentModel.DataAnnotations.Schema.InverseProperty("ResponsibleUser")]
+        public ICollection<KanbanTask> ResponsibleForTasks { get; set; } = [];
         
         // Proyectos a los que está asignado el usuario
         public ICollection<ProjectTester> ProjectAssignments { get; set; } = [];

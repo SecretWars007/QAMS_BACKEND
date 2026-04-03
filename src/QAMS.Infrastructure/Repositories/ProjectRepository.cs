@@ -44,6 +44,7 @@ namespace QAMS.Infrastructure.Repositories
                 .Include(p => p.TestSuites)
                 .Include(p => p.KanbanBoards)
                 .Include(p => p.HistoricDevolutions)
+                .Include(p => p.Requirements)
                 .FirstOrDefaultAsync(p => p.Id == projectId);
         }
 
@@ -70,6 +71,7 @@ namespace QAMS.Infrastructure.Repositories
                     .ThenInclude(kb => kb.Columns)
                         .ThenInclude(kc => kc.Tasks)
                 .Include(p => p.HistoricDevolutions)
+                .Include(p => p.Requirements)
                 .Where(predicate)
                 .ToListAsync();
         }

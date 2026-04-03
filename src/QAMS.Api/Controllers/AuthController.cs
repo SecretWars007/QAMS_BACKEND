@@ -1,4 +1,7 @@
 // src/QAMS.Api/Controllers/AuthController.cs
+using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +19,11 @@ namespace QAMS.Api.Controllers
         private readonly IUserService _userService = userService;
         private readonly ILogger<AuthController> _logger = logger;
 
-        /// <summary>POST api/auth/login</summary>
+        /// <summary>
+        /// Inicia sesión en el sistema.
+        /// </summary>
+        /// <param name="request">Credenciales del usuario.</param>
+        /// <returns>Token JWT y datos básicos del usuario.</returns>
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
@@ -26,7 +33,11 @@ namespace QAMS.Api.Controllers
             return Ok(result);
         }
 
-        /// <summary>POST api/auth/register</summary>
+        /// <summary>
+        /// Registra un nuevo usuario en el sistema.
+        /// </summary>
+        /// <param name="request">Datos del nuevo usuario.</param>
+        /// <returns>Datos del usuario recién creado.</returns>
         [HttpPost("register")]
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
@@ -36,7 +47,11 @@ namespace QAMS.Api.Controllers
             return Created("", result);
         }
 
-        /// <summary>POST api/auth/refresh</summary>
+        /// <summary>
+        /// Renueva el Access Token usando un Refresh Token válido.
+        /// </summary>
+        /// <param name="request">Refresh Token actual.</param>
+        /// <returns>Nuevo par de tokens (Access y Refresh).</returns>
         [HttpPost("refresh")]
         [AllowAnonymous]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequestDto request)
@@ -46,7 +61,10 @@ namespace QAMS.Api.Controllers
             return Ok(result);
         }
 
-        /// <summary>POST api/auth/logout</summary>
+        /// <summary>
+        /// Cierra la sesión del usuario actual, invalidando su Refresh Token.
+        /// </summary>
+        /// <returns>Sin contenido (NoContent).</returns>
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> Logout()
@@ -73,11 +91,10 @@ namespace QAMS.Api.Controllers
             if (string.IsNullOrEmpty(token))
                 return Ok(new { message = "Si el correo existe en el sistema, recibirás instrucciones para restablecer tu contraseña." });
 
-            // TODO: en producción NO incluir el token en la respuesta; enviar por email
+            // TODO: en producción enviar por email (ya implementado en AuthService)
             return Ok(new
             {
-                message = "Token de restablecimiento generado. Úsalo en el endpoint /reset-password dentro de los próximos 15 minutos.",
-                resetToken = token   // Solo para desarrollo – eliminar en producción
+                message = "Si el correo existe, recibirás instrucciones para restablecer tu contraseña dentro de los próximos 15 minutos."
             });
         }
 

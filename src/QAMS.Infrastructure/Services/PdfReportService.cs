@@ -198,7 +198,7 @@ namespace QAMS.Infrastructure.Services
 
                                         // EVIDENCIAS (Imágenes)
                                         var evidences = allEvidences.Where(e => e.ExecutionStepResultId == obs.ExecutionStepResultId && 
-                                            (e.FileType.Code == "IMAGE" || e.FileType.Code == "VIDEO")).ToList();
+                                            (e.FileType?.Code == "IMAGE" || e.FileType?.Code == "VIDEO")).ToList();
 
                                         if (evidences.Count > 0)
                                         {
@@ -361,7 +361,7 @@ namespace QAMS.Infrastructure.Services
                                             columns.RelativeColumn();
                                         });
 
-                                        foreach (var ev in lastExecResults.Evidences.Where(e => e.FileType.Code == "IMAGE").Take(6))
+                                        foreach (var ev in lastExecResults.Evidences.Where(e => e.FileType?.Code == "IMAGE").Take(6))
                                         {
                                             var path = Path.Combine(_uploadsPath, ev.FilePath);
                                             if (File.Exists(path))
@@ -485,7 +485,7 @@ namespace QAMS.Infrastructure.Services
                                     table.Cell().Text(project.EndDate?.ToString("dd/MM/yyyy") ?? "N/A").FontSize(9);
                                     
                                     table.Cell().Text("Prioridad:").Bold().FontSize(9);
-                                    table.Cell().Text(project.Priority.ToString()).FontSize(9);
+                                    table.Cell().Text(project.ProjectPriority?.Name ?? "N/A").FontSize(9);
                                 });
                             });
 
@@ -669,7 +669,7 @@ namespace QAMS.Infrastructure.Services
                                                                     foreach (var ev in res.Evidences)
                                                                     {
                                                                         var p = Path.Combine(_uploadsPath, ev.FilePath);
-                                                                        if (File.Exists(p) && (ev.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) || IsImageExtension(ev.FileName)))
+                                                                        if (File.Exists(p) && ((ev.ContentType != null && ev.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)) || IsImageExtension(ev.FileName ?? "")))
                                                                         {
                                                                             resTable.Cell().ColumnSpan(3).PaddingTop(5).Column(evCol => 
                                                                             {
@@ -691,7 +691,7 @@ namespace QAMS.Infrastructure.Services
                                                         foreach (var evidence in exec.Evidences)
                                                         {
                                                             var fullPath = Path.Combine(_uploadsPath, evidence.FilePath);
-                                                            if (File.Exists(fullPath) && (evidence.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) || IsImageExtension(evidence.FileName)))
+                                                            if (File.Exists(fullPath) && ((evidence.ContentType != null && evidence.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)) || IsImageExtension(evidence.FileName ?? "")))
                                                             {
                                                                 execCol.Item().PaddingVertical(5).Column(evCol => 
                                                                 {
@@ -737,8 +737,8 @@ namespace QAMS.Infrastructure.Services
                                 foreach (var task in kanbanTasks)
                                 {
                                     table.Cell().Element(CellStyle).Text(task.Title).FontSize(9);
-                                    table.Cell().Element(CellStyle).Text(task.KanbanColumn?.Name ?? "N/A").FontSize(9);
-                                    table.Cell().Element(CellStyle).Text(task.Assignee?.FullName ?? "Unassigned").FontSize(9);
+                                    table.Cell().Element(CellStyle).Text(task.Column?.Name ?? "N/A").FontSize(9);
+                                    table.Cell().Element(CellStyle).Text(task.ResponsibleUser?.FullName ?? "Unassigned").FontSize(9);
                                 }
                             });
                         }
@@ -1005,7 +1005,7 @@ namespace QAMS.Infrastructure.Services
                             (e.StatusId == 2 && e.StepResults != null && e.StepResults.Count > 0 && e.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult))) ||
                             (e.Status != null && (e.Status.Code == "PASSED" || e.Status.Name == "Aprobado")))
                 .GroupBy(e => e.ExecutionDate.Date)
-                .ToDictionary(g => g.Key, g => g.Select(e => e.TestCase.EstimatedTimeHours).Sum());
+                .ToDictionary(g => g.Key, g => g.Select(e => e.TestCase?.EstimatedTimeHours ?? 0).Sum());
 
             container.Column(col =>
             {
