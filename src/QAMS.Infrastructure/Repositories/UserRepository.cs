@@ -75,11 +75,10 @@ namespace QAMS.Infrastructure.Repositories
         /// - No carga roles (lazy loading)
         /// - Usa comparación exact
         /// </summary>
-        public async Task<User?> GetByUsernameAsync(string username) =>
-            // LINQ query: filtrar por username exacto y retornar el primero o null. 
-            // Usamos IgnoreQueryFilters para encontrar también usuarios borrados lógicamente
-            // ya que el Username debe ser único a nivel global (incluso borrados).
-            await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+        public async Task<User?> GetByUsernameAsync(string username)
+        {
+            return await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+        }
 
         /// <summary>
         /// OBTIENE UN USUARIO POR SU EMAIL.
@@ -102,9 +101,10 @@ namespace QAMS.Infrastructure.Repositories
         /// - SQL Server suele ser case-insensitive para strings
         /// - No carga roles para evitar overhead
         /// </summary>
-        public async Task<User?> GetByEmailAsync(string email) =>
-            // LINQ: filtrar por email exacto (case-insensitive usando ToLower() para compatibilidad EF Core)
-            await _dbSet.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            return await _dbSet.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+        }
 
         /// <summary>
         /// OBTIENE UN USUARIO CON TODOS SUS ROLES (EAGER LOADING).
@@ -216,9 +216,9 @@ namespace QAMS.Infrastructure.Repositories
         /// - Para casos simples, usar GetWithRolesAsync
         /// - La consulta es más grande pero evita roundtrips
         /// </summary>
-        public async Task<User?> GetWithRolesAndPermissionsAsync(string username) =>
-            // LINQ: carga cadena completa de usuario → roles → permisos
-            await _dbSet
+        public async Task<User?> GetWithRolesAndPermissionsAsync(string username)
+        {
+            return await _dbSet
                 // Step 1: Incluir colección de UserRoles (la relación Many-to-Many)
                 .Include(u => u.UserRoles)
                 // Step 2: Para cada UserRole, incluir el Role relacionado
@@ -226,11 +226,12 @@ namespace QAMS.Infrastructure.Repositories
                 // Step 3: Para cada Role, incluir sus RolePermissions
                 .ThenInclude(r => r!.RolePermissions)
                 // Step 4: Para cada RolePermission, incluir el Permission
-                .ThenInclude(rp => rp.Permission)
+                .ThenInclude(rp => rp!.Permission)
                 // Usar SplitQuery para evitar cartesian product y errores de múltiples colecciones
                 .AsSplitQuery()
                 // Filtrar por username y retornar el primero o null
-                .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+                .FirstOrDefaultAsync(u => u.Username!.ToLower() == username.ToLower());
+        }
 
         // ================================================================
         // OPERACIONES DE ASIGNACIÓN DE ROLES (INSERT en tabla puente)

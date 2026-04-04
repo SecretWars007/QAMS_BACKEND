@@ -1577,8 +1577,8 @@ namespace QAMS.Infrastructure.Migrations
                 table: "evidence_types",
                 keyColumn: "id",
                 keyValue: 1,
-                columns: new[] { "created_at", "CreatedByUserId", "DeletedAt", "DeletedByUserId", "IsDeleted", "UpdatedAt", "UpdatedByUserId" },
-                values: new object[] { new DateTime(2026, 3, 29, 23, 8, 39, 499, DateTimeKind.Utc).AddTicks(5184), null, null, null, false, null, null });
+                columns: ["created_at", "CreatedByUserId", "DeletedAt", "DeletedByUserId", "IsDeleted", "UpdatedAt", "UpdatedByUserId"],
+                values: [new DateTime(2026, 3, 29, 23, 8, 39, 499, DateTimeKind.Utc).AddTicks(5184), null, null, null, false, null, null]);
 
             migrationBuilder.UpdateData(
                 table: "evidence_types",
@@ -1591,8 +1591,8 @@ namespace QAMS.Infrastructure.Migrations
                 table: "evidence_types",
                 keyColumn: "id",
                 keyValue: 3,
-                columns: new[] { "created_at", "CreatedByUserId", "DeletedAt", "DeletedByUserId", "IsDeleted", "UpdatedAt", "UpdatedByUserId" },
-                values: new object[] { new DateTime(2026, 3, 29, 23, 8, 39, 499, DateTimeKind.Utc).AddTicks(5193), null, null, null, false, null, null });
+                columns: ["created_at", "CreatedByUserId", "DeletedAt", "DeletedByUserId", "IsDeleted", "UpdatedAt", "UpdatedByUserId"],
+                values: [new DateTime(2026, 3, 29, 23, 8, 39, 499, DateTimeKind.Utc).AddTicks(5193), null, null, null, false, null, null]);
 
             migrationBuilder.UpdateData(
                 table: "evidence_types",
@@ -2154,28 +2154,28 @@ namespace QAMS.Infrastructure.Migrations
                 columns: new[] { "CreatedAt", "CreatedByUserId", "DeletedAt", "DeletedByUserId", "IsDeleted", "UpdatedAt", "UpdatedByUserId" },
                 values: new object[] { new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2808), null, null, null, false, null, null });
 
-            migrationBuilder.UpdateData(
-                table: "roles",
-                keyColumn: "id",
-                keyValue: new Guid("11111111-1111-1111-1111-111111111111"),
-                columns: new[] { "CreatedByUserId", "DeletedAt", "DeletedByUserId", "IsDeleted", "UpdatedAt", "UpdatedByUserId" },
-                values: new object[] { null, null, null, false, null, null });
+            // migrationBuilder.UpdateData(
+            //     table: "roles",
+            //     keyColumn: "id",
+            //     keyValue: new Guid("11111111-1111-1111-1111-111111111111"),
+            //     columns: new[] { "CreatedByUserId", "DeletedAt", "DeletedByUserId", "IsDeleted", "UpdatedAt", "UpdatedByUserId" },
+            //     values: new object[] { null, null, null, false, null, null });
+            // 
+            // migrationBuilder.UpdateData(
+            //     table: "roles",
+            //     keyColumn: "id",
+            //     keyValue: new Guid("22222222-2222-2222-2222-222222222222"),
+            //     columns: new[] { "CreatedByUserId", "DeletedAt", "DeletedByUserId", "IsDeleted", "UpdatedAt", "UpdatedByUserId" },
+            //     values: new object[] { null, null, null, false, null, null });
 
-            migrationBuilder.UpdateData(
-                table: "roles",
-                keyColumn: "id",
-                keyValue: new Guid("22222222-2222-2222-2222-222222222222"),
-                columns: new[] { "CreatedByUserId", "DeletedAt", "DeletedByUserId", "IsDeleted", "UpdatedAt", "UpdatedByUserId" },
-                values: new object[] { null, null, null, false, null, null });
-
-            migrationBuilder.InsertData(
-                table: "roles",
-                columns: new[] { "id", "created_at", "CreatedByUserId", "DeletedAt", "DeletedByUserId", "description", "is_active", "IsDeleted", "name", "UpdatedAt", "UpdatedByUserId" },
-                values: new object[,]
-                {
-                    { new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, "Planifica suites, asigna tareas y genera reportes", true, false, "Líder de Pruebas (Lead)", null, null },
-                    { new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, "Revisa defectos asignados y actualiza código", true, false, "Desarrollador", null, null }
-                });
+            // migrationBuilder.InsertData(
+            //     table: "roles",
+            //     columns: new[] { "id", "created_at", "CreatedByUserId", "DeletedAt", "DeletedByUserId", "description", "is_active", "IsDeleted", "name", "UpdatedAt", "UpdatedByUserId" },
+            //     values: new object[,]
+            //     {
+            //         { new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, "Planifica suites, asigna tareas y genera reportes", true, false, "Líder de Pruebas (Lead)", null, null },
+            //         { new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, "Revisa defectos asignados y actualiza código", true, false, "Desarrollador", null, null }
+            //     });
 
             migrationBuilder.UpdateData(
                 table: "step_result_statuses",
@@ -2329,43 +2329,43 @@ namespace QAMS.Infrastructure.Migrations
                 columns: new[] { "role_id", "user_id", "assigned_at", "CreatedAt", "CreatedByUserId", "DeletedAt", "DeletedByUserId", "IsDeleted", "UpdatedAt", "UpdatedByUserId" },
                 values: new object[] { new Guid("11111111-1111-1111-1111-111111111111"), new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 657, DateTimeKind.Utc).AddTicks(3424), null, null, null, false, null, null });
 
-            migrationBuilder.UpdateData(
-                table: "users",
-                keyColumn: "id",
-                keyValue: new Guid("99999999-9999-9999-9999-999999999999"),
-                columns: new[] { "documento_identidad", "fecha_nacimiento", "telefono" },
-                values: new object[] { "00000000", new DateOnly(1990, 1, 1), null });
+            // migrationBuilder.UpdateData(
+            //     table: "users",
+            //     keyColumn: "id",
+            //     keyValue: new Guid("99999999-9999-9999-9999-999999999999"),
+            //     columns: new[] { "documento_identidad", "fecha_nacimiento", "telefono" },
+            //     values: new object[] { "00000000", new DateOnly(1990, 1, 1), null });
 
-            migrationBuilder.InsertData(
-                table: "role_permissions",
-                columns: new[] { "permission_id", "role_id", "assigned_at", "CreatedAt", "CreatedByUserId", "DeletedAt", "DeletedByUserId", "IsDeleted", "UpdatedAt", "UpdatedByUserId" },
-                values: new object[,]
-                {
-                    { new Guid("41544143-4f4c-5347-5f56-494557000000"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2899), null, null, null, false, null, null },
-                    { new Guid("424e414b-4e41-555f-5044-415445000000"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2892), null, null, null, false, null, null },
-                    { new Guid("424e414b-4e41-565f-4945-570000000000"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2888), null, null, null, false, null, null },
-                    { new Guid("43455845-5455-4f49-4e53-5f4352454154"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2880), null, null, null, false, null, null },
-                    { new Guid("43455845-5455-4f49-4e53-5f5550444154"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2883), null, null, null, false, null, null },
-                    { new Guid("43455845-5455-4f49-4e53-5f55504c4f41"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2886), null, null, null, false, null, null },
-                    { new Guid("43455845-5455-4f49-4e53-5f5649455700"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2877), null, null, null, false, null, null },
-                    { new Guid("48534144-4f42-5241-445f-564945570000"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2895), null, null, null, false, null, null },
-                    { new Guid("4a4f5250-4345-5354-5f56-494557000000"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2851), null, null, null, false, null, null },
-                    { new Guid("54534554-435f-5341-4553-5f4352454154"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2858), null, null, null, false, null, null },
-                    { new Guid("54534554-435f-5341-4553-5f5550444154"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2873), null, null, null, false, null, null },
-                    { new Guid("54534554-435f-5341-4553-5f5649455700"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2855), null, null, null, false, null, null },
-                    { new Guid("424e414b-4e41-555f-5044-415445000000"), new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2918), null, null, null, false, null, null },
-                    { new Guid("424e414b-4e41-565f-4945-570000000000"), new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2915), null, null, null, false, null, null },
-                    { new Guid("43455845-5455-4f49-4e53-5f5649455700"), new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2912), null, null, null, false, null, null },
-                    { new Guid("48534144-4f42-5241-445f-564945570000"), new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2929), null, null, null, false, null, null },
-                    { new Guid("4a4f5250-4345-5354-5f56-494557000000"), new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2904), null, null, null, false, null, null },
-                    { new Guid("54534554-435f-5341-4553-5f5649455700"), new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2909), null, null, null, false, null, null }
-                });
+            // migrationBuilder.InsertData(
+            //     table: "role_permissions",
+            //     columns: new[] { "permission_id", "role_id", "assigned_at", "CreatedAt", "CreatedByUserId", "DeletedAt", "DeletedByUserId", "IsDeleted", "UpdatedAt", "UpdatedByUserId" },
+            //     values: new object[,]
+            //     {
+            //         { new Guid("41544143-4f4c-5347-5f56-494557000000"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2899), null, null, null, false, null, null },
+            //         { new Guid("424e414b-4e41-555f-5044-415445000000"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2892), null, null, null, false, null, null },
+            //         { new Guid("424e414b-4e41-565f-4945-570000000000"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2888), null, null, null, false, null, null },
+            //         { new Guid("43455845-5455-4f49-4e53-5f4352454154"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2880), null, null, null, false, null, null },
+            //         { new Guid("43455845-5455-4f49-4e53-5f5550444154"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2883), null, null, null, false, null, null },
+            //         { new Guid("43455845-5455-4f49-4e53-5f55504c4f41"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2820), null, null, null, false, null, null },
+            //         { new Guid("43455845-5455-4f49-4e53-5f5649455700"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2877), null, null, null, false, null, null },
+            //         { new Guid("48534144-4f42-5241-445f-564945570000"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2895), null, null, null, false, null, null },
+            //         { new Guid("4a4f5250-4345-5354-5f56-494557000000"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2851), null, null, null, false, null, null },
+            //         { new Guid("54534554-435f-5341-4553-5f4352454154"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2858), null, null, null, false, null, null },
+            //         { new Guid("54534554-435f-5341-4553-5f5550444154"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2873), null, null, null, false, null, null },
+            //         { new Guid("54534554-435f-5341-4553-5f5649455700"), new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2855), null, null, null, false, null, null },
+            //         { new Guid("424e414b-4e41-555f-5044-415445000000"), new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2918), null, null, null, false, null, null },
+            //         { new Guid("424e414b-4e41-565f-4945-570000000000"), new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2915), null, null, null, false, null, null },
+            //         { new Guid("43455845-5455-4f49-4e53-5f5649455700"), new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2912), null, null, null, false, null, null },
+            //         { new Guid("48534144-4f42-5241-445f-564945570000"), new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2929), null, null, null, false, null, null },
+            //         { new Guid("4a4f5250-4345-5354-5f56-494557000000"), new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2904), null, null, null, false, null, null },
+            //         { new Guid("54534554-435f-5341-4553-5f5649455700"), new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 29, 23, 8, 39, 567, DateTimeKind.Utc).AddTicks(2909), null, null, null, false, null, null }
+            //     });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_users_documento_identidad_fecha_nacimiento",
-                table: "users",
-                columns: new[] { "documento_identidad", "fecha_nacimiento" },
-                unique: true);
+            // migrationBuilder.CreateIndex(
+            //     name: "IX_users_documento_identidad_fecha_nacimiento",
+            //     table: "users",
+            //     columns: new[] { "documento_identidad", "fecha_nacimiento" },
+            //     unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_user_roles_CreatedByUserId",
@@ -3078,13 +3078,6 @@ namespace QAMS.Infrastructure.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.SetNull);
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_test_steps_users_created_by_user_id",
-                table: "test_steps",
-                column: "created_by_user_id",
-                principalTable: "users",
-                principalColumn: "id",
-                onDelete: ReferentialAction.SetNull);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_user_roles_users_CreatedByUserId",
@@ -3330,17 +3323,17 @@ namespace QAMS.Infrastructure.Migrations
                 name: "FK_test_executions_users_updated_by_user_id",
                 table: "test_executions");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_test_steps_users_DeletedByUserId",
-                table: "test_steps");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_test_steps_users_UpdatedByUserId",
-                table: "test_steps");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_test_steps_users_created_by_user_id",
-                table: "test_steps");
+            // migrationBuilder.DropForeignKey(
+            //     name: "FK_test_steps_users_DeletedByUserId",
+            //     table: "test_steps");
+            // 
+            // migrationBuilder.DropForeignKey(
+            //     name: "FK_test_steps_users_UpdatedByUserId",
+            //     table: "test_steps");
+            // 
+            // migrationBuilder.DropForeignKey(
+            //     name: "FK_test_steps_users_created_by_user_id",
+            //     table: "test_steps");
 
             migrationBuilder.DropForeignKey(
                 name: "FK_user_roles_users_CreatedByUserId",
@@ -3373,13 +3366,13 @@ namespace QAMS.Infrastructure.Migrations
                 name: "IX_user_roles_UpdatedByUserId",
                 table: "user_roles");
 
-            migrationBuilder.DropIndex(
-                name: "IX_test_steps_DeletedByUserId",
-                table: "test_steps");
-
-            migrationBuilder.DropIndex(
-                name: "IX_test_steps_UpdatedByUserId",
-                table: "test_steps");
+            // migrationBuilder.DropIndex(
+            //     name: "IX_test_steps_DeletedByUserId",
+            //     table: "test_steps");
+            // 
+            // migrationBuilder.DropIndex(
+            //     name: "IX_test_steps_UpdatedByUserId",
+            //     table: "test_steps");
 
             migrationBuilder.DropIndex(
                 name: "IX_test_executions_created_by_user_id",
@@ -3782,29 +3775,29 @@ namespace QAMS.Infrastructure.Migrations
                 name: "UpdatedByUserId",
                 table: "test_suite_statuses");
 
-            migrationBuilder.DropColumn(
-                name: "CreatedAt",
-                table: "test_steps");
-
-            migrationBuilder.DropColumn(
-                name: "DeletedAt",
-                table: "test_steps");
-
-            migrationBuilder.DropColumn(
-                name: "DeletedByUserId",
-                table: "test_steps");
-
-            migrationBuilder.DropColumn(
-                name: "IsDeleted",
-                table: "test_steps");
-
-            migrationBuilder.DropColumn(
-                name: "UpdatedAt",
-                table: "test_steps");
-
-            migrationBuilder.DropColumn(
-                name: "UpdatedByUserId",
-                table: "test_steps");
+            // migrationBuilder.DropColumn(
+            //     name: "CreatedAt",
+            //     table: "test_steps");
+            // 
+            // migrationBuilder.DropColumn(
+            //     name: "DeletedAt",
+            //     table: "test_steps");
+            // 
+            // migrationBuilder.DropColumn(
+            //     name: "DeletedByUserId",
+            //     table: "test_steps");
+            // 
+            // migrationBuilder.DropColumn(
+            //     name: "IsDeleted",
+            //     table: "test_steps");
+            // 
+            // migrationBuilder.DropColumn(
+            //     name: "UpdatedAt",
+            //     table: "test_steps");
+            // 
+            // migrationBuilder.DropColumn(
+            //     name: "UpdatedByUserId",
+            //     table: "test_steps");
 
             migrationBuilder.DropColumn(
                 name: "created_at",
@@ -5113,13 +5106,13 @@ namespace QAMS.Infrastructure.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Cascade);
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_test_steps_users_created_by_user_id",
-                table: "test_steps",
-                column: "created_by_user_id",
-                principalTable: "users",
-                principalColumn: "id",
-                onDelete: ReferentialAction.Restrict);
+            // migrationBuilder.AddForeignKey(
+            //     name: "FK_test_steps_users_created_by_user_id",
+            //     table: "test_steps",
+            //     column: "created_by_user_id",
+            //     principalTable: "users",
+            //     principalColumn: "id",
+            //     onDelete: ReferentialAction.Restrict);
         }
     }
 }

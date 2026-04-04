@@ -1,0 +1,469 @@
+﻿
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:414:                type: "uuid",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:415:                nullable: true);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:416:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:417:            
+migrationBuilder.AlterColumn<string>(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:418:                name: "expected_result",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:419:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:420:                type: "character 
+varying(1000)",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:421:                maxLength: 1000,
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:422:                nullable: false,
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:423:                oldClrType: 
+typeof(string),
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:424:                oldType: "text");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:425:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:426:            
+migrationBuilder.AlterColumn<string>(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:427:                name: "action",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:428:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:429:                type: "character 
+varying(1000)",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:430:                maxLength: 1000,
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:431:                nullable: false,
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:432:                oldClrType: 
+typeof(string),
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:433:                oldType: "text");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:434:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:435:            
+migrationBuilder.AddColumn<DateTime>(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:436:                name: "CreatedAt",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:437:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:438:                type: "timestamp with 
+time zone",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:439:                nullable: false,
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:440:                defaultValue: new 
+DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:441:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:442:            
+migrationBuilder.AddColumn<DateTime>(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:443:                name: "DeletedAt",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:444:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:445:                type: "timestamp with 
+time zone",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:446:                nullable: true);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:447:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:448:            
+migrationBuilder.AddColumn<Guid>(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:449:                name: "DeletedByUserId",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:450:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:451:                type: "uuid",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:452:                nullable: true);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:453:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:454:            
+migrationBuilder.AddColumn<bool>(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:455:                name: "IsDeleted",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:456:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:457:                type: "boolean",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:458:                nullable: false,
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:459:                defaultValue: false);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:460:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:461:            
+migrationBuilder.AddColumn<DateTime>(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:462:                name: "UpdatedAt",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:463:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:464:                type: "timestamp with 
+time zone",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:465:                nullable: true);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:466:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:467:            
+migrationBuilder.AddColumn<Guid>(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:468:                name: "UpdatedByUserId",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:469:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:470:                type: "uuid",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:471:                nullable: true);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:472:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:473:            
+migrationBuilder.AlterColumn<DateTime>(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:474:                name: "execution_date",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2382:                table: "user_roles",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2383:                column: 
+"UpdatedByUserId");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2384:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2385:            migrationBuilder.CreateIndex(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2386:                name: 
+"IX_test_steps_DeletedByUserId",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2387:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2388:                column: 
+"DeletedByUserId");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2389:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2390:            migrationBuilder.CreateIndex(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2391:                name: 
+"IX_test_steps_UpdatedByUserId",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2392:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2393:                column: 
+"UpdatedByUserId");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2394:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2395:            migrationBuilder.CreateIndex(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2396:                name: 
+"IX_test_executions_created_by_user_id",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:2397:                table: "test_executions",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3062:                principalColumn: "id",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3063:                onDelete: 
+ReferentialAction.SetNull);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3064:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3065:            
+migrationBuilder.AddForeignKey(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3066:                name: 
+"FK_test_steps_users_DeletedByUserId",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3067:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3068:                column: 
+"DeletedByUserId",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3069:                principalTable: "users",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3070:                principalColumn: "id",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3071:                onDelete: 
+ReferentialAction.SetNull);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3072:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3073:            
+migrationBuilder.AddForeignKey(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3074:                name: 
+"FK_test_steps_users_UpdatedByUserId",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3075:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3076:                column: 
+"UpdatedByUserId",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3077:                principalTable: "users",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3078:                principalColumn: "id",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3079:                onDelete: 
+ReferentialAction.SetNull);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3080:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3081:            
+migrationBuilder.AddForeignKey(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3082:                name: 
+"FK_test_steps_users_created_by_user_id",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3083:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3084:                column: 
+"created_by_user_id",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3085:                principalTable: "users",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3086:                principalColumn: "id",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3087:                onDelete: 
+ReferentialAction.SetNull);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3088:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3330:                name: 
+"FK_test_executions_users_updated_by_user_id",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3331:                table: 
+"test_executions");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3332:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3333:            
+migrationBuilder.DropForeignKey(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3334:                name: 
+"FK_test_steps_users_DeletedByUserId",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3335:                table: "test_steps");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3336:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3337:            
+migrationBuilder.DropForeignKey(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3338:                name: 
+"FK_test_steps_users_UpdatedByUserId",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3339:                table: "test_steps");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3340:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3341:            
+migrationBuilder.DropForeignKey(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3342:                name: 
+"FK_test_steps_users_created_by_user_id",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3343:                table: "test_steps");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3344:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3345:            
+migrationBuilder.DropForeignKey(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3346:                name: 
+"FK_user_roles_users_CreatedByUserId",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3347:                table: "user_roles");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3348:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3373:                name: 
+"IX_user_roles_UpdatedByUserId",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3374:                table: "user_roles");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3375:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3376:            migrationBuilder.DropIndex(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3377:                name: 
+"IX_test_steps_DeletedByUserId",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3378:                table: "test_steps");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3379:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3380:            migrationBuilder.DropIndex(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3381:                name: 
+"IX_test_steps_UpdatedByUserId",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3382:                table: "test_steps");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3383:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3384:            migrationBuilder.DropIndex(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3385:                name: 
+"IX_test_executions_created_by_user_id",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3386:                table: 
+"test_executions");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3387:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3782:                name: "UpdatedByUserId",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3783:                table: 
+"test_suite_statuses");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3784:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3785:            migrationBuilder.DropColumn(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3786:                name: "CreatedAt",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3787:                table: "test_steps");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3788:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3789:            migrationBuilder.DropColumn(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3790:                name: "DeletedAt",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3791:                table: "test_steps");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3792:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3793:            migrationBuilder.DropColumn(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3794:                name: "DeletedByUserId",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3795:                table: "test_steps");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3796:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3797:            migrationBuilder.DropColumn(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3798:                name: "IsDeleted",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3799:                table: "test_steps");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3800:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3801:            migrationBuilder.DropColumn(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3802:                name: "UpdatedAt",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3803:                table: "test_steps");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3804:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3805:            migrationBuilder.DropColumn(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3806:                name: "UpdatedByUserId",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3807:                table: "test_steps");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3808:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3809:            migrationBuilder.DropColumn(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3810:                name: "created_at",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3811:                table: 
+"test_executions");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:3812:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4545:                oldClrType: 
+typeof(DateTime),
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4546:                oldType: "timestamp with 
+time zone");
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4547:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4548:            
+migrationBuilder.AlterColumn<string>(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4549:                name: "expected_result",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4550:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4551:                type: "text",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4552:                nullable: false,
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4553:                oldClrType: 
+typeof(string),
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4554:                oldType: "character 
+varying(1000)",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4555:                oldMaxLength: 1000);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4556:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4557:            
+migrationBuilder.AlterColumn<string>(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4558:                name: "action",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4559:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4560:                type: "text",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4561:                nullable: false,
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4562:                oldClrType: 
+typeof(string),
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4563:                oldType: "character 
+varying(1000)",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:4564:                oldMaxLength: 1000);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:5113:                principalColumn: "id",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:5114:                onDelete: 
+ReferentialAction.Cascade);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:5115:
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:5116:            
+migrationBuilder.AddForeignKey(
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:5117:                name: 
+"FK_test_steps_users_created_by_user_id",
+> src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:5118:                table: "test_steps",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:5119:                column: 
+"created_by_user_id",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:5120:                principalTable: "users",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:5121:                principalColumn: "id",
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:5122:                onDelete: 
+ReferentialAction.Restrict);
+  src\QAMS.Infrastructure\Migrations\20260329230840_ConsolidatePr
+oductionChanges.cs:5123:        }
+
+

@@ -43,7 +43,7 @@ var builder = WebApplication.CreateBuilder(args);
 var rawConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (!string.IsNullOrEmpty(rawConnectionString) && rawConnectionString.Contains("://"))
 {
-    try 
+    try
     {
         // Forzar prefijo para que System.Uri lo reconozca
         var uriString = rawConnectionString.Replace("postgresql://", "postgres://", StringComparison.OrdinalIgnoreCase);
@@ -54,7 +54,7 @@ if (!string.IsNullOrEmpty(rawConnectionString) && rawConnectionString.Contains("
         var host = uri.Host;
         var dbPort = uri.Port > 0 ? uri.Port : 5432;
         var database = uri.AbsolutePath.TrimStart('/');
-        
+
         // Reconstruir en formato estándar de .NET (Compatible con cualquier driver)
         var semicolonString = $"Host={host};Port={dbPort};Database={database};Username={user};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
         builder.Configuration["ConnectionStrings:DefaultConnection"] = semicolonString;
@@ -123,7 +123,7 @@ builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 // builder.Services.AddValidatorsFromAssemblyContaining<MappingProfile>();
 
 // Controllers + API Explorer + Swagger
-builder.Services.AddControllers(options => 
+builder.Services.AddControllers(options =>
 {
     // Global filter to validate all inputs across the entire application
     options.Filters.Add<QAMS.Api.Filters.GlobalInputSanitizationFilter>();
@@ -142,18 +142,18 @@ builder.Services.AddSwaggerGen(c =>
             Email = "support@qams.local"
         },
         License = new Microsoft.OpenApi.Models.OpenApiLicense
-            {
-                Name = "Internal Use Only"
-            }
-        });
-
-        // Incluir comentarios XML
-        var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-        if (File.Exists(xmlPath))
         {
-            c.IncludeXmlComments(xmlPath);
+            Name = "Internal Use Only"
         }
+    });
+
+    // Incluir comentarios XML
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
 
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
@@ -184,7 +184,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // CORS
-builder.Services.AddAntiforgery(options => 
+builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-XSRF-TOKEN";
     options.Cookie.Name = "XSRF-TOKEN";
@@ -199,21 +199,25 @@ builder.Services.AddCors(o =>
         p =>
         {
             var frontendUrl = builder.Configuration["FRONTEND_URL"];
+            List<string> origins = ["http://localhost:4200", "http://127.0.0.1:4200", "http://localhost", "http://127.0.0.1"];
             if (!string.IsNullOrEmpty(frontendUrl))
             {
-                p.WithOrigins(frontendUrl.TrimEnd('/'));
+                origins.Add(frontendUrl.TrimEnd('/'));
             }
 
-            p.SetIsOriginAllowed(origin => 
+            p.WithOrigins([.. origins])
+            .SetIsOriginAllowed(origin =>
             {
                 if (string.IsNullOrEmpty(origin)) return false;
-                try {
+                try
+                {
                     var host = new Uri(origin).Host;
-                    return host.EndsWith(".onrender.com", StringComparison.OrdinalIgnoreCase) || 
+                    return host.EndsWith(".onrender.com", StringComparison.OrdinalIgnoreCase) ||
                            host.Equals("onrender.com", StringComparison.OrdinalIgnoreCase) ||
                            host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
                            host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
-                } catch { return false; }
+                }
+                catch { return false; }
             })
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -248,7 +252,7 @@ app.Use((context, next) =>
 {
     var tokens = context.RequestServices.GetRequiredService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
     var tokenSet = tokens.GetAndStoreTokens(context);
-    context.Response.Cookies.Append("XSRF-TOKEN", tokenSet.RequestToken!, 
+    context.Response.Cookies.Append("XSRF-TOKEN", tokenSet.RequestToken!,
         new CookieOptions { HttpOnly = false, Secure = !app.Environment.IsDevelopment(), SameSite = SameSiteMode.None });
     return next(context);
 });
@@ -260,7 +264,7 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var environment = app.Environment;
-    
+
     try
     {
         var db = services.GetRequiredService<QamsDbContext>();
@@ -274,18 +278,19 @@ using (var scope = app.Services.CreateScope())
         {
             // Enmascaramiento robusto (siempre será Semicolon después de la normalización)
             var parts = connectionString.Split(';');
-            var masked = string.Join(";", parts.Select(p => {
+            var masked = string.Join(";", parts.Select(p =>
+            {
                 var trimmed = p.Trim();
                 return trimmed.StartsWith("Password", StringComparison.OrdinalIgnoreCase) ? "Password=***" : trimmed;
             }));
             app.Logger.LogInformation("Cadena de conexión detectada y normalizada: {ConnectionString}", masked);
         }
-        
+
         // En Producción, esperar un poco para asegurar que la base de datos de Render esté lista
         if (environment.IsProduction())
         {
             app.Logger.LogInformation("Ambiente de Producción detectado. Esperando 5 segundos para asegurar disponibilidad de DB...");
-            Thread.Sleep(5000); 
+            Thread.Sleep(5000);
         }
 
         app.Logger.LogInformation("Iniciando aplicación de migraciones...");
@@ -303,7 +308,7 @@ using (var scope = app.Services.CreateScope())
             else
             {
                 app.Logger.LogInformation("No hay migraciones pendientes.");
-                
+
                 // Si no hay migrations aplicadas (proyecto usa EnsureCreated en dev o DB vacía sin historial), crear esquema
                 var applied = db.Database.GetAppliedMigrations();
                 if (applied == null || !applied.Any())
@@ -327,7 +332,7 @@ using (var scope = app.Services.CreateScope())
                 if (environment.IsProduction())
                 {
                     // En producción queremos saber si esto falla críticamente
-                    throw; 
+                    throw;
                 }
             }
         }
