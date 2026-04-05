@@ -106,6 +106,18 @@ namespace QAMS.Infrastructure.Repositories
             await _dbSet.IgnoreQueryFilters()
                 .FirstOrDefaultAsync(u => u.Email!.ToLower() == email.ToLower());
 
+        public async Task<List<User>> GetPhysicalConflictsAsync(string email, string username, string documento)
+        {
+            var lowerEmail = email.ToLower();
+            var lowerUsername = username.ToLower();
+            
+            return await _dbSet.IgnoreQueryFilters()
+                .Where(u => u.Email!.ToLower() == lowerEmail 
+                         || u.Username!.ToLower() == lowerUsername
+                         || u.DocumentoIdentidad == documento)
+                .ToListAsync();
+        }
+
         /// <summary>
         /// OBTIENE UN USUARIO CON TODOS SUS ROLES (EAGER LOADING).
         /// 

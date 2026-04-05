@@ -100,43 +100,57 @@ namespace QAMS.Application.Services
         {
             _logger.LogInformation("Intento de registro: '{Username}' con email '{Email}'.", request.Username, request.Email);
 
-            // 1. Validar nombre de usuario estrictamente (físico)
-            var userWithSameName = await _userRepo.GetByUsernamePhysicalAsync(request.Username);
-            if (userWithSameName != null)
+            // 1. Validar conflictos ACTIVOS primero (para arrojar 400 Bad Request)
+            var activeConflicts = await _userRepo.FindAsync(u => 
+                u.Email!.ToLower() == request.Email.ToLower() || 
+                u.Username!.ToLower() == request.Username.ToLower() ||
+                (u.DocumentoIdentidad == request.DocumentoIdentidad && u.FechaNacimiento == request.FechaNacimiento));
+
+            if (activeConflicts.Any())
             {
-                _logger.LogWarning("Registro fallido: El nombre de usuario '{Username}' ya existe en el historial.", request.Username);
-                throw new DomainException("El nombre de usuario ya está en uso. Por favor, selecciona otro.");
+                var conflict = activeConflicts.First();
+                if (conflict.Email!.ToLower() == request.Email.ToLower())
+                    throw new DomainException("El correo electrónico ya está en uso.");
+                if (conflict.Username!.ToLower() == request.Username.ToLower())
+                    throw new DomainException("El nombre de usuario ya está en uso.");
+                throw new DomainException("El documento de identidad ya está registrado.");
             }
 
-            // 2. Validar email físicamente
-            var existingEmailUser = await _userRepo.GetByEmailPhysicalAsync(request.Email);
-            if (existingEmailUser != null)
+            // 2. Buscar TODOS los conflictos físicos (incluyendo borrados) para limpieza total
+            var physicalConflicts = await _userRepo.GetPhysicalConflictsAsync(request.Email, request.Username, request.DocumentoIdentidad);
+            
+            if (physicalConflicts.Any())
             {
-                if (!existingEmailUser.IsDeleted)
+                _logger.LogInformation("Se encontraron {Count} conflictos en el historial. Iniciando anonimización masiva...", physicalConflicts.Count);
+                
+                foreach (var clashingUser in physicalConflicts)
                 {
-                    _logger.LogWarning("Registro fallido: El email '{Email}' ya está en uso y activo.", request.Email);
-                    throw new DomainException("El correo electrónico ya está en uso.");
+                    // Solo anonimizamos registros que estén marcados como ELIMINADOS
+                    // Los activos ya fueron filtrados arriba (aunque por redundancia lo validamos)
+                    if (clashingUser.IsDeleted)
+                    {
+                        var suffix = Guid.NewGuid().ToString().Substring(0, 8);
+                        
+                        // Liberar campos únicos
+                        clashingUser.Email = $"del_{suffix}_{clashingUser.Email}";
+                        if (clashingUser.Email.Length > 150) clashingUser.Email = clashingUser.Email.Substring(0, 150);
+                        
+                        clashingUser.Username = $"del_{suffix}_{clashingUser.Username}";
+                        if (clashingUser.Username.Length > 100) clashingUser.Username = clashingUser.Username.Substring(0, 100);
+
+                        // Max length DocumentoIdentidad es 20
+                        if (clashingUser.DocumentoIdentidad.Length <= 11)
+                            clashingUser.DocumentoIdentidad = $"del_{suffix}_{clashingUser.DocumentoIdentidad}";
+                        else
+                            clashingUser.DocumentoIdentidad = $"del_{suffix}";
+
+                        clashingUser.UpdatedAt = DateTime.UtcNow;
+                        _userRepo.Update(clashingUser);
+                    }
                 }
-
-                _logger.LogInformation("Email '{Email}' encontrado en usuario eliminado. Procediendo a registro como nuevo usuario (anonimizando anterior)...", request.Email);
                 
-                // Anonimizar el registro anterior para liberar el email, username y documento en la DB
-                // Esto permite insertar un NUEVO registro con los mismos datos originales sin violar índices únicos
-                var suffix = Guid.NewGuid().ToString().Substring(0, 8);
-                existingEmailUser.Email = $"deleted_{suffix}_{existingEmailUser.Email}";
-                existingEmailUser.Username = $"deleted_{suffix}_{existingEmailUser.Username}";
-                
-                // Limpiar el documento para liberar el índice único (DocumentoIdentidad + FechaNacimiento)
-                // Max length de DocumentoIdentidad es 20
-                if (existingEmailUser.DocumentoIdentidad.Length <= 12)
-                    existingEmailUser.DocumentoIdentidad = $"del_{suffix}_{existingEmailUser.DocumentoIdentidad}";
-                else
-                    existingEmailUser.DocumentoIdentidad = $"del_{suffix}"; 
-
-                existingEmailUser.UpdatedAt = DateTime.UtcNow;
-
-                _userRepo.Update(existingEmailUser);
-                await _uow.SaveChangesAsync(); // Guardar anonimización primero
+                await _uow.SaveChangesAsync(); // Limpiar historial definitivamente
+                _logger.LogInformation("Historial limpiado exitosamente.");
             }
 
             // 3. Validar edad (entre 18 y 80 años)

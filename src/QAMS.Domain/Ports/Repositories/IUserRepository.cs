@@ -12,6 +12,7 @@ namespace QAMS.Domain.Ports.Repositories
         Task<User?> GetByEmailAsync(string email);
         Task<User?> GetByUsernamePhysicalAsync(string username);
         Task<User?> GetByEmailPhysicalAsync(string email);
+        Task<List<User>> GetPhysicalConflictsAsync(string email, string username, string documento);
         Task<User?> GetWithRolesAsync(Guid userId);
         Task<List<User>> GetByIdsWithRolesAsync(IEnumerable<Guid> userIds);
         Task<List<User>> GetAllWithRolesAsync();
