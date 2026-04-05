@@ -16,6 +16,17 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(ur => ur.RoleId).HasColumnName("role_id");
             builder.Property(ur => ur.AssignedAt).HasColumnName("assigned_at").IsRequired();
 
+            // ISoftDelete mapping (Matching PascalCase columns in DB for this specific table)
+            builder.Property(ur => ur.IsDeleted).HasColumnName("IsDeleted").HasDefaultValue(false);
+            builder.Property(ur => ur.DeletedAt).HasColumnName("DeletedAt");
+            builder.Property(ur => ur.DeletedByUserId).HasColumnName("DeletedByUserId");
+
+            // IAuditable mapping (Matching PascalCase columns in DB for this specific table)
+            builder.Property(ur => ur.CreatedAt).HasColumnName("CreatedAt").HasDefaultValueSql("NOW()");
+            builder.Property(ur => ur.CreatedByUserId).HasColumnName("CreatedByUserId");
+            builder.Property(ur => ur.UpdatedAt).HasColumnName("UpdatedAt");
+            builder.Property(ur => ur.UpdatedByUserId).HasColumnName("UpdatedByUserId");
+
             builder.HasOne(ur => ur.User)
                 .WithMany(u => u.UserRoles)
                 .HasForeignKey(ur => ur.UserId)

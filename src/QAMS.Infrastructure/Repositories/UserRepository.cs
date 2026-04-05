@@ -1,4 +1,5 @@
 // src/QAMS.Infrastructure/Repositories/UserRepository.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Ports.Repositories;
@@ -39,6 +40,24 @@ namespace QAMS.Infrastructure.Repositories
 
         /// <summary>
         /// Inicializa una instancia de UserRepository.
+        /// </summary>
+        
+        // Sobrescritura de métodos del repositorio genérico para aplicar el filtro de borrado lógico manualmente
+        public override async Task<User?> GetByIdAsync(Guid id) =>
+            await _dbSet.FirstOrDefaultAsync(u => u.Id == id && u.IsDeleted == false);
+
+        public override async Task<IReadOnlyList<User>> GetAllAsync() =>
+            await _dbSet.Where(u => u.IsDeleted == false).AsNoTracking().ToListAsync();
+
+        public override async Task<IReadOnlyList<User>> FindAsync(Expression<Func<User, bool>> predicate) =>
+            await _dbSet.Where(u => u.IsDeleted == false).Where(predicate).AsNoTracking().ToListAsync();
+
+        public override async Task<bool> AnyAsync(Expression<Func<User, bool>> predicate) =>
+            await _dbSet.Where(u => u.IsDeleted == false).AnyAsync(predicate);
+
+        public override async Task<int> CountAsync(Expression<Func<User, bool>> predicate) =>
+            await _dbSet.Where(u => u.IsDeleted == false).CountAsync(predicate);
+
         /// 
         /// PARÁMETRO:
         /// - context: DbContext que representa la BD
@@ -70,41 +89,22 @@ namespace QAMS.Infrastructure.Repositories
         /// QUERY GENERADA (SQL aproximado):
         /// SELECT * FROM users WHERE username = @username LIMIT 1
         /// 
-        /// NOTA:
-        /// - FirstOrDefaultAsync retorna un resultado o null
         /// - No carga roles (lazy loading)
         /// - Usa comparación exact
         /// </summary>
-        public async Task<User?> GetByUsernameAsync(string username)
-        {
-            return await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
-        }
+        public async Task<User?> GetByUsernameAsync(string username) =>
+            await _dbSet.FirstOrDefaultAsync(u => u.Username!.ToLower() == username.ToLower() && u.IsDeleted == false);
 
-        /// <summary>
-        /// OBTIENE UN USUARIO POR SU EMAIL.
-        /// 
-        /// CASO DE USO:
-        /// - Login por email (si está soportado)
-        /// - Validación de unicidad de email al crear/actualizar usuario
-        /// - Recuperación de contraseña
-        /// 
-        /// PARÁMETRO:
-        /// - email: correo a buscar (case-insensitive en BD típicamente)
-        /// 
-        /// RETORNA:
-        /// - User: el usuario con ese email, o null si no existe
-        /// 
-        /// QUERY GENERADA:
-        /// SELECT * FROM users WHERE email = @email LIMIT 1
-        /// 
-        /// NOTA:
-        /// - SQL Server suele ser case-insensitive para strings
-        /// - No carga roles para evitar overhead
-        /// </summary>
-        public async Task<User?> GetByEmailAsync(string email)
-        {
-            return await _dbSet.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
-        }
+        public async Task<User?> GetByEmailAsync(string email) =>
+            await _dbSet.FirstOrDefaultAsync(u => u.Email!.ToLower() == email.ToLower() && u.IsDeleted == false);
+
+        public async Task<User?> GetByUsernamePhysicalAsync(string username) =>
+            await _dbSet.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Username!.ToLower() == username.ToLower());
+
+        public async Task<User?> GetByEmailPhysicalAsync(string email) =>
+            await _dbSet.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Email!.ToLower() == email.ToLower());
 
         /// <summary>
         /// OBTIENE UN USUARIO CON TODOS SUS ROLES (EAGER LOADING).
@@ -142,31 +142,33 @@ namespace QAMS.Infrastructure.Repositories
         /// - Permisos NO se cargan aquí (usar GetWithRolesAndPermissionsAsync para eso)
         /// </summary>
         public async Task<User?> GetWithRolesAsync(Guid userId) =>
-            // LINQ: seleccionar usuario e incluir sus roles con sus detalles
+            // LINQ: seleccionar usuario e incluir sus roles con sus detalles (filtrando borrados)
             await _dbSet
-                // Include carga la colección de UserRoles
-                .Include(u => u.UserRoles)
+                .Where(u => u.IsDeleted == false)
+                // Include filtrado para evitar roles borrados lógicamente
+                .Include(u => u.UserRoles.Where(ur => !ur.IsDeleted))
                 // ThenInclude carga los detalles de cada Role incluido
                 .ThenInclude(ur => ur.Role)
                 // Filtrar por el usuario específico y retornar el primero o null
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
         /// <summary>
-        /// OBTIENE TODOS LOS USUARIOS CON SUS ROLES (EAGER LOADING).
+        /// OBTIENE TODOS LOS USUARIOS CON SUS ROLES (EAGER LOADING, EXCLUYENDO BORRADOS).
         /// </summary>
         public async Task<List<User>> GetAllWithRolesAsync() =>
             await _dbSet
-                .Include(u => u.UserRoles)
+                .Where(u => u.IsDeleted == false)
+                .Include(u => u.UserRoles.Where(ur => !ur.IsDeleted))
                 .ThenInclude(ur => ur.Role)
                 .ToListAsync();
 
         /// <summary>
-        /// OBTIENE VARIOS USUARIOS POR SUS IDS CON ROLES (BATCH LOADING).
+        /// OBTIENE VARIOS USUARIOS POR SUS IDS CON ROLES (BATCH LOADING, EXCLUYENDO BORRADOS).
         /// </summary>
         public async Task<List<User>> GetByIdsWithRolesAsync(IEnumerable<Guid> userIds) =>
             await _dbSet
-                .Where(u => userIds.Contains(u.Id))
-                .Include(u => u.UserRoles)
+                .Where(u => u.IsDeleted == false && userIds.Contains(u.Id))
+                .Include(u => u.UserRoles.Where(ur => !ur.IsDeleted))
                 .ThenInclude(ur => ur.Role)
                 .ToListAsync();
 
@@ -219,8 +221,9 @@ namespace QAMS.Infrastructure.Repositories
         public async Task<User?> GetWithRolesAndPermissionsAsync(string username)
         {
             return await _dbSet
-                // Step 1: Incluir colección de UserRoles (la relación Many-to-Many)
-                .Include(u => u.UserRoles)
+                .Where(u => u.IsDeleted == false)
+                // Step 1: Incluir colección de UserRoles FILTRADOS por borrado lógico
+                .Include(u => u.UserRoles.Where(ur => !ur.IsDeleted))
                 // Step 2: Para cada UserRole, incluir el Role relacionado
                 .ThenInclude(ur => ur.Role)
                 // Step 3: Para cada Role, incluir sus RolePermissions
@@ -281,46 +284,40 @@ namespace QAMS.Infrastructure.Repositories
         public async Task AssignRoleAsync(Guid userId, Guid roleId)
         {
             // ============================================================
-            // PASO 1: Verificar si la asignación ya existe (IDEMPOTENCIA)
+            // PASO 1: Buscar si la asignación ya existe (Ignorando filtros de borrado)
+            // ============================================================
+            
+            // Usamos IgnoreQueryFilters para detectar si el registro existe físicamente (borrado o no)
+            var assignment = await _context.UserRoles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId);
+
+            if (assignment != null)
+            {
+                // Si existe y está borrado, lo restauramos
+                if (assignment.IsDeleted)
+                {
+                    assignment.IsDeleted = false;
+                    assignment.AssignedAt = DateTime.UtcNow;
+                    _context.UserRoles.Update(assignment);
+                }
+                // Si ya existe y NO está borrado, no hacemos nada (idempotencia)
+                return;
+            }
+
+            // ============================================================
+            // PASO 2: Crear nuevo UserRole si no existe físicamente
             // ============================================================
 
-            // LINQ: verificar si existe un UserRole con este userId y roleId
-            // AnyAsync retorna true si existe al menos un registro
-            var exists = await _context.UserRoles
-                // Filtrar por ambas claves de la relación
-                .AnyAsync(ur => ur.UserId == userId && ur.RoleId == roleId);
-
-            // Si la asignación ya existe, retornar sin hacer nada
-            // Esto implementa idempotencia: múltiples llamadas = una sola asignación
-            if (exists) return;
-
-            // ============================================================
-            // PASO 2: Crear nuevo UserRole si no existe
-            // ============================================================
-
-            // Instanciar nueva entidad UserRole (tabla puente)
             var userRole = new UserRole
             {
-                // Asociar con el usuario
                 UserId = userId,
-
-                // Asociar con el rol
                 RoleId = roleId,
-
-                // Registrar cuándo se hizo la asignación (UTC para consistencia global)
-                AssignedAt = DateTime.UtcNow
+                AssignedAt = DateTime.UtcNow,
+                IsDeleted = false
             };
 
-            // ============================================================
-            // PASO 3: Agregar a DbSet (en memoria, no en BD aún)
-            // ============================================================
-
-            // AddAsync agrega la entidad a DbSet en estado "Added"
-            // EF Core la rastreará y creará INSERT SQL al llamar SaveChangesAsync
             await _context.UserRoles.AddAsync(userRole);
-
-            // NOTA: El cambio se persiste EXTERNAMENTE (en UserService.AssignRoleAsync)
-            // mediante _uow.SaveChangesAsync()
         }
 
         /// <summary>
@@ -363,8 +360,9 @@ namespace QAMS.Infrastructure.Repositories
             // ============================================================
 
             // LINQ: buscar el UserRole exacto que matchea userId Y roleId
-            // FirstOrDefaultAsync retorna el primero o null
+            // Se usa IgnoreQueryFilters para asegurar que encontramos registros ya borrados lógicamente
             var assignment = await _context.UserRoles
+                .IgnoreQueryFilters()
                 // Filtrar por ambas claves de la relación
                 .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId);
 
@@ -421,26 +419,23 @@ namespace QAMS.Infrastructure.Repositories
         public async Task RemoveAllRolesAsync(Guid userId)
         {
             // ============================================================
-            // PASO 1: Obtener todos los UserRoles del usuario (Where devuelve IQueryable)
+            // PASO 1: Obtener todos los UserRoles del usuario materializados
             // ============================================================
 
-            // LINQ: filtrar todos los registros de UserRole que pertenecen a este usuario
-            // Where devuelve una query sin ejecutarla (lazy evaluation)
-            var assignments = _context.UserRoles.Where(ur => ur.UserId == userId);
+            // Es importante usar ToListAsync() para que el tracker capture 
+            // las entidades antes de marcarlas para borrar.
+            var assignments = await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .ToListAsync();
 
             // ============================================================
             // PASO 2: Marcar todos para eliminación (RemoveRange)
             // ============================================================
 
-            // RemoveRange marca toda la colección en estado "Deleted"
-            // EF Core luego generará DELETE SQL parametrizado
-            _context.UserRoles.RemoveRange(assignments);
-
-            // Retornar tarea completada (la línea anterior no es asincrónica)
-            // Se incluye Task.CompletedTask por consistencia con la firma async
-            await Task.CompletedTask;
-
-            // NOTA: El cambio se persiste EXTERNAMENTE (en UserService.RemoveAllRolesAsync)
+            if (assignments.Any())
+            {
+                _context.UserRoles.RemoveRange(assignments);
+            }
         }
     }
 }

@@ -232,6 +232,10 @@ namespace QAMS.Application.Services
             // Esto prepara para asignar los nuevos roles
             await _userRepo.RemoveAllRolesAsync(id);
 
+            // IMPORTANTE: Limpiar la colección en memoria para que el tracker no mantenga 
+            // las referencias obsoletas durante la re-asignación en el bucle siguiente.
+            user.UserRoles?.Clear();
+
             // ASIGNAR NUEVOS ROLES: Validar e iterar cada roleId nuevo
             foreach (var roleId in dto.RoleIds)
             {

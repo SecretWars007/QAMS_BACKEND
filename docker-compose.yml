@@ -57,6 +57,9 @@ services:
       EncryptionSettings__IV: "1234567890123456"
       Redis__Configuration: "redis:6379"
       FRONTEND_URL: "http://localhost:4200"
+      SmtpSettings__Username: ${SMTP_USERNAME}
+      SmtpSettings__Password: ${SMTP_PASSWORD}
+      SmtpSettings__FromEmail: ${SMTP_USERNAME}
     ports:
       - "5000:8080"
     depends_on:

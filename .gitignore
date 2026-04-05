@@ -34,3 +34,9 @@ logs/
 [Bb]in/
 [Oo]bj/
 publish/
+
+# Miscellaneous
+*.txt
+
+# Text files
+*.txt

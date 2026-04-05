@@ -98,24 +98,49 @@ namespace QAMS.Application.Services
 
         public async Task<LoginResponseDto> RegisterAsync(RegisterRequestDto request)
         {
-            _logger.LogInformation("Registro: '{Username}'.", request.Username);
+            _logger.LogInformation("Intento de registro: '{Username}' con email '{Email}'.", request.Username, request.Email);
 
-            if (await _userRepo.GetByUsernameAsync(request.Username) is not null || 
-                await _userRepo.GetByEmailAsync(request.Email) is not null)
+            // 1. Validar nombre de usuario estrictamente (físico)
+            var userWithSameName = await _userRepo.GetByUsernamePhysicalAsync(request.Username);
+            if (userWithSameName != null)
             {
-                throw new DomainException("El nombre de usuario o correo electrónico ya está en uso.");
+                _logger.LogWarning("Registro fallido: El nombre de usuario '{Username}' ya existe en el historial.", request.Username);
+                throw new DomainException("El nombre de usuario ya está en uso. Por favor, selecciona otro.");
             }
 
-            // Validar edad (entre 18 y 80 años)
+            // 2. Validar email físicamente
+            var existingEmailUser = await _userRepo.GetByEmailPhysicalAsync(request.Email);
+            if (existingEmailUser != null)
+            {
+                if (!existingEmailUser.IsDeleted)
+                {
+                    _logger.LogWarning("Registro fallido: El email '{Email}' ya está en uso y activo.", request.Email);
+                    throw new DomainException("El correo electrónico ya está en uso.");
+                }
+
+                _logger.LogInformation("Email '{Email}' encontrado en usuario eliminado. Procediendo a registro como nuevo usuario (anoniizando anterior)...", request.Email);
+                
+                // Anonimizar el registro anterior para liberar el email y username en la DB
+                // Esto permite insertar un NUEVO registro con el mismo email original sin violar índices únicos
+                existingEmailUser.Email = $"deleted_{Guid.NewGuid()}_{existingEmailUser.Email}";
+                existingEmailUser.Username = $"deleted_{Guid.NewGuid()}_{existingEmailUser.Username}";
+                existingEmailUser.UpdatedAt = DateTime.UtcNow;
+
+                _userRepo.Update(existingEmailUser);
+                await _uow.SaveChangesAsync(); // Guardar anonimización primero
+            }
+
+            // 3. Validar edad (entre 18 y 80 años)
             var age = DateTime.Today.Year - request.FechaNacimiento.Year;
             if (request.FechaNacimiento.ToDateTime(TimeOnly.MinValue).Date > DateTime.Today.AddYears(-age)) age--;
             if (age < 18 || age > 80)
                 throw new DomainException("La edad del usuario debe estar entre 18 y 80 años.");
 
-            // Validar que el Documento y Fecha no estén duplicados (Índice único compuesto)
+            // 4. Validar que el Documento y Fecha no estén duplicados (Índice único compuesto)
             if (await _userRepo.AnyAsync(u => u.DocumentoIdentidad == request.DocumentoIdentidad && u.FechaNacimiento == request.FechaNacimiento))
                 throw new DomainException($"El documento de identidad '{request.DocumentoIdentidad}' vinculado a esa fecha de nacimiento ya está registrado en el sistema.");
 
+            // 5. Crear NUEVO usuario
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -127,13 +152,14 @@ namespace QAMS.Application.Services
                 FechaNacimiento = request.FechaNacimiento,
                 Telefono = request.Telefono,
                 IsActive = true,
+                IsDeleted = false,
                 CreatedAt = DateTime.UtcNow
             };
 
             await _userRepo.AddAsync(user);
-            await _uow.SaveChangesAsync();
+            await _uow.SaveChangesAsync(); 
 
-            _logger.LogInformation("Usuario registrado: '{Username}' ({Id}).", user.Username, user.Id);
+            _logger.LogInformation("Usuario registrado como NUEVO registro: '{Username}' ({Id}).", user.Username, user.Id);
 
             // Enviar correo de bienvenida (no bloquea el registro si falla)
             try
