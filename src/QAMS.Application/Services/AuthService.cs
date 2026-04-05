@@ -118,12 +118,21 @@ namespace QAMS.Application.Services
                     throw new DomainException("El correo electrónico ya está en uso.");
                 }
 
-                _logger.LogInformation("Email '{Email}' encontrado en usuario eliminado. Procediendo a registro como nuevo usuario (anoniizando anterior)...", request.Email);
+                _logger.LogInformation("Email '{Email}' encontrado en usuario eliminado. Procediendo a registro como nuevo usuario (anonimizando anterior)...", request.Email);
                 
-                // Anonimizar el registro anterior para liberar el email y username en la DB
-                // Esto permite insertar un NUEVO registro con el mismo email original sin violar índices únicos
-                existingEmailUser.Email = $"deleted_{Guid.NewGuid()}_{existingEmailUser.Email}";
-                existingEmailUser.Username = $"deleted_{Guid.NewGuid()}_{existingEmailUser.Username}";
+                // Anonimizar el registro anterior para liberar el email, username y documento en la DB
+                // Esto permite insertar un NUEVO registro con los mismos datos originales sin violar índices únicos
+                var suffix = Guid.NewGuid().ToString().Substring(0, 8);
+                existingEmailUser.Email = $"deleted_{suffix}_{existingEmailUser.Email}";
+                existingEmailUser.Username = $"deleted_{suffix}_{existingEmailUser.Username}";
+                
+                // Limpiar el documento para liberar el índice único (DocumentoIdentidad + FechaNacimiento)
+                // Max length de DocumentoIdentidad es 20
+                if (existingEmailUser.DocumentoIdentidad.Length <= 12)
+                    existingEmailUser.DocumentoIdentidad = $"del_{suffix}_{existingEmailUser.DocumentoIdentidad}";
+                else
+                    existingEmailUser.DocumentoIdentidad = $"del_{suffix}"; 
+
                 existingEmailUser.UpdatedAt = DateTime.UtcNow;
 
                 _userRepo.Update(existingEmailUser);
