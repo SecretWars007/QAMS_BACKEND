@@ -39,6 +39,7 @@ namespace QAMS.Infrastructure.Repositories
             return await _dbSet
                 .Include(p => p.CreatedBy)
                 .Include(p => p.ProjectStatus)
+                .Include(p => p.ProjectPriority)
                 .Include(p => p.ProjectTesters)
                     .ThenInclude(pt => pt.User)
                 .Include(p => p.TestSuites)
@@ -62,14 +63,11 @@ namespace QAMS.Infrastructure.Repositories
             return await _dbSet
                 .Include(p => p.CreatedBy)
                 .Include(p => p.ProjectStatus)
+                .Include(p => p.ProjectPriority)
                 .Include(p => p.ProjectTesters)
                     .ThenInclude(pt => pt.User)
                 .Include(p => p.TestSuites)
-                .Include(p => p.TestCases)
-                    .ThenInclude(tc => tc.TestSteps)
                 .Include(p => p.KanbanBoards)
-                    .ThenInclude(kb => kb.Columns)
-                        .ThenInclude(kc => kc.Tasks)
                 .Include(p => p.HistoricDevolutions)
                 .Include(p => p.Requirements)
                 .Where(predicate)

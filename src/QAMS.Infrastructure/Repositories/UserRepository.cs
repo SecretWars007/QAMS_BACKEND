@@ -444,7 +444,7 @@ namespace QAMS.Infrastructure.Repositories
             // PASO 2: Marcar todos para eliminación (RemoveRange)
             // ============================================================
 
-            if (assignments.Any())
+            if (assignments.Count > 0)
             {
                 _context.UserRoles.RemoveRange(assignments);
             }

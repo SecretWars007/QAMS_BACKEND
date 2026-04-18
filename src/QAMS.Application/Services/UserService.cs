@@ -82,25 +82,44 @@ namespace QAMS.Application.Services
             // El valor {Username} se extrae de dto.Username
             _logger.LogInformation("Creando usuario '{Username}'.", dto.Username);
 
-            // VALIDACIÓN: Verificar que el username sea único en el sistema (Incluso borrados)
-            // Usamos IgnoreQueryFilters para asegurar que el username sea único globalmente
-            if (await _userRepo.AnyWithFilterAsync(u => u.Username == dto.Username))
-                throw new DomainException($"Username '{dto.Username}' ya existe.");
+            // 1. Validar conflictos ACTIVOS primero (para arrojar 400 Bad Request)
+            var allConflicts = await _userRepo.GetPhysicalConflictsAsync(dto.Email, dto.Username, dto.DocumentoIdentidad);
+            
+            var activeConflicts = allConflicts.Where(u => !u.IsDeleted).ToList();
+            if (activeConflicts.Count > 0)
+            {
+                var first = activeConflicts.First();
+                if (string.Equals(first.Email, dto.Email, StringComparison.OrdinalIgnoreCase))
+                    throw new DomainException($"El email '{dto.Email}' ya está siendo usado por otro usuario activo.");
+                if (string.Equals(first.Username, dto.Username, StringComparison.OrdinalIgnoreCase))
+                    throw new DomainException($"El nombre de usuario '{dto.Username}' ya existe.");
+                if (first.DocumentoIdentidad == dto.DocumentoIdentidad)
+                    throw new DomainException($"El Documento de Identidad '{dto.DocumentoIdentidad}' ya está registrado con otro usuario activo.");
+            }
 
-            // VALIDACIÓN: Verificar que el email sea único (solo para activos)
-            // El filtro global de EF Core ya se encarga de ignorar a los borrados lógicamente
-            if (await _userRepo.AnyAsync(u => u.Email == dto.Email))
-                throw new DomainException($"Email '{dto.Email}' ya está en uso por otro usuario activo.");
+            // 2. Limpiar/Anonimizar conflictos HISTÓRICOS (eliminados)
+            var historicalConflicts = allConflicts.Where(u => u.IsDeleted).ToList();
+            foreach (var oldUser in historicalConflicts)
+            {
+                _logger.LogInformation("Anonimizando registro histórico conflictivo (ID: {UserId}) para permitir nueva creación admin.", oldUser.Id);
+                
+                // Limpiar campos únicos para que no choquen con el registro físico nuevo
+                var timestamp = DateTime.UtcNow.Ticks;
+                oldUser.Email = $"deleted_{timestamp}_{oldUser.Email}";
+                oldUser.Username = $"deleted_{timestamp}_{oldUser.Username}";
+                oldUser.DocumentoIdentidad = $"DEL_{timestamp}";
+                oldUser.UpdatedAt = DateTime.UtcNow;
 
-            // VALIDACIÓN: El usuario debe tener entre 18 y 80 años de edad
+                _userRepo.Update(oldUser);
+            }
+
+            // 3. Validar edad (entre 18 y 80 años)
             var age = DateTime.Today.Year - dto.FechaNacimiento.Year;
             if (dto.FechaNacimiento.ToDateTime(TimeOnly.MinValue).Date > DateTime.Today.AddYears(-age)) age--;
             if (age < 18 || age > 80)
                 throw new DomainException("El usuario debe tener entre 18 y 80 años de edad.");
 
-            // VALIDACIÓN: Combinación DocumentoIdentidad + FechaNacimiento única
-            if (await _userRepo.AnyAsync(u => u.DocumentoIdentidad == dto.DocumentoIdentidad && u.FechaNacimiento == dto.FechaNacimiento))
-                throw new DomainException($"Ya existe un usuario con el Documento de Identidad '{dto.DocumentoIdentidad}' y la misma Fecha de Nacimiento.");
+            // CREAR NUEVA ENTIDAD: Instanciar User con valores iniciales
 
             // CREAR NUEVA ENTIDAD: Instanciar User con valores iniciales
             var user = new User
@@ -167,51 +186,36 @@ namespace QAMS.Application.Services
             // SECCIÓN 1: Actualizar campos básicos del usuario
             // ============================================================
 
-            // VALIDACIÓN: El email no debe estar en uso por OTRO usuario
-            if (user.Email != dto.Email && await _userRepo.AnyAsync(u => u.Email == dto.Email && u.Id != id))
-                throw new DomainException($"El email '{dto.Email}' ya está siendo usado por otro usuario.");
-
-            if (dto.IsActive.HasValue)
-            {
-                // VALIDACIÓN: No permitir auto-desactivación (similar a self-delete)
-                if (id == _currentUserService.UserId && !dto.IsActive.Value && user.IsActive)
-                {
-                    _logger.LogWarning("Intento de auto-desactivación bloqueado para el usuario {UserId}.", id);
-                    throw new DomainException("No puedes desactivar tu propio usuario desde este endpoint. Usa la configuración de perfil si está disponible.");
-                }
-
-                // VALIDACIÓN: No permitir inactivar si tiene roles asignados
-                if (!dto.IsActive.Value && user.IsActive && user.UserRoles != null && user.UserRoles.Count > 0)
-                {
-                    _logger.LogWarning("Intento de inactivación fallido: El usuario {UserId} tiene roles asignados.", id);
-                    throw new DomainException("No se puede inactivar al usuario si tiene roles asignados. Primero remueve sus roles.");
-                }
-
-                user.IsActive = dto.IsActive.Value;
-            }
-
-            // Actualizar campos básicos
-            user.Email = dto.Email;
-            user.FullName = dto.FullName;
-            
-            // Validar edad si cambió la fecha
-            if (dto.FechaNacimiento.HasValue)
-            {
-                var age = DateTime.Today.Year - dto.FechaNacimiento.Value.Year;
-                if (dto.FechaNacimiento.Value.ToDateTime(TimeOnly.MinValue).Date > DateTime.Today.AddYears(-age)) age--;
-                if (age < 18 || age > 80)
-                    throw new DomainException("El usuario debe tener entre 18 y 80 años de edad.");
-            }
-
-            // Validar unicidad si el Documento o Fecha cambian
+            // 1. Validar conflictos (Email, Documento) e ignorar históricos durante la validación de activos
             var doc = dto.DocumentoIdentidad ?? user.DocumentoIdentidad;
-            var fec = dto.FechaNacimiento ?? user.FechaNacimiento;
-
-            if ((dto.DocumentoIdentidad != null && dto.DocumentoIdentidad != user.DocumentoIdentidad) || 
-                (dto.FechaNacimiento.HasValue && dto.FechaNacimiento.Value != user.FechaNacimiento))
+            var allConflicts = await _userRepo.GetPhysicalConflictsAsync(dto.Email, user.Username, doc);
+            
+            // Validar conflictos ACTIVOS (excluyendo al usuario actual)
+            var activeConflicts = allConflicts.Where(u => !u.IsDeleted && u.Id != id).ToList();
+            if (activeConflicts.Count > 0)
             {
-                if (await _userRepo.AnyAsync(u => u.DocumentoIdentidad == doc && u.FechaNacimiento == fec && u.Id != id))
-                    throw new DomainException("Ya existe otro usuario con la misma combinación de Documento de Identidad y Fecha de Nacimiento.");
+                var first = activeConflicts.First();
+                if (string.Equals(first.Email, dto.Email, StringComparison.OrdinalIgnoreCase))
+                    throw new DomainException($"El email '{dto.Email}' ya está siendo usado por otro usuario activo.");
+                if (first.DocumentoIdentidad == doc && (dto.DocumentoIdentidad != null || dto.FechaNacimiento.HasValue))
+                {
+                    var fec = dto.FechaNacimiento ?? user.FechaNacimiento;
+                    if (first.FechaNacimiento == fec)
+                        throw new DomainException("Ya existe otro usuario activo con la misma combinación de Documento de Identidad y Fecha de Nacimiento.");
+                }
+            }
+
+            // 2. Limpiar/Anonimizar conflictos HISTÓRICOS (eliminados)
+            var historicalConflicts = allConflicts.Where(u => u.IsDeleted).ToList();
+            foreach (var oldUser in historicalConflicts)
+            {
+                _logger.LogInformation("Anonimizando registro histórico conflictivo (ID: {UserId}) para permitir actualización admin.", oldUser.Id);
+                var timestamp = DateTime.UtcNow.Ticks;
+                oldUser.Email = $"deleted_{timestamp}_{oldUser.Email}";
+                oldUser.Username = $"deleted_{timestamp}_{oldUser.Username}";
+                oldUser.DocumentoIdentidad = $"DEL_{timestamp}";
+                oldUser.UpdatedAt = DateTime.UtcNow;
+                _userRepo.Update(oldUser);
             }
 
             if (dto.DocumentoIdentidad != null) user.DocumentoIdentidad = dto.DocumentoIdentidad;

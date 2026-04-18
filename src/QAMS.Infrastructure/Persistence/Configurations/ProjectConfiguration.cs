@@ -2,8 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using QAMS.Domain.Entities;
-
-using QAMS.Infrastructure.Persistence.Configurations;
 using QAMS.Domain.Entities.Catalogs;
 
 namespace QAMS.Infrastructure.Persistence.Configurations
@@ -24,8 +22,8 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(p => p.WorkHoursPerDay).HasColumnName("work_hours_per_day").HasDefaultValue(7);
             builder.Property(p => p.ExecutedHours).HasColumnName("executed_hours").HasColumnType("numeric(10,2)").HasDefaultValue(0m);
             builder.Property(p => p.RemainingHours).HasColumnName("remaining_hours").HasColumnType("numeric(10,2)").HasDefaultValue(0m);
-            builder.Property(p => p.ProjectPriorityId).HasColumnName("project_priority_id").HasDefaultValue(1); // Default: LOW o MEDIUM
-            builder.Property(p => p.ProjectStatusId).HasColumnName("project_status_id").HasDefaultValue(1); // Default: Pendiente
+            builder.Property(p => p.ProjectPriorityId).HasColumnName("project_priority_id").HasDefaultValue(1);
+            builder.Property(p => p.ProjectStatusId).HasColumnName("project_status_id").HasDefaultValue(1);
 
             // Nuevos Campos requeridos
             builder.Property(p => p.Version).HasColumnName("version").HasMaxLength(50).HasDefaultValue("1.0");
@@ -65,6 +63,11 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.HasOne(p => p.ProjectPriority)
                 .WithMany(s => s.Projects)
                 .HasForeignKey(p => p.ProjectPriorityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(p => p.ProjectStatus)
+                .WithMany(s => s.Projects)
+                .HasForeignKey(p => p.ProjectStatusId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Property(p => p.DevolucionesCounter).HasColumnName("devoluciones_counter").HasDefaultValue(0);

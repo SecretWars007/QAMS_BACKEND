@@ -18,7 +18,9 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             ];
         private static readonly string[] sourceArray0 =
             [
-                "PROJECTS_VIEW", "TEST_CASES_VIEW", "TEST_CASES_CREATE", "TEST_CASES_UPDATE",
+                "PROJECTS_VIEW", "PROJECTS_CREATE", "PROJECTS_UPDATE",
+                "USERS_VIEW",
+                "TEST_CASES_VIEW", "TEST_CASES_CREATE", "TEST_CASES_UPDATE",
                 "EXECUTIONS_VIEW", "EXECUTIONS_CREATE", "EXECUTIONS_UPDATE", "EXECUTIONS_UPLOAD_EVIDENCE",
                 "KANBAN_VIEW", "KANBAN_UPDATE", "DASHBOARD_VIEW", "CATALOGS_VIEW"
             ];

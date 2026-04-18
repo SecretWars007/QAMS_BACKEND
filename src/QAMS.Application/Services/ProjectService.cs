@@ -83,12 +83,15 @@ namespace QAMS.Application.Services
             // Crear Tablero Kanban automáticamente
             await kanbanService.CreateBoardAsync(project.Id, $"Tablero - {project.Name}");
 
-            logger.LogInformation("Proyecto '{Name}' creado con ID {Id}.", project.Name, project.Id);
+            // Recargar el proyecto con detalles para el mapeo (Status, Priority, etc)
+            var createdProject = await projectRepo.GetWithDetailsAsync(project.Id);
             
-            // Send email notification to testers and creator
+            logger.LogInformation("Proyecto '{Name}' creado con ID {Id}.", project.Name, project.Id);
+
+            // Notificación (opcional/asíncrona en el try-catch)
             await NotifyProjectTestersAsync(project, "Creado", "GetProjectCreatedEmailHtml");
 
-            return mapper.Map<ProjectDto>(project);
+            return mapper.Map<ProjectDto>(createdProject ?? project);
         }
 
         public async Task<ProjectDto> UpdateAsync(Guid id, CreateProjectDto dto)
