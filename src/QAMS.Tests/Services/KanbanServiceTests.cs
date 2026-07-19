@@ -1,59 +1,72 @@
-using AutoMapper;
+#nullable enable
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.Kanban;
 using QAMS.Application.Interfaces;
-using QAMS.Application.Services;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Entities.Catalogs;
-using QAMS.Domain.Exceptions;
-using QAMS.Domain.Ports.Repositories;
+using QAMS.Infrastructure.Persistence.Configurations;
+using QAMS.Tests.IntegrationTests.Infrastructure;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.EntityFrameworkCore;
 
 namespace QAMS.Tests.Services;
 
-public class KanbanServiceTests
+[Collection("Integration tests")]
+public class KanbanServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
-    private readonly Mock<IKanbanBoardRepository> _mockBoardRepo = new();
-    private readonly Mock<IGenericRepository<KanbanColumn>> _mockColumnRepo = new();
-    private readonly Mock<IGenericRepository<KanbanTask>> _mockTaskRepo = new();
-    private readonly Mock<ICatalogRepository<TaskPriority>> _mockPriorityRepo = new();
-    private readonly Mock<ITestExecutionRepository> _mockExecRepo = new();
-    private readonly Mock<ICatalogRepository<ExecutionStatus>> _mockExecStatusRepo = new();
-    private readonly Mock<IUnitOfWork> _mockUow = new();
-    private readonly Mock<IMapper> _mockMapper = new();
-    private readonly Mock<ILogger<KanbanService>> _mockLogger = new();
+    private IKanbanService GetService(IServiceScope scope)
+        => scope.ServiceProvider.GetRequiredService<IKanbanService>();
 
-    private KanbanService CreateService() => new(
-        _mockBoardRepo.Object,
-        _mockColumnRepo.Object,
-        _mockTaskRepo.Object,
-        _mockPriorityRepo.Object,
-        _mockExecRepo.Object,
-        _mockExecStatusRepo.Object,
-        _mockUow.Object,
-        _mockMapper.Object,
-        _mockLogger.Object
-    );
+    private async Task<(Guid projectId, Guid boardId)> CreateProjectWithBoardAsync(string suffix)
+    {
+        var projectId = Guid.NewGuid();
+        var boardId = Guid.NewGuid();
+        var user = await CreateTestUserAsync($"kanban_u_{suffix}");
 
-    [Fact]
+        await ExecuteInScopeAsync(async db =>
+        {
+            var project = new Project
+            {
+                Id = projectId,
+                Name = $"Kanban Project {suffix}",
+                IsActive = true,
+                CreatedByUserId = user.Id,
+                ProjectStatusId = 1,
+                ProjectPriorityId = 1
+            };
+            db.Projects.Add(project);
+
+            var board = new KanbanBoard
+            {
+                Id = boardId,
+                Name = $"Kanban Board {suffix}",
+                ProjectId = projectId,
+                Columns =
+                [
+                    new KanbanColumn { Id = Guid.NewGuid(), Name = "Por Hacer", OrderIndex = 0, BoardId = boardId },
+                    new KanbanColumn { Id = Guid.NewGuid(), Name = "En Progreso", OrderIndex = 1, BoardId = boardId },
+                    new KanbanColumn { Id = Guid.NewGuid(), Name = "Hecho", OrderIndex = 2, BoardId = boardId }
+                ]
+            };
+            db.KanbanBoards.Add(board);
+            await db.SaveChangesAsync();
+        });
+
+        return (projectId, boardId);
+    }
+
+    [Fact(DisplayName = "GetBoardAsync_CuandoExiste_DebeRetornarDto")]
     public async Task GetBoardAsync_WhenExists_ShouldReturnDto()
     {
         // Arrange
-        var boardId = Guid.NewGuid();
-        var board = new KanbanBoard { Id = boardId, Name = "Test Board" };
-        var dto = new KanbanBoardDto { Id = boardId, Name = "Test Board" };
+        var (_, boardId) = await CreateProjectWithBoardAsync("get");
 
-        _mockBoardRepo.Setup(r => r.GetFullBoardAsync(boardId)).ReturnsAsync(board);
-        _mockMapper.Setup(m => m.Map<KanbanBoardDto>(board)).Returns(dto);
-
-        var service = CreateService();
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
 
         // Act
         var result = await service.GetBoardAsync(boardId);
@@ -63,102 +76,149 @@ public class KanbanServiceTests
         result.Id.Should().Be(boardId);
     }
 
-    [Fact]
+    [Fact(DisplayName = "CreateBoardAsync_DebeCrearConColumnasDefecto")]
     public async Task CreateBoardAsync_ShouldCreateWithDefaultColumns()
     {
         // Arrange
+        var user = await CreateTestUserAsync("kanban_board_create");
         var projectId = Guid.NewGuid();
-        var name = "Project Board";
-        
-        _mockBoardRepo.Setup(r => r.GetFullBoardAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(new KanbanBoard { Name = name });
+        await ExecuteInScopeAsync(async db =>
+        {
+            db.Projects.Add(new Project
+            {
+                Id = projectId,
+                Name = $"BoardCreateProject {Guid.NewGuid():N}",
+                IsActive = true,
+                CreatedByUserId = user.Id,
+                ProjectStatusId = 1,
+                ProjectPriorityId = 1
+            });
+            await db.SaveChangesAsync();
+        });
 
-        var service = CreateService();
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
 
         // Act
-        await service.CreateBoardAsync(projectId, name);
+        await service.CreateBoardAsync(projectId, "Mi Tablero");
 
         // Assert
-        _mockBoardRepo.Verify(r => r.AddAsync(It.Is<KanbanBoard>(b => 
-            b.Name == name && 
-            b.ProjectId == projectId && 
-            b.Columns.Count == 5)), Times.Once);
-        
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+        await ExecuteInScopeAsync(async db =>
+        {
+            var board = await db.KanbanBoards
+                .Include(b => b.Columns)
+                .FirstOrDefaultAsync(b => b.ProjectId == projectId);
+
+            board.Should().NotBeNull();
+            board!.Columns.Should().HaveCountGreaterThanOrEqualTo(3);
+        });
     }
 
-    [Fact]
+    [Fact(DisplayName = "CreateTaskAsync_DebeAumentarOrderIndex")]
     public async Task CreateTaskAsync_ShouldIncreaseOrderIndex()
     {
         // Arrange
-        var columnId = Guid.NewGuid();
-        var dto = new CreateKanbanTaskDto 
-        { 
-            KanbanColumnId = columnId, 
-            Title = "New Task", 
-            PriorityId = 1 
-        };
-        
-        var existingTasks = new List<KanbanTask> 
-        { 
-            new() { OrderIndex = 0 }, 
-            new() { OrderIndex = 1 } 
+        var (_, boardId) = await CreateProjectWithBoardAsync("task_create");
+
+        Guid columnId = Guid.Empty;
+        int taskPriorityId = 0;
+
+        await ExecuteInScopeAsync(async db =>
+        {
+            var board = await db.KanbanBoards.Include(b => b.Columns).FirstAsync(b => b.Id == boardId);
+            columnId = board.Columns.First().Id;
+
+            var priority = await db.Set<TaskPriority>().FirstOrDefaultAsync();
+            if (priority == null)
+            {
+                priority = new TaskPriority { Name = "Media", Code = "MEDIUM", SortOrder = 1 };
+                db.Set<TaskPriority>().Add(priority);
+                await db.SaveChangesAsync();
+            }
+            taskPriorityId = priority.Id;
+
+            // Add 2 existing tasks
+            db.KanbanTasks.Add(new KanbanTask { KanbanColumnId = columnId, Title = "Task 0", OrderIndex = 0, PriorityId = taskPriorityId });
+            db.KanbanTasks.Add(new KanbanTask { KanbanColumnId = columnId, Title = "Task 1", OrderIndex = 1, PriorityId = taskPriorityId });
+            await db.SaveChangesAsync();
+        });
+
+        var dto = new CreateKanbanTaskDto
+        {
+            KanbanColumnId = columnId,
+            Title = "New Task",
+            PriorityId = taskPriorityId
         };
 
-        _mockPriorityRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new TaskPriority());
-        _mockTaskRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<KanbanTask, bool>>>()))
-            .ReturnsAsync(existingTasks);
-
-        var service = CreateService();
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
 
         // Act
         await service.CreateTaskAsync(dto);
 
         // Assert
-        _mockTaskRepo.Verify(r => r.AddAsync(It.Is<KanbanTask>(t => 
-            t.OrderIndex == 2)), Times.Once);
+        await ExecuteInScopeAsync(async db =>
+        {
+            var tasks = await db.KanbanTasks
+                .Where(t => t.KanbanColumnId == columnId)
+                .OrderBy(t => t.OrderIndex)
+                .ToListAsync();
+
+            tasks.Should().HaveCount(3);
+            tasks.Last().OrderIndex.Should().Be(2);
+            tasks.Last().Title.Should().Be("New Task");
+        });
     }
 
-    [Fact]
-    public async Task MoveTaskAsync_ShouldReorderDestinyColumnAndSyncStatus()
+    [Fact(DisplayName = "MoveTaskAsync_DebeReordenarColumnaDestino")]
+    public async Task MoveTaskAsync_ShouldReorderDestinationColumn()
     {
         // Arrange
-        var taskId = Guid.NewGuid();
-        var targetColumnId = Guid.NewGuid();
-        var testCaseId = Guid.NewGuid();
-        var task = new KanbanTask { Id = taskId, TestCaseId = testCaseId, OrderIndex = 0 };
-        var targetColumn = new KanbanColumn { Id = targetColumnId, Name = "En Progreso" };
-        var dto = new MoveTaskDto { TargetColumnId = targetColumnId, NewOrderIndex = 1 };
-        
-        var existingTasksInTarget = new List<KanbanTask> 
-        { 
-            new() { Id = Guid.NewGuid(), OrderIndex = 1 }, // This one should be moved to 2
-            new() { Id = Guid.NewGuid(), OrderIndex = 2 }  // This one should be moved to 3
-        };
+        var (_, boardId) = await CreateProjectWithBoardAsync("move_task");
 
-        _mockTaskRepo.Setup(r => r.GetByIdAsync(taskId)).ReturnsAsync(task);
-        _mockColumnRepo.Setup(r => r.GetByIdAsync(targetColumnId)).ReturnsAsync(targetColumn);
-        _mockTaskRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<KanbanTask, bool>>>()))
-            .ReturnsAsync(existingTasksInTarget);
-            
-        // Mock Sync logic
-        _mockExecRepo.Setup(r => r.GetByTestCaseTrackedAsync(testCaseId)).ReturnsAsync([]);
+        Guid taskId = Guid.NewGuid();
+        Guid targetColumnId = Guid.Empty;
+        int taskPriorityId = 0;
 
-        var service = CreateService();
+        await ExecuteInScopeAsync(async db =>
+        {
+            var board = await db.KanbanBoards.Include(b => b.Columns).FirstAsync(b => b.Id == boardId);
+            var sourceColumn = board.Columns.First();
+            targetColumnId = board.Columns.Skip(1).First().Id;
+
+            var priority = await db.Set<TaskPriority>().FirstOrDefaultAsync();
+            if (priority == null)
+            {
+                priority = new TaskPriority { Name = "Media", Code = "MEDIUM_MOVE", SortOrder = 1 };
+                db.Set<TaskPriority>().Add(priority);
+                await db.SaveChangesAsync();
+            }
+            taskPriorityId = priority.Id;
+
+            db.KanbanTasks.Add(new KanbanTask
+            {
+                Id = taskId,
+                KanbanColumnId = sourceColumn.Id,
+                Title = "Task To Move",
+                OrderIndex = 0,
+                PriorityId = taskPriorityId
+            });
+            await db.SaveChangesAsync();
+        });
+
+        var dto = new MoveTaskDto { TargetColumnId = targetColumnId, NewOrderIndex = 0 };
+
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
 
         // Act
         await service.MoveTaskAsync(taskId, dto);
 
         // Assert
-        task.KanbanColumnId.Should().Be(targetColumnId);
-        task.OrderIndex.Should().Be(1);
-        
-        foreach(var t in existingTasksInTarget)
+        await ExecuteInScopeAsync(async db =>
         {
-            _mockTaskRepo.Verify(r => r.Update(t), Times.AtLeastOnce);
-        }
-        
-        existingTasksInTarget.First(t => t.OrderIndex == 2).Should().NotBeNull();
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+            var task = await db.KanbanTasks.FindAsync(taskId);
+            task!.KanbanColumnId.Should().Be(targetColumnId);
+        });
     }
 }

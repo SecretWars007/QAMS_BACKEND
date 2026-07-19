@@ -1,67 +1,126 @@
-using Moq;
-using AutoMapper;
-using Microsoft.Extensions.Logging;
-using QAMS.Application.Services;
+#nullable enable
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using QAMS.Application.DTOs.TestSuites;
 using QAMS.Application.Interfaces;
-using QAMS.Domain.Ports.Repositories;
-using QAMS.Domain.Ports.Services;
 using QAMS.Domain.Entities;
-using Xunit;
+using QAMS.Domain.Exceptions;
+using QAMS.Infrastructure.Persistence.Configurations;
+using QAMS.Tests.IntegrationTests.Infrastructure;
 using System;
 using System.Threading.Tasks;
+using Xunit;
+using Microsoft.EntityFrameworkCore;
 
-namespace QAMS.Tests.Services
+namespace QAMS.Tests.Services;
+
+[Collection("Integration tests")]
+public class TestSuiteServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
-    public class TestSuiteServiceTests
+    private ITestSuiteService GetService(IServiceScope scope)
+        => scope.ServiceProvider.GetRequiredService<ITestSuiteService>();
+
+    [Fact(DisplayName = "GetByIdAsync_CuandoExiste_DebeRetornarDto")]
+    public async Task GetByIdAsync_WhenExists_ReturnsDto()
     {
-        private readonly Mock<ITestSuiteRepository> _testSuiteRepoMock;
-        private readonly Mock<IProjectRepository> _projectRepoMock;
-        private readonly Mock<IUnitOfWork> _uowMock;
-        private readonly Mock<IMapper> _mapperMock;
-        private readonly Mock<ILogger<TestSuiteService>> _loggerMock;
-        private readonly Mock<IEmailService> _emailServiceMock;
-        private readonly Mock<ICurrentUserService> _currentUserServiceMock;
-        private readonly Mock<IUserRepository> _userRepoMock;
-        private readonly TestSuiteService _service;
+        // Arrange
+        var user = await CreateTestUserAsync("suite_user");
+        var projectId = Guid.NewGuid();
+        var suiteId = Guid.NewGuid();
 
-        public TestSuiteServiceTests()
+        await ExecuteInScopeAsync(async db =>
         {
-            _testSuiteRepoMock = new Mock<ITestSuiteRepository>();
-            _projectRepoMock = new Mock<IProjectRepository>();
-            _uowMock = new Mock<IUnitOfWork>();
-            _mapperMock = new Mock<IMapper>();
-            _loggerMock = new Mock<ILogger<TestSuiteService>>();
-            _emailServiceMock = new Mock<IEmailService>();
-            _currentUserServiceMock = new Mock<ICurrentUserService>();
-            _userRepoMock = new Mock<IUserRepository>();
+            db.Projects.Add(new Project
+            {
+                Id = projectId,
+                Name = $"Suite Project {Guid.NewGuid():N}",
+                IsActive = true,
+                CreatedByUserId = user.Id,
+                ProjectStatusId = 1,
+                ProjectPriorityId = 1
+            });
 
-            _service = new TestSuiteService(
-                _testSuiteRepoMock.Object,
-                _projectRepoMock.Object,
-                _uowMock.Object,
-                _mapperMock.Object,
-                _loggerMock.Object,
-                _emailServiceMock.Object,
-                _currentUserServiceMock.Object,
-                _userRepoMock.Object);
-        }
+            db.TestSuites.Add(new TestSuite
+            {
+                Id = suiteId,
+                Name = "My Test Suite",
+                ProjectId = projectId,
+                StatusId = 1,
+                CreatedByUserId = user.Id
+            });
 
-        [Fact]
-        public async Task GetByIdAsync_WhenExists_ReturnsDto()
+            await db.SaveChangesAsync();
+        });
+
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
+
+        // Act
+        var result = await service.GetByIdAsync(suiteId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be(suiteId);
+        result.Name.Should().Be("My Test Suite");
+    }
+
+    [Fact(DisplayName = "GetByIdAsync_CuandoNoExiste_DebeRetornarNull")]
+    public async Task GetByIdAsync_WhenNotExists_ShouldThrowEntityNotFoundException()
+    {
+        // Arrange
+        var fakeId = Guid.NewGuid();
+
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
+
+        // Act & Assert — el servicio lanza EntityNotFoundException cuando no existe
+        await Assert.ThrowsAsync<EntityNotFoundException>(() => service.GetByIdAsync(fakeId));
+    }
+
+    [Fact(DisplayName = "CreateAsync_DebeCrearTestSuite")]
+    public async Task CreateAsync_ShouldCreateTestSuite()
+    {
+        // Arrange
+        var user = await CreateTestUserAsync("suite_create_user");
+        var projectId = Guid.NewGuid();
+
+        await ExecuteInScopeAsync(async db =>
         {
-            // Arrange
-            var id = Guid.NewGuid();
-            var suite = new TestSuite { Id = id, Name = "Suite 1" };
-            _testSuiteRepoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(suite);
-            _mapperMock.Setup(m => m.Map<QAMS.Application.DTOs.TestSuites.TestSuiteDto>(suite))
-                .Returns(new QAMS.Application.DTOs.TestSuites.TestSuiteDto { Id = id, Name = "Suite 1" });
+            db.Projects.Add(new Project
+            {
+                Id = projectId,
+                Name = $"Suite Create Project {Guid.NewGuid():N}",
+                IsActive = true,
+                CreatedByUserId = user.Id,
+                ProjectStatusId = 1,
+                ProjectPriorityId = 1
+            });
+            await db.SaveChangesAsync();
+        });
 
-            // Act
-            var result = await _service.GetByIdAsync(id);
+        var dto = new CreateTestSuiteDto
+        {
+            Name = $"New Suite {Guid.NewGuid():N}",
+            ProjectId = projectId
+        };
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(id, result.Id);
-        }
+        // Authenticate
+        Authenticate(user.Id);
+
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
+
+        // Act
+        var result = await service.CreateAsync(dto);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Name.Should().Be(dto.Name);
+
+        await ExecuteInScopeAsync(async db =>
+        {
+            var suite = await db.TestSuites.FirstOrDefaultAsync(s => s.Name == dto.Name);
+            suite.Should().NotBeNull();
+        });
     }
 }

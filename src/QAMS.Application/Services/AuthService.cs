@@ -260,7 +260,12 @@ namespace QAMS.Application.Services
                 return string.Empty;
             }
 
-            var token = new Random().Next(100000, 999999).ToString();
+            var randomBytes = new byte[32];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            var token = Convert.ToHexString(randomBytes);
             user.PasswordResetToken = token;
             user.PasswordResetTokenExpiryTime = DateTime.UtcNow.AddMinutes(15);
             user.UpdatedAt = DateTime.UtcNow;

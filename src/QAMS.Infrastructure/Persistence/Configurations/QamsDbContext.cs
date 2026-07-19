@@ -315,7 +315,10 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 {
                     case EntityState.Added:
                         entry.Entity.CreatedAt = now;
-                        entry.Entity.CreatedByUserId = userId;
+                        if (entry.Entity.CreatedByUserId == null || entry.Entity.CreatedByUserId == Guid.Empty)
+                        {
+                            entry.Entity.CreatedByUserId = userId;
+                        }
                         break;
 
                     case EntityState.Modified:

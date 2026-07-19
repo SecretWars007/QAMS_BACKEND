@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using QAMS.Api.Filters;
 using QAMS.Application.DTOs.Auth;
 using QAMS.Application.Interfaces;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace QAMS.Api.Controllers
 {
@@ -26,6 +27,7 @@ namespace QAMS.Api.Controllers
         /// <returns>Token JWT y datos básicos del usuario.</returns>
         [HttpPost("login")]
         [AllowAnonymous]
+        [EnableRateLimiting("AuthLimit")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
             _logger.LogInformation("POST /api/auth/login - Usuario: {Username}", request.Username);
@@ -40,6 +42,7 @@ namespace QAMS.Api.Controllers
         /// <returns>Datos del usuario recién creado.</returns>
         [HttpPost("register")]
         [AllowAnonymous]
+        [EnableRateLimiting("AuthLimit")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
             _logger.LogInformation("POST /api/auth/register - Usuario: {Username}", request.Username);
@@ -82,6 +85,7 @@ namespace QAMS.Api.Controllers
         /// </summary>
         [HttpPost("forgot-password")]
         [AllowAnonymous]
+        [EnableRateLimiting("AuthLimit")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
         {
             _logger.LogInformation("POST /api/auth/forgot-password - Email: {Email}", request.Email);
@@ -104,6 +108,7 @@ namespace QAMS.Api.Controllers
         /// </summary>
         [HttpPost("reset-password")]
         [AllowAnonymous]
+        [EnableRateLimiting("AuthLimit")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
         {
             _logger.LogInformation("POST /api/auth/reset-password - Email: {Email}", request.Email);

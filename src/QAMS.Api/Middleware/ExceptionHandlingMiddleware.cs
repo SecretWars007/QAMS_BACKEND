@@ -18,7 +18,7 @@ namespace QAMS.Api.Middleware
         private readonly RequestDelegate _next = next;
         private readonly ILogger<ExceptionHandlingMiddleware> _logger = logger;
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task InvokeAsync(HttpContext context, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
         {
             try
             {
@@ -42,9 +42,17 @@ namespace QAMS.Api.Middleware
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error interno no controlado.");
-                var detail = ex.ToString();
-                if (ex.InnerException != null)
-                    detail += " | INNER: " + ex.InnerException.ToString();
+                
+                string detail = "Ha ocurrido un error interno en el servidor.";
+                
+                // Mostrar detalles sólo en desarrollo o pruebas
+                if (Microsoft.Extensions.Hosting.HostEnvironmentEnvExtensions.IsDevelopment(env) || env.EnvironmentName == "Testing")
+                {
+                    detail = ex.ToString();
+                    if (ex.InnerException != null)
+                        detail += " | INNER: " + ex.InnerException.ToString();
+                }
+                
                 await WriteResponse(context, HttpStatusCode.InternalServerError, detail);
             }
         }

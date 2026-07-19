@@ -30,7 +30,8 @@ namespace QAMS.Application.Services
             logger.LogInformation("Creando suite de pruebas '{Name}' para el proyecto {ProjectId}.", dto.Name, dto.ProjectId);
             
             // Validar nombre duplicado en el mismo proyecto
-            var existing = await testSuiteRepo.FindAsync(s => s.ProjectId == dto.ProjectId && string.Equals(s.Name, dto.Name, StringComparison.OrdinalIgnoreCase));
+            var dtoNameLower = dto.Name.ToLower();
+            var existing = await testSuiteRepo.FindAsync(s => s.ProjectId == dto.ProjectId && s.Name.ToLower() == dtoNameLower);
             if (existing.Count > 0)
             {
                 throw new DomainException($"Ya existe una suite con el nombre '{dto.Name}' en este proyecto.");
@@ -107,7 +108,8 @@ namespace QAMS.Application.Services
             // Validar nombre duplicado (si cambió)
             if (!string.Equals(suite.Name, dto.Name, StringComparison.OrdinalIgnoreCase))
             {
-                var existing = await testSuiteRepo.FindAsync(s => s.ProjectId == suite.ProjectId && string.Equals(s.Name, dto.Name, StringComparison.OrdinalIgnoreCase));
+                var dtoNameLower = dto.Name.ToLower();
+                var existing = await testSuiteRepo.FindAsync(s => s.ProjectId == suite.ProjectId && s.Name.ToLower() == dtoNameLower);
                 if (existing.Count > 0)
                 {
                     throw new DomainException($"Ya existe otra suite con el nombre '{dto.Name}' en este proyecto.");

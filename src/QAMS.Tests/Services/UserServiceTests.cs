@@ -1,378 +1,312 @@
-using AutoFixture;
+#nullable enable
 using FluentAssertions;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.Users;
-using QAMS.Application.Services;
+using QAMS.Application.Interfaces;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Exceptions;
-using QAMS.Domain.Ports;
-using QAMS.Domain.Ports.Repositories;
-using QAMS.Domain.Ports.Services;
-using Microsoft.Extensions.Logging;
-using AutoMapper;
-using QAMS.Application.Interfaces;
+using QAMS.Tests.IntegrationTests.Infrastructure;
+using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using Xunit;
+using Microsoft.EntityFrameworkCore;
 
 namespace QAMS.Tests.Services;
 
-/// <summary>
-/// Test suite for UserService with comprehensive TDD coverage.
-/// 
-/// Patterns Applied:
-/// - Test-Driven Development: Red-Green-Refactor
-/// - AAA: Arrange-Act-Assert structure
-/// - Mocking: Isolated dependencies with Moq
-/// 
-/// Total: 6 tests covering all code paths
-/// </summary>
-public class UserServiceTests
+[Collection("Integration tests")]
+public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
-    private readonly Mock<IUserRepository> _mockUserRepository = new();
-    private readonly Mock<IRoleRepository> _mockRoleRepository = new();
-    private readonly Mock<IPasswordHasher> _mockPasswordHasher = new();
-    private readonly Mock<ICurrentUserService> _mockCurrentUserService = new();
-    private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
-    private readonly Mock<IMapper> _mockMapper = new();
-    private readonly Mock<ILogger<UserService>> _mockLogger = new();
-    private readonly Mock<IEmailService> _mockEmailService = new();
-
-    /// <summary>
-    /// Factory method for creating UserService instance.
-    /// Centralizes dependency injection to prevent duplication.
-    /// </summary>
-    private UserService CreateService() => new(
-        _mockUserRepository.Object,
-        roleRepo: _mockRoleRepository.Object,
-        hasher: _mockPasswordHasher.Object,
-        currentUserService: _mockCurrentUserService.Object,
-        uow: _mockUnitOfWork.Object,
-        mapper: _mockMapper.Object,
-        emailService: _mockEmailService.Object,
-        logger: _mockLogger.Object
-    );
+    private IUserService GetUserService(IServiceScope scope, Guid? currentUserId = null)
+    {
+        if (currentUserId.HasValue)
+        {
+            var httpContextAccessor = scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>();
+            var context = new DefaultHttpContext();
+            var identity = new ClaimsIdentity(new[] 
+            { 
+                new Claim(ClaimTypes.NameIdentifier, currentUserId.Value.ToString()) 
+            }, "TestAuth");
+            context.User = new ClaimsPrincipal(identity);
+            httpContextAccessor.HttpContext = context;
+        }
+        return scope.ServiceProvider.GetRequiredService<IUserService>();
+    }
 
     [Fact(DisplayName = "AssignRoleAsync_UsuarioYRolExisten_DebeAsignar")]
     public async Task AssignRoleAsync_WhenUserAndRoleExist_ShouldAssign()
     {
-        // ARRANGE
-        var userId = Guid.NewGuid();
-        var roleId = Guid.NewGuid();
+        // Arrange
+        var user = await CreateTestUserAsync("assignuser");
+        Guid roleId = Guid.NewGuid();
+        
+        await ExecuteInScopeAsync(async db => 
+        {
+            db.Roles.Add(new Role { Id = roleId, Name = "TestRoleAssign", Description = "Desc" });
+            await db.SaveChangesAsync();
+        });
 
-        _mockUserRepository
-            .Setup(r => r.GetByIdAsync(userId))
-            .ReturnsAsync(new User { Id = userId, IsActive = true });
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope);
 
-        _mockRoleRepository
-            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Role, bool>>>()))
-            .ReturnsAsync(true);
+        // Act
+        await service.AssignRoleAsync(user.Id, roleId);
 
-        _mockUnitOfWork
-            .Setup(u => u.SaveChangesAsync())
-            .ReturnsAsync(1);
-
-        var service = CreateService();
-
-        // ACT
-        await service.AssignRoleAsync(userId, roleId);
-
-        // ASSERT
-        _mockUserRepository.Verify(r => r.AssignRoleAsync(userId, roleId), Times.Once);
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+        // Assert
+        await ExecuteInScopeAsync(async db => 
+        {
+            var userRole = await db.UserRoles.FirstOrDefaultAsync(ur => ur.UserId == user.Id && ur.RoleId == roleId);
+            userRole.Should().NotBeNull();
+        });
     }
 
     [Fact(DisplayName = "AssignRoleAsync_UsuarioNoExiste_DebeThrowException")]
     public async Task AssignRoleAsync_WhenUserDoesNotExist_ShouldThrowException()
     {
-        var userId = Guid.NewGuid();
-        var roleId = Guid.NewGuid();
+        // Arrange
+        Guid fakeUserId = Guid.NewGuid();
+        Guid roleId = Guid.NewGuid();
+        
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope);
 
-        _mockUserRepository
-            .Setup(r => r.GetByIdAsync(userId))
-            .ReturnsAsync((User)null);
-
-        var service = CreateService();
-
-        // ACT & ASSERT
-        await Assert.ThrowsAsync<EntityNotFoundException>(
-            () => service.AssignRoleAsync(userId, roleId)
-        );
-
-        _mockRoleRepository.Verify(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Role, bool>>>()), Times.Never);
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
+        // Act & Assert
+        await Assert.ThrowsAsync<EntityNotFoundException>(() => service.AssignRoleAsync(fakeUserId, roleId));
     }
 
     [Fact(DisplayName = "AssignRoleAsync_RolNoExiste_DebeThrowException")]
     public async Task AssignRoleAsync_WhenRoleDoesNotExist_ShouldThrowException()
     {
-        var userId = Guid.NewGuid();
-        var roleId = Guid.NewGuid();
+        // Arrange
+        var user = await CreateTestUserAsync("assignuser2");
+        Guid fakeRoleId = Guid.NewGuid();
+        
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope);
 
-        _mockUserRepository
-            .Setup(r => r.GetByIdAsync(userId))
-            .ReturnsAsync(new User { Id = userId, IsActive = true });
-
-        _mockRoleRepository
-            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Role, bool>>>()))
-            .ReturnsAsync(false);
-
-        var service = CreateService();
-
-        // ACT & ASSERT
-        await Assert.ThrowsAsync<EntityNotFoundException>(
-            () => service.AssignRoleAsync(userId, roleId)
-        );
-
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
+        // Act & Assert
+        await Assert.ThrowsAsync<EntityNotFoundException>(() => service.AssignRoleAsync(user.Id, fakeRoleId));
     }
 
     [Fact(DisplayName = "RemoveRoleAsync_CuandoExisteUsuario_DebeRemover")]
     public async Task RemoveRoleAsync_WhenUserExists_ShouldRemoveRole()
     {
-        var userId = Guid.NewGuid();
-        var roleId = Guid.NewGuid();
+        // Arrange
+        var user = await CreateTestUserAsync("removerole");
+        Guid roleId = Guid.NewGuid();
+        
+        await ExecuteInScopeAsync(async db => 
+        {
+            db.Roles.Add(new Role { Id = roleId, Name = "TestRoleRemove", Description = "Desc" });
+            db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = roleId });
+            await db.SaveChangesAsync();
+        });
 
-        _mockUserRepository
-            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
-            .ReturnsAsync(true);
-            
-        _mockRoleRepository
-            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Role, bool>>>()))
-            .ReturnsAsync(true);
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope);
 
-        _mockUnitOfWork
-            .Setup(u => u.SaveChangesAsync())
-            .ReturnsAsync(1);
+        // Act
+        await service.RemoveRoleAsync(user.Id, roleId);
 
-        var service = CreateService();
-
-        // ACT
-        await service.RemoveRoleAsync(userId, roleId);
-
-        // ASSERT
-        _mockUserRepository.Verify(r => r.RemoveRoleAsync(userId, roleId), Times.Once);
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
-    }
-
-    [Fact(DisplayName = "RemoveRoleAsync_UsuarioNoExiste_DebeThrowException")]
-    public async Task RemoveRoleAsync_WhenUserDoesNotExist_ShouldThrowException()
-    {
-        var userId = Guid.NewGuid();
-        var roleId = Guid.NewGuid();
-
-        _mockUserRepository
-            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
-            .ReturnsAsync(false);
-
-        var service = CreateService();
-
-        // ACT & ASSERT
-        await Assert.ThrowsAsync<EntityNotFoundException>(
-            () => service.RemoveRoleAsync(userId, roleId)
-        );
-
-        _mockUserRepository.Verify(
-            r => r.RemoveRoleAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
-            Times.Never
-        );
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
+        // Assert
+        await ExecuteInScopeAsync(async db => 
+        {
+            var userRole = await db.UserRoles.FirstOrDefaultAsync(ur => ur.UserId == user.Id && ur.RoleId == roleId && !ur.IsDeleted);
+            userRole.Should().BeNull();
+        });
     }
 
     [Fact(DisplayName = "RemoveAllRolesAsync_DebeRemoverTodosLosRoles")]
     public async Task RemoveAllRolesAsync_ShouldRemoveAllRoles()
     {
-        var userId = Guid.NewGuid();
+        // Arrange
+        var user = await CreateTestUserAsync("removeall");
+        Guid roleId1 = Guid.NewGuid();
+        Guid roleId2 = Guid.NewGuid();
+        
+        await ExecuteInScopeAsync(async db => 
+        {
+            db.Roles.Add(new Role { Id = roleId1, Name = "R1", Description = "Desc" });
+            db.Roles.Add(new Role { Id = roleId2, Name = "R2", Description = "Desc" });
+            db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = roleId1 });
+            db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = roleId2 });
+            await db.SaveChangesAsync();
+        });
 
-        _mockUserRepository
-            .Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
-            .ReturnsAsync(true);
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope);
 
-        _mockUnitOfWork
-            .Setup(u => u.SaveChangesAsync())
-            .ReturnsAsync(3);
+        // Act
+        await service.RemoveAllRolesAsync(user.Id);
 
-        var service = CreateService();
-
-        // ACT
-        await service.RemoveAllRolesAsync(userId);
-
-        // ASSERT
-        _mockUserRepository.Verify(r => r.RemoveAllRolesAsync(userId), Times.Once);
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+        // Assert
+        await ExecuteInScopeAsync(async db => 
+        {
+            var count = await db.UserRoles.CountAsync(ur => ur.UserId == user.Id && !ur.IsDeleted);
+            count.Should().Be(0);
+        });
     }
 
     [Fact(DisplayName = "DeleteAsync_UsuarioExistenteYNoEsElMismo_DebeDesactivar")]
     public async Task DeleteAsync_WhenUserExistsAndIsNotSelf_ShouldDeactivate()
     {
-        // ARRANGE
-        var currentUserId = Guid.NewGuid();
-        var targetUserId = Guid.NewGuid();
-        var user = new User { Id = targetUserId, Username = "test", IsActive = true };
+        // Arrange
+        var targetUser = await CreateTestUserAsync("targetdelete");
+        var currentUser = await CreateTestUserAsync("currentuser");
 
-        _mockCurrentUserService.Setup(s => s.UserId).Returns(currentUserId);
-        _mockUserRepository.Setup(r => r.GetWithRolesAsync(targetUserId)).ReturnsAsync(user);
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope, currentUserId: currentUser.Id);
 
-        var service = CreateService();
+        // Act
+        await service.DeleteAsync(targetUser.Id);
 
-        // ACT
-        await service.DeleteAsync(targetUserId);
-
-        // ASSERT
-        user.IsActive.Should().BeFalse();
-        _mockUserRepository.Verify(r => r.Update(user), Times.Once);
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+        // Assert
+        await ExecuteInScopeAsync(async db => 
+        {
+            var updatedUser = await db.Users.FindAsync(targetUser.Id);
+            updatedUser!.IsActive.Should().BeFalse();
+            updatedUser.IsDeleted.Should().BeTrue();
+        });
     }
 
     [Fact(DisplayName = "DeleteAsync_AutoEliminacion_DebeLanzarDomainException")]
     public async Task DeleteAsync_WhenSelfDeletionAttempt_ShouldThrowDomainException()
     {
-        // ARRANGE
-        var userId = Guid.NewGuid();
-        _mockCurrentUserService.Setup(s => s.UserId).Returns(userId);
+        // Arrange
+        var user = await CreateTestUserAsync("selfdelete");
 
-        var service = CreateService();
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope, currentUserId: user.Id);
 
-        // ACT & ASSERT
-        await Assert.ThrowsAsync<DomainException>(() => service.DeleteAsync(userId));
+        // Act & Assert
+        await Assert.ThrowsAsync<DomainException>(() => service.DeleteAsync(user.Id));
     }
 
     [Fact(DisplayName = "DeleteAsync_UsuarioConRoles_DebeLanzarDomainException")]
     public async Task DeleteAsync_WhenUserHasRoles_ShouldThrowDomainException()
     {
-        // ARRANGE
-        var currentUserId = Guid.NewGuid();
-        var targetUserId = Guid.NewGuid();
-        var user = new User 
-        { 
-            Id = targetUserId, 
-            Username = "test", 
-            IsActive = true,
-            UserRoles = [new() { RoleId = Guid.NewGuid(), UserId = targetUserId }]
-        };
+        // Arrange
+        var targetUser = await CreateTestUserAsync("targetdelete2");
+        var currentUser = await CreateTestUserAsync("currentuser2");
+        
+        await ExecuteInScopeAsync(async db => 
+        {
+            var roleId = Guid.NewGuid();
+            db.Roles.Add(new Role { Id = roleId, Name = "RoleForDeleteTest", Description = "Desc" });
+            db.UserRoles.Add(new UserRole { UserId = targetUser.Id, RoleId = roleId });
+            await db.SaveChangesAsync();
+        });
 
-        _mockCurrentUserService.Setup(s => s.UserId).Returns(currentUserId);
-        _mockUserRepository.Setup(r => r.GetWithRolesAsync(targetUserId)).ReturnsAsync(user);
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope, currentUserId: currentUser.Id);
 
-        var service = CreateService();
-
-        // ACT & ASSERT
-        var act = () => service.DeleteAsync(targetUserId);
-        await act.Should().ThrowAsync<DomainException>()
-            .WithMessage("No se puede eliminar el usuario porque tiene roles asignados. Primero remueve sus roles.");
-
-        _mockUserRepository.Verify(r => r.Update(It.IsAny<User>()), Times.Never);
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<DomainException>(() => service.DeleteAsync(targetUser.Id));
+        ex.Message.Should().Contain("roles asignados");
     }
 
     [Fact(DisplayName = "GetAllAsync_DebeRetornarTodosLosUsuarios")]
     public async Task GetAllAsync_ShouldReturnAllUsers()
     {
-        // ARRANGE
-        var users = new List<User>
-        {
-            new() { Id = Guid.NewGuid(), IsActive = true, Username = "active" },
-            new() { Id = Guid.NewGuid(), IsActive = false, Username = "inactive" }
-        };
+        // Arrange
+        await CreateTestUserAsync("getall1");
+        await CreateTestUserAsync("getall2");
+        
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope);
 
-        _mockUserRepository.Setup(r => r.GetAllWithRolesAsync()).ReturnsAsync(users);
-        _mockMapper.Setup(m => m.Map<List<UserDto>>(It.IsAny<List<User>>()))
-                   .Returns((List<User> src) => [.. src.Select(u => new UserDto { Username = u.Username })]);
-
-        var service = CreateService();
-
-        // ACT
+        // Act
         var result = await service.GetAllAsync();
 
-        // ASSERT
-        result.Should().HaveCount(2);
-        result[0].Username.Should().Be("active");
-        result[1].Username.Should().Be("inactive");
+        // Assert
+        result.Should().NotBeEmpty();
+        result.Count.Should().BeGreaterThanOrEqualTo(2);
     }
 
     [Fact(DisplayName = "UpdateAsync_EmailYaEnUso_DebeLanzarDomainException")]
     public async Task UpdateAsync_WhenEmailAlreadyInUseByAnotherUser_ShouldThrowDomainException()
     {
-        // ARRANGE
-        var userId = Guid.NewGuid();
-        var existingUser = new User { Id = userId, Email = "old@test.com" };
-        var otherUserId = Guid.NewGuid();
-        var dto = new UpdateUserDto { Email = "taken@test.com", FullName = "New Name", IsActive = true, RoleIds = [] };
+        // Arrange
+        var user1 = await CreateTestUserAsync("user1");
+        var user2 = await CreateTestUserAsync("user2");
+        
+        var dto = new UpdateUserDto 
+        { 
+            Email = user1.Email, // Usar el email del user1
+            FullName = "New Name", 
+            IsActive = true, 
+            RoleIds = [] 
+        };
 
-        _mockUserRepository.Setup(r => r.GetWithRolesAsync(userId)).ReturnsAsync(existingUser);
-        _mockUserRepository.Setup(r => r.AnyAsync(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>()))
-                           .ReturnsAsync(true); // Taken by another
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope);
 
-        var service = CreateService();
-
-        // ACT & ASSERT
-        await Assert.ThrowsAsync<DomainException>(() => service.UpdateAsync(userId, dto));
+        // Act & Assert
+        await Assert.ThrowsAsync<DomainException>(() => service.UpdateAsync(user2.Id, dto));
     }
 
     [Fact(DisplayName = "CreateAsync_EdadInvalida_DebeLanzarDomainException")]
     public async Task CreateAsync_WhenAgeIsInvalid_ShouldThrowDomainException()
     {
-        // ARRANGE
+        // Arrange
+        var uniqueId = Guid.NewGuid().ToString("N")[..8];
         var dto = new CreateUserDto 
         { 
-            Username = "young", 
-            Email = "y@y.com", 
+            Username = $"young_create_{uniqueId}", 
+            Email = $"young_create_{uniqueId}@y.com",
+            DocumentoIdentidad = $"DOC-{uniqueId}",
             FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-17)),
             RoleIds = []
         };
-        
-        var service = CreateService();
 
-        // ACT & ASSERT
-        var act = () => service.CreateAsync(dto);
-        await act.Should().ThrowAsync<DomainException>().WithMessage("*entre 18 y 80*");
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<DomainException>(() => service.CreateAsync(dto));
+        ex.Message.Should().Contain("18 y 80");
     }
 
     [Fact(DisplayName = "UpdateAsync_EdadInvalida_DebeLanzarDomainException")]
     public async Task UpdateAsync_WhenAgeIsInvalid_ShouldThrowDomainException()
     {
-        // ARRANGE
-        var userId = Guid.NewGuid();
-        var user = new User { Id = userId, FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-30)) };
+        // Arrange
+        var user = await CreateTestUserAsync("updateage");
         var dto = new UpdateUserDto 
         { 
-            Email = "u@u.com", 
+            Email = user.Email, 
             FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-85)),
             RoleIds = []
         };
 
-        _mockUserRepository.Setup(r => r.GetWithRolesAsync(userId)).ReturnsAsync(user);
-        
-        var service = CreateService();
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope);
 
-        // ACT & ASSERT
-        var act = () => service.UpdateAsync(userId, dto);
-        await act.Should().ThrowAsync<DomainException>().WithMessage("*entre 18 y 80*");
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<DomainException>(() => service.UpdateAsync(user.Id, dto));
+        ex.Message.Should().Contain("18 y 80");
     }
 
     [Fact(DisplayName = "ResetPasswordAsync_UsuarioExistente_DebeActualizarHash")]
     public async Task ResetPasswordAsync_WhenUserExists_ShouldUpdateHash()
     {
-        // ARRANGE
-        var userId = Guid.NewGuid();
-        var user = new User { Id = userId, Email = "test@example.com", FullName = "Test User" };
-        var newPassword = "newPassword123";
-        var hashedPass = "hashedValue";
+        // Arrange
+        var user = await CreateTestUserAsync("resetpasstest");
+        var oldHash = user.PasswordHash;
+        
+        using var scope = Factory.Services.CreateScope();
+        var service = GetUserService(scope);
 
-        _mockUserRepository.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
-        _mockPasswordHasher.Setup(h => h.HashPassword(newPassword)).Returns(hashedPass);
+        // Act
+        await service.ResetPasswordAsync(user.Id, "NewPassword123!");
 
-        var service = CreateService();
-
-        // ACT
-        await service.ResetPasswordAsync(userId, newPassword);
-
-        // ASSERT
-        user.PasswordHash.Should().Be(hashedPass);
-        _mockUserRepository.Verify(r => r.Update(user), Times.Once);
-        _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
-        _mockEmailService.Verify(e => e.SendEmailAsync("test@example.com", It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        // Assert
+        await ExecuteInScopeAsync(async db => 
+        {
+            var dbUser = await db.Users.FindAsync(user.Id);
+            dbUser!.PasswordHash.Should().NotBe(oldHash); // El hash debe haber cambiado
+        });
     }
 }

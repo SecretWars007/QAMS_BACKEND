@@ -218,10 +218,17 @@ namespace QAMS.Application.Services
                 _userRepo.Update(oldUser);
             }
 
+            // 3. Validar edad si se está actualizando la fecha de nacimiento (entre 18 y 80 años)
+            var fechaNac = dto.FechaNacimiento ?? user.FechaNacimiento;
+            var age = DateTime.Today.Year - fechaNac.Year;
+            if (fechaNac.ToDateTime(TimeOnly.MinValue).Date > DateTime.Today.AddYears(-age)) age--;
+            if (age < 18 || age > 80)
+                throw new DomainException("El usuario debe tener entre 18 y 80 años de edad.");
+
             if (dto.DocumentoIdentidad != null) user.DocumentoIdentidad = dto.DocumentoIdentidad;
             if (dto.FechaNacimiento.HasValue) user.FechaNacimiento = dto.FechaNacimiento.Value;
             if (dto.Telefono != null) user.Telefono = dto.Telefono;
-            
+
             user.UpdatedAt = DateTime.UtcNow;
 
             // PERSISTENCIA 1: Guardar cambios básicos

@@ -70,6 +70,7 @@ namespace QAMS.Infrastructure.Repositories
                 .Include(p => p.KanbanBoards)
                 .Include(p => p.HistoricDevolutions)
                 .Include(p => p.Requirements)
+                .Include(p => p.TestCases)
                 .Where(predicate)
                 .ToListAsync();
         }

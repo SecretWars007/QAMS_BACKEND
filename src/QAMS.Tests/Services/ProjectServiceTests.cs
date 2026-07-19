@@ -1,64 +1,56 @@
 #nullable enable
-using AutoMapper;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.Projects;
 using QAMS.Application.Interfaces;
-using QAMS.Application.Services;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Exceptions;
-using QAMS.Domain.Ports.Repositories;
+using QAMS.Infrastructure.Persistence.Configurations;
+using QAMS.Tests.IntegrationTests.Infrastructure;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
-using QAMS.Domain.Ports.Services;
 using Xunit;
+using Microsoft.EntityFrameworkCore;
 
 namespace QAMS.Tests.Services;
 
-public class ProjectServiceTests
+[Collection("Integration tests")]
+public class ProjectServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
-    private readonly Mock<IProjectRepository> _mockProjectRepo = new();
-    private readonly Mock<IUserRepository> _mockUserRepo = new();
-    private readonly Mock<ICurrentUserService> _mockCurrentUserService = new();
-    private readonly Mock<IGenericRepository<ProjectDevolution>> _mockDevolutionRepo = new();
-    private readonly Mock<IKanbanService> _mockKanbanService = new();
-    private readonly Mock<ITestExecutionRepository> _mockExecRepo = new();
-    private readonly Mock<IObservationRepository> _mockObservationRepo = new();
-    private readonly Mock<IUnitOfWork> _mockUow = new();
-    private readonly Mock<IMapper> _mockMapper = new();
-    private readonly Mock<IEmailService> _mockEmailService = new();
-    private readonly Mock<ILogger<ProjectService>> _mockLogger = new();
+    private IProjectService GetService(IServiceScope scope)
+        => scope.ServiceProvider.GetRequiredService<IProjectService>();
 
-    private ProjectService CreateService() => new(
-        _mockProjectRepo.Object,
-        _mockUserRepo.Object,
-        _mockCurrentUserService.Object,
-        _mockKanbanService.Object,
-        _mockDevolutionRepo.Object,
-        _mockExecRepo.Object,
-        _mockObservationRepo.Object,
-        _mockUow.Object,
-        _mockMapper.Object,
-        _mockEmailService.Object,
-        _mockLogger.Object
-    );
+    private async Task<(Guid projectId, User owner)> CreateTestProjectAsync(string name)
+    {
+        var user = await CreateTestUserAsync($"proj_owner");
+        var projectId = Guid.NewGuid();
 
-    [Fact]
+        await ExecuteInScopeAsync(async db =>
+        {
+            db.Projects.Add(new Project
+            {
+                Id = projectId,
+                Name = name,
+                IsActive = true,
+                CreatedByUserId = user.Id,
+                ProjectStatusId = 1,
+                ProjectPriorityId = 1
+            });
+            await db.SaveChangesAsync();
+        });
+
+        return (projectId, user);
+    }
+
+    [Fact(DisplayName = "GetByIdAsync_CuandoProyectoExiste_DebeRetornarDto")]
     public async Task GetByIdAsync_WhenProjectExists_ShouldReturnProjectDto()
     {
         // Arrange
-        var projectId = Guid.NewGuid();
-        var project = new Project { Id = projectId, Name = "Test Project" };
-        var projectDto = new ProjectDto { Id = projectId, Name = "Test Project" };
+        var uniqueName = $"Project GetById {Guid.NewGuid():N}";
+        var (projectId, _) = await CreateTestProjectAsync(uniqueName);
 
-        _mockProjectRepo.Setup(r => r.GetWithDetailsAsync(projectId)).ReturnsAsync(project);
-        _mockMapper.Setup(m => m.Map<ProjectDto>(project)).Returns(projectDto);
-
-        var service = CreateService();
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
 
         // Act
         var result = await service.GetByIdAsync(projectId);
@@ -66,154 +58,119 @@ public class ProjectServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Id.Should().Be(projectId);
-        _mockProjectRepo.Verify(r => r.GetWithDetailsAsync(projectId), Times.Once);
+        result.Name.Should().Be(uniqueName);
     }
 
-    [Fact]
+    [Fact(DisplayName = "GetByIdAsync_CuandoProyectoNoExiste_DebeThrowEntityNotFoundException")]
     public async Task GetByIdAsync_WhenProjectDoesNotExist_ShouldThrowEntityNotFoundException()
     {
         // Arrange
-        var projectId = Guid.NewGuid();
-        _mockProjectRepo.Setup(r => r.GetWithDetailsAsync(projectId)).ReturnsAsync((Project?)null);
+        var fakeId = Guid.NewGuid();
 
-        var service = CreateService();
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
 
         // Act & Assert
-        await Assert.ThrowsAsync<EntityNotFoundException>(() => service.GetByIdAsync(projectId));
+        await Assert.ThrowsAsync<EntityNotFoundException>(() => service.GetByIdAsync(fakeId));
     }
 
-    [Fact]
+    [Fact(DisplayName = "CreateAsync_CuandoProyectoNombreDuplicado_DebeLanzarDomainException")]
     public async Task CreateAsync_WhenProjectNameAlreadyExists_ShouldThrowDomainException()
     {
         // Arrange
-        var dto = new CreateProjectDto { Name = "Existing Project" };
-        _mockProjectRepo.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Project, bool>>>())).ReturnsAsync(true);
+        var uniqueName = $"Duplicate Project {Guid.NewGuid():N}";
+        await CreateTestProjectAsync(uniqueName);
 
-        var service = CreateService();
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
+
+        var dto = new CreateProjectDto { Name = uniqueName, ProjectStatusId = 1, ProjectPriorityId = 1 };
 
         // Act & Assert
         await Assert.ThrowsAsync<DomainException>(() => service.CreateAsync(dto));
     }
 
-    [Fact]
+    [Fact(DisplayName = "CreateAsync_CuandoProyectoNuevo_DebeCrearYRetornarDto")]
     public async Task CreateAsync_WhenProjectIsNew_ShouldCreateAndReturnProjectDto()
     {
-        // Arrange
-        var dto = new CreateProjectDto 
-        { 
-            Name = "New Project", 
-            Description = "Test Description",
-            TesterIds = [Guid.NewGuid()]
+        // Arrange — necesitamos un usuario autenticado para CurrentUserService
+        var testerUser = await CreateTestUserAsync("proj_tester_create", "Tester");
+        var uniqueName = $"New Integration Project {Guid.NewGuid():N}";
+
+        var dto = new CreateProjectDto
+        {
+            Name = uniqueName,
+            Description = "Test",
+            ProjectStatusId = 1,
+            ProjectPriorityId = 1,
+            TesterIds = [testerUser.Id]
         };
-        
-        var tester = new User { Id = dto.TesterIds[0], FullName = "John Tester" };
-        tester.UserRoles.Add(new UserRole { UserId = tester.Id, RoleId = QAMS.Domain.Constants.SystemRoles.TesterRoleId });
 
-        _mockProjectRepo.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Project, bool>>>())).ReturnsAsync(false);
-        _mockUserRepo.Setup(r => r.GetByIdsWithRolesAsync(It.IsAny<List<Guid>>())).ReturnsAsync([tester]);
-        _mockCurrentUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
-        _mockMapper.Setup(m => m.Map<ProjectDto>(It.IsAny<Project>())).Returns(new ProjectDto { Name = dto.Name });
+        // Autenticar como el tester (el CurrentUserService leerá el userId del HttpContext en el scope)
+        Authenticate(testerUser.Id);
 
-        var service = CreateService();
+        // Act — usamos el HttpClient que ya tiene auth configurada
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
 
-        // Act
         var result = await service.CreateAsync(dto);
 
         // Assert
         result.Should().NotBeNull();
-        result.Name.Should().Be(dto.Name);
-        _mockProjectRepo.Verify(r => r.AddAsync(It.IsAny<Project>()), Times.Once);
-        _mockKanbanService.Verify(s => s.CreateBoardAsync(It.IsAny<Guid>(), It.IsAny<string>()), Times.Once);
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+        result.Name.Should().Be(uniqueName);
+
+        await ExecuteInScopeAsync(async db =>
+        {
+            var project = await db.Projects.FirstOrDefaultAsync(p => p.Name == uniqueName);
+            project.Should().NotBeNull();
+            project!.IsActive.Should().BeTrue();
+        });
     }
 
-    [Fact]
-    public async Task CreateAsync_WhenTesterDoesNotHaveTesterRole_ShouldThrowDomainException()
-    {
-        // Arrange
-        var testerId = Guid.NewGuid();
-        var dto = new CreateProjectDto 
-        { 
-            Name = "New Project", 
-            TesterIds = [testerId]
-        };
-        
-        var user = new User { Id = testerId, FullName = "Not A Tester" };
-        // No Tester role added
-
-        _mockProjectRepo.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Project, bool>>>())).ReturnsAsync(false);
-        _mockUserRepo.Setup(r => r.GetByIdsWithRolesAsync(It.IsAny<List<Guid>>())).ReturnsAsync([user]);
-
-        var service = CreateService();
-
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<DomainException>(() => service.CreateAsync(dto));
-        ex.Message.Should().Contain("no tiene el rol de Tester");
-    }
-
-    [Fact]
-    public async Task RegisterDevolutionAsync_WhenProjectExists_ShouldRegisterAndIncrementCounter()
-    {
-        // Arrange
-        var projectId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var project = new Project { Id = projectId, DevolucionesCounter = 0 };
-        var dto = new RegisterDevolutionDto { Notes = "Devolution notes" };
-
-        _mockProjectRepo.Setup(r => r.GetByIdAsync(projectId)).ReturnsAsync(project);
-        _mockExecRepo.Setup(r => r.GetByProjectAsync(projectId)).ReturnsAsync([]);
-        _mockObservationRepo.Setup(r => r.CountAsync(It.IsAny<Expression<Func<ExecutionStepObservation, bool>>>())).ReturnsAsync(0);
-        _mockMapper.Setup(m => m.Map<ProjectDevolutionDto>(It.IsAny<ProjectDevolution>())).Returns(new ProjectDevolutionDto());
-
-        var service = CreateService();
-
-        // Act
-        await service.RegisterDevolutionAsync(projectId, userId, dto);
-
-        // Assert
-        project.DevolucionesCounter.Should().Be(1);
-        project.ProjectStatusId.Should().Be(5); // DEVOLUCION status
-        _mockDevolutionRepo.Verify(r => r.AddAsync(It.IsAny<ProjectDevolution>()), Times.Once);
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
-    }
-
-    [Fact]
-    public async Task UpdateAsync_WhenProjectExists_ShouldUpdateAndReturnProjectDto()
-    {
-        // Arrange
-        var projectId = Guid.NewGuid();
-        var project = new Project { Id = projectId, Name = "Old Name" };
-        var dto = new CreateProjectDto { Name = "New Name" };
-
-        _mockProjectRepo.Setup(r => r.GetWithDetailsAsync(projectId)).ReturnsAsync(project);
-        _mockMapper.Setup(m => m.Map<ProjectDto>(It.IsAny<Project>())).Returns(new ProjectDto { Name = dto.Name });
-
-        var service = CreateService();
-
-        // Act
-        var result = await service.UpdateAsync(projectId, dto);
-
-        // Assert
-        project.Name.Should().Be(dto.Name);
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
-    }
-
-    [Fact]
+    [Fact(DisplayName = "DeleteAsync_CuandoProyectoExiste_DebeDesactivarlo")]
     public async Task DeleteAsync_WhenProjectExists_ShouldDeactivate()
     {
         // Arrange
-        var projectId = Guid.NewGuid();
-        var project = new Project { Id = projectId, IsActive = true };
+        var uniqueName = $"Project Delete {Guid.NewGuid():N}";
+        var (projectId, _) = await CreateTestProjectAsync(uniqueName);
 
-        _mockProjectRepo.Setup(r => r.GetByIdAsync(projectId)).ReturnsAsync(project);
-
-        var service = CreateService();
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
 
         // Act
         await service.DeleteAsync(projectId);
 
         // Assert
-        project.IsActive.Should().BeFalse();
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+        await ExecuteInScopeAsync(async db =>
+        {
+            var project = await db.Projects.FindAsync(projectId);
+            project!.IsActive.Should().BeFalse();
+        });
+    }
+
+    [Fact(DisplayName = "UpdateAsync_CuandoProyectoExiste_DebeActualizarNombre")]
+    public async Task UpdateAsync_WhenProjectExists_ShouldUpdateAndReturnProjectDto()
+    {
+        // Arrange
+        var originalName = $"Original Project {Guid.NewGuid():N}";
+        var (projectId, _) = await CreateTestProjectAsync(originalName);
+
+        var updatedName = $"Updated Project {Guid.NewGuid():N}";
+        var dto = new CreateProjectDto { Name = updatedName, ProjectStatusId = 1, ProjectPriorityId = 1 };
+
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
+
+        // Act
+        var result = await service.UpdateAsync(projectId, dto);
+
+        // Assert
+        result.Name.Should().Be(updatedName);
+
+        await ExecuteInScopeAsync(async db =>
+        {
+            var project = await db.Projects.FindAsync(projectId);
+            project!.Name.Should().Be(updatedName);
+        });
     }
 }

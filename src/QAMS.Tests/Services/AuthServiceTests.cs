@@ -1,236 +1,255 @@
 #nullable enable
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.Auth;
 using QAMS.Application.Interfaces;
-using QAMS.Application.Services;
-using QAMS.Domain.Entities;
 using QAMS.Domain.Exceptions;
-using QAMS.Domain.Ports.Repositories;
-using QAMS.Domain.Ports.Services;
+using QAMS.Tests.IntegrationTests.Infrastructure;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.EntityFrameworkCore;
+using QAMS.Infrastructure.Persistence.Configurations;
 
 namespace QAMS.Tests.Services;
 
-public class AuthServiceTests
+[Collection("Integration tests")]
+public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
-    private readonly Mock<IUserRepository> _mockUserRepo = new();
-    private readonly Mock<IRbacService> _mockRbacService = new();
-    private readonly Mock<IPasswordHasher> _mockHasher = new();
-    private readonly Mock<IJwtTokenGenerator> _mockJwt = new();
-    private readonly Mock<IUnitOfWork> _mockUow = new();
-    private readonly Mock<IEmailService> _mockEmailService = new();
-    private readonly Mock<ILogger<AuthService>> _mockLogger = new();
+    private IAuthService GetAuthService(IServiceScope scope)
+    {
+        return scope.ServiceProvider.GetRequiredService<IAuthService>();
+    }
 
-    private AuthService CreateService() => new(
-        _mockUserRepo.Object,
-        _mockRbacService.Object,
-        _mockHasher.Object,
-        _mockJwt.Object,
-        _mockUow.Object,
-        _mockEmailService.Object,
-        _mockLogger.Object
-    );
-
-    [Fact]
+    [Fact(DisplayName = "LoginAsync_WhenCredentialsValid_ShouldReturnTokens")]
     public async Task LoginAsync_WhenCredentialsValid_ShouldReturnTokens()
     {
         // Arrange
-        var request = new LoginRequestDto { Username = "user", Password = "password" };
-        var user = new User { Id = Guid.NewGuid(), Username = "user", PasswordHash = "hash", IsActive = true };
-        IReadOnlyList<string> permissions = ["Perm1"];
-
-        _mockUserRepo.Setup(r => r.GetWithRolesAndPermissionsAsync(request.Username)).ReturnsAsync(user);
-        _mockHasher.Setup(h => h.VerifyPassword(request.Password, user.PasswordHash)).Returns(true);
-        _mockRbacService.Setup(s => s.GetUserPermissionsAsync(user.Id)).ReturnsAsync(permissions);
-        _mockJwt.Setup(j => j.GenerateAccessToken(user, permissions)).Returns("access-token");
-        _mockJwt.Setup(j => j.GenerateRefreshToken()).Returns("refresh-token");
-
-        var service = CreateService();
+        var user = await CreateTestUserAsync("validloginuser");
+        var request = new LoginRequestDto { Username = user.Username, Password = "password123" };
+        
+        using var scope = Factory.Services.CreateScope();
+        var service = GetAuthService(scope);
 
         // Act
         var result = await service.LoginAsync(request);
 
         // Assert
-        result.AccessToken.Should().Be("access-token");
-        result.RefreshToken.Should().Be("refresh-token");
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+        result.AccessToken.Should().NotBeNullOrEmpty();
+        result.RefreshToken.Should().NotBeNullOrEmpty();
     }
 
-    [Fact]
+    [Fact(DisplayName = "LoginAsync_WhenUserNotFound_ShouldThrowUnauthorizedException")]
     public async Task LoginAsync_WhenUserNotFound_ShouldThrowUnauthorizedException()
     {
         // Arrange
-        var request = new LoginRequestDto { Username = "unknown", Password = "password" };
-        _mockUserRepo.Setup(r => r.GetWithRolesAndPermissionsAsync(request.Username)).ReturnsAsync((User?)null);
-
-        var service = CreateService();
+        var request = new LoginRequestDto { Username = "unknown_user", Password = "password123" };
+        
+        using var scope = Factory.Services.CreateScope();
+        var service = GetAuthService(scope);
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedException>(() => service.LoginAsync(request));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RegisterAsync_WhenUserExists_ShouldThrowDomainException")]
     public async Task RegisterAsync_WhenUserExists_ShouldThrowDomainException()
     {
         // Arrange
-        var request = new RegisterRequestDto { Username = "existing", Email = "a@a.com" };
-        _mockUserRepo.Setup(r => r.GetByUsernameAsync(request.Username)).ReturnsAsync(new User());
-
-        var service = CreateService();
+        var user = await CreateTestUserAsync("existinguser");
+        var request = new RegisterRequestDto 
+        { 
+            Username = user.Username, // Mismo username
+            Email = "another@test.com", 
+            Password = "Password123!",
+            DocumentoIdentidad = "12345678",
+            FullName = "New User",
+            FechaNacimiento = new DateOnly(1995, 1, 1),
+            Telefono = "+12345678"
+        };
+        
+        using var scope = Factory.Services.CreateScope();
+        var service = GetAuthService(scope);
 
         // Act & Assert
         await Assert.ThrowsAsync<DomainException>(() => service.RegisterAsync(request));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RegisterAsync_WhenAgeUnder18_ShouldThrowDomainException")]
     public async Task RegisterAsync_WhenAgeUnder18_ShouldThrowDomainException()
     {
         // Arrange
+        var uniqueId = Guid.NewGuid().ToString("N")[..8];
         var request = new RegisterRequestDto 
         { 
-            Username = "young", 
-            Email = "y@y.com", 
-            FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-17)) 
+            Username = $"young_{uniqueId}", 
+            Email = $"young_{uniqueId}@test.com",
+            Password = "Password123!",
+            FullName = "Young User",
+            DocumentoIdentidad = $"DOC-{uniqueId}",
+            FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-17)),
+            Telefono = "+12345678"
         };
-        var service = CreateService();
+        
+        using var scope = Factory.Services.CreateScope();
+        var service = GetAuthService(scope);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<DomainException>(() => service.RegisterAsync(request));
         ex.Message.Should().Contain("18 y 80");
     }
 
-    [Fact]
+    [Fact(DisplayName = "RegisterAsync_WhenAgeOver80_ShouldThrowDomainException")]
     public async Task RegisterAsync_WhenAgeOver80_ShouldThrowDomainException()
     {
         // Arrange
+        var uniqueId = Guid.NewGuid().ToString("N")[..8];
         var request = new RegisterRequestDto 
         { 
-            Username = "old", 
-            Email = "o@o.com", 
-            FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-81)) 
+            Username = $"old_{uniqueId}", 
+            Email = $"old_{uniqueId}@test.com",
+            Password = "Password123!",
+            FullName = "Old User",
+            DocumentoIdentidad = $"DOC-{uniqueId}",
+            FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-81)),
+            Telefono = "+12345678"
         };
-        var service = CreateService();
+        
+        using var scope = Factory.Services.CreateScope();
+        var service = GetAuthService(scope);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<DomainException>(() => service.RegisterAsync(request));
         ex.Message.Should().Contain("18 y 80");
     }
 
-    [Fact]
+    [Fact(DisplayName = "ForgotPasswordAsync_WhenEmailExists_ShouldGenerateToken")]
     public async Task ForgotPasswordAsync_WhenEmailExists_ShouldGenerateToken()
     {
         // Arrange
-        var email = "user@test.com";
-        var user = new User { Email = email, IsActive = true };
-        _mockUserRepo.Setup(r => r.GetByEmailAsync(email)).ReturnsAsync(user);
-
-        var service = CreateService();
+        var user = await CreateTestUserAsync("forgotuser");
+        
+        using var scope = Factory.Services.CreateScope();
+        var service = GetAuthService(scope);
 
         // Act
-        var token = await service.ForgotPasswordAsync(new ForgotPasswordRequestDto { Email = email });
+        var token = await service.ForgotPasswordAsync(new ForgotPasswordRequestDto { Email = user.Email });
 
         // Assert
-        token.Should().NotBeEmpty();
-        user.PasswordResetToken.Should().Be(token);
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+        token.Should().NotBeNullOrEmpty();
+        
+        await ExecuteInScopeAsync(async db => 
+        {
+            var dbUser = await db.Users.FindAsync(user.Id);
+            dbUser.Should().NotBeNull();
+            dbUser!.PasswordResetToken.Should().Be(token);
+        });
     }
 
-    [Fact]
+    [Fact(DisplayName = "ResetPasswordAsync_WhenTokenValid_ShouldUpdatePassword")]
     public async Task ResetPasswordAsync_WhenTokenValid_ShouldUpdatePassword()
     {
         // Arrange
-        var email = "user@test.com";
-        var token = "123456";
-        var user = new User 
-        { 
-            Email = email, 
-            PasswordResetToken = token, 
-            PasswordResetTokenExpiryTime = DateTime.UtcNow.AddMinutes(10) 
-        };
+        var user = await CreateTestUserAsync("resetuser");
+        string token = "";
         
-        _mockUserRepo.Setup(r => r.GetByEmailAsync(email)).ReturnsAsync(user);
-        _mockHasher.Setup(h => h.HashPassword("new-pass")).Returns("new-hash");
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var service = GetAuthService(scope);
+            token = await service.ForgotPasswordAsync(new ForgotPasswordRequestDto { Email = user.Email });
+        }
 
-        var service = CreateService();
-
-        // Act
-        await service.ResetPasswordAsync(new ResetPasswordRequestDto 
-        { 
-            Email = email, 
-            ResetToken = token, 
-            NewPassword = "new-pass" 
-        });
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var service = GetAuthService(scope);
+            
+            // Act
+            await service.ResetPasswordAsync(new ResetPasswordRequestDto 
+            { 
+                Email = user.Email, 
+                ResetToken = token, 
+                NewPassword = "NewPassword123!" 
+            });
+        }
 
         // Assert
-        user.PasswordHash.Should().Be("new-hash");
-        user.PasswordResetToken.Should().BeNull();
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+        await ExecuteInScopeAsync(async db => 
+        {
+            var dbUser = await db.Users.FindAsync(user.Id);
+            dbUser.Should().NotBeNull();
+            dbUser!.PasswordResetToken.Should().BeNull(); // Token limpiado
+        });
+        
+        // Comprobar que el login con nueva contraseña funciona
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var service = GetAuthService(scope);
+            var result = await service.LoginAsync(new LoginRequestDto { Username = user.Username, Password = "NewPassword123!" });
+            result.AccessToken.Should().NotBeNullOrEmpty();
+        }
     }
 
-    [Fact]
+    [Fact(DisplayName = "RevokeRefreshTokenAsync_WhenUserExists_ShouldClearToken")]
     public async Task RevokeRefreshTokenAsync_WhenUserExists_ShouldClearToken()
     {
         // Arrange
-        var userId = Guid.NewGuid();
-        var user = new User { Id = userId, RefreshToken = "token" };
-        _mockUserRepo.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
-
-        var service = CreateService();
+        var user = await CreateTestUserAsync("revokeuser");
+        
+        // Asignar un refresh token manualmente
+        await ExecuteInScopeAsync(async db => 
+        {
+            var dbUser = await db.Users.FindAsync(user.Id);
+            dbUser!.RefreshToken = "some-refresh-token";
+            await db.SaveChangesAsync();
+        });
+        
+        using var scope = Factory.Services.CreateScope();
+        var service = GetAuthService(scope);
 
         // Act
-        await service.RevokeRefreshTokenAsync(userId);
+        await service.RevokeRefreshTokenAsync(user.Id);
 
         // Assert
-        user.RefreshToken.Should().BeNull();
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+        await ExecuteInScopeAsync(async db => 
+        {
+            var dbUser = await db.Users.FindAsync(user.Id);
+            dbUser!.RefreshToken.Should().BeNull();
+        });
     }
 
-    [Fact]
+    [Fact(DisplayName = "AdminResetPasswordAsync_WhenUserExists_ShouldUpdatePassword")]
     public async Task AdminResetPasswordAsync_WhenUserExists_ShouldUpdatePassword()
     {
         // Arrange
-        var targetUserId = Guid.NewGuid();
-        var user = new User 
-        { 
-            Id = targetUserId, 
-            PasswordHash = "old-hash",
-            PasswordResetToken = "some-token",
-            PasswordResetTokenExpiryTime = DateTime.UtcNow.AddMinutes(5)
-        };
+        var user = await CreateTestUserAsync("adminresetuser");
         
-        _mockUserRepo.Setup(r => r.GetByIdAsync(targetUserId)).ReturnsAsync(user);
-        _mockHasher.Setup(h => h.HashPassword("new-admin-pass")).Returns("new-admin-hash");
-
-        var service = CreateService();
+        using var scope = Factory.Services.CreateScope();
+        var service = GetAuthService(scope);
 
         // Act
-        await service.AdminResetPasswordAsync(targetUserId, "new-admin-pass");
+        await service.AdminResetPasswordAsync(user.Id, "AdminNewPass123!");
 
         // Assert
-        user.PasswordHash.Should().Be("new-admin-hash");
-        user.PasswordResetToken.Should().BeNull();
-        user.PasswordResetTokenExpiryTime.Should().BeNull();
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+        // Comprobar que el login con nueva contraseña funciona
+        using (var loginScope = Factory.Services.CreateScope())
+        {
+            var loginService = GetAuthService(loginScope);
+            var result = await loginService.LoginAsync(new LoginRequestDto { Username = user.Username, Password = "AdminNewPass123!" });
+            result.AccessToken.Should().NotBeNullOrEmpty();
+        }
     }
 
-    [Fact]
+    [Fact(DisplayName = "AdminResetPasswordAsync_WhenUserNotFound_ShouldThrowEntityNotFoundException")]
     public async Task AdminResetPasswordAsync_WhenUserNotFound_ShouldThrowEntityNotFoundException()
     {
         // Arrange
-        var targetUserId = Guid.NewGuid();
-        _mockUserRepo.Setup(r => r.GetByIdAsync(targetUserId)).ReturnsAsync((User?)null);
-
-        var service = CreateService();
+        var fakeId = Guid.NewGuid();
+        
+        using var scope = Factory.Services.CreateScope();
+        var service = GetAuthService(scope);
 
         // Act & Assert
         await Assert.ThrowsAsync<EntityNotFoundException>(() => 
-            service.AdminResetPasswordAsync(targetUserId, "any-password"));
+            service.AdminResetPasswordAsync(fakeId, "any-password"));
     }
 }

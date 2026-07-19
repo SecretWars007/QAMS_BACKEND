@@ -23,6 +23,8 @@ using QAMS.Application.DTOs.Users;
 using QAMS.Application.DTOs.Roles;
 using QAMS.Domain.Entities;
 using QAMS.Application.Mappings;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 // Cargar variables de entorno desde .env si existe (Desarrollo Local)
 var dotEnv = Path.Combine(Directory.GetCurrentDirectory(), ".env");
 if (File.Exists(dotEnv))
@@ -129,6 +131,19 @@ builder.Services.AddControllers(options =>
     options.Filters.Add<QAMS.Api.Filters.GlobalInputSanitizationFilter>();
 });
 builder.Services.AddEndpointsApiExplorer();
+
+// Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("AuthLimit", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 2;
+    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
@@ -348,17 +363,20 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Habilitar Swagger siempre (facilita pruebas en Render y otros entornos)
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+// Habilitar Swagger sólo en Desarrollo o Testing
+if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Testing")
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "QAMS API v1");
-    c.RoutePrefix = "swagger";
-});
-
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "QAMS API v1");
+        c.RoutePrefix = "swagger";
+    });
+}
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();

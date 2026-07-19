@@ -1,3 +1,8 @@
+# Reglas de Oro
+
+1. **Idioma**: El agente debe responder SIEMPRE y TODO en español.
+2. **Actualizaciones de Estado**: El agente debe informar del estado de sus tareas cada 600 segundos (usando recordatorios si es necesario o manteniendo actualizaciones frecuentes).
+3. **Tests Reales**: Los tests no deben usar mocks (Moq, etc.). Deben ser tests reales de integración que prueben contra una base de datos real o un entorno real (por ejemplo, usando Testcontainers).
 # QAMS - Project Guidelines & Agent Persona
 
 Welcome! This document defines the architectural standards, coding practices, and core principles for the **QAMS (Quality Assurance Management System)** project. It serves as a source of truth for both human developers and the Antigravity AI agent.
@@ -104,3 +109,4 @@ The backend is the core of the system:
 ---
 
 *This document is dynamic. Update it as the architecture evolves.*
+

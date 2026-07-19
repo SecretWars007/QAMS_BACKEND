@@ -18,7 +18,7 @@ namespace QAMS.Domain.Entities
         public int StatusId { get; set; }
         public ExecutionStatus? Status { get; set; }
         public string? Notes { get; set; }
-        public decimal? ActualTimeHours { get; set; }
+        public decimal ActualTimeHours { get; set; } = 0m;
         public DateTime ExecutionDate { get; set; } = DateTime.UtcNow;
         public DateTime? CompletedAt { get; set; }
 

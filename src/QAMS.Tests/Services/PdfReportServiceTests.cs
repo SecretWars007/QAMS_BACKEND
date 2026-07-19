@@ -1,49 +1,50 @@
+#nullable enable
+// PdfReportServiceTests - Tests sin Moq usando datos en memoria (domain objects reales)
+// PdfReportService es un servicio de generación de PDFs con lógica de presentación pura.
+// Se valida que el PDF generado no esté vacío con datos reales de dominio.
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.Reports;
 using QAMS.Application.Interfaces;
-using QAMS.Infrastructure.Services;
 using QAMS.Domain.Entities;
-using QAMS.Domain.Ports.Repositories;
+using QAMS.Infrastructure.Persistence.Configurations;
+using QAMS.Tests.IntegrationTests.Infrastructure;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.EntityFrameworkCore;
 
 namespace QAMS.Tests.Services;
 
-public class PdfReportServiceTests
+[Collection("Integration tests")]
+public class PdfReportServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
-    private readonly Mock<IProjectRepository> _mockProjectRepo = new();
-    private readonly Mock<ITestExecutionRepository> _mockExecRepo = new();
-    private readonly Mock<IObservationRepository> _mockObservationRepo = new();
-    private readonly Mock<IEvidenceRepository> _mockEvidenceRepo = new();
-    private readonly Mock<ILogger<PdfReportService>> _mockLogger = new();
+    private IReportService GetService(IServiceScope scope)
+        => scope.ServiceProvider.GetRequiredService<IReportService>();
 
-    private PdfReportService CreateService() => new(
-        _mockProjectRepo.Object,
-        _mockExecRepo.Object,
-        _mockObservationRepo.Object,
-        _mockEvidenceRepo.Object,
-        _mockLogger.Object
-    );
-
-    [Fact]
+    [Fact(DisplayName = "GenerateProjectReportAsync_DebeRetornarByteArrayNoVacio")]
     public async Task GenerateProjectReportAsync_ShouldReturnNonEmptyByteArray()
     {
         // Arrange
+        var user = await CreateTestUserAsync("pdf_user_report");
         var projectId = Guid.NewGuid();
-        var project = new Project { Id = projectId, Name = "Test Project" };
-        
-        _mockProjectRepo.Setup(r => r.FindWithDetailsAsync(It.IsAny<Expression<Func<Project, bool>>>()))
-            .ReturnsAsync([project]);
-        _mockExecRepo.Setup(r => r.GetByProjectAsync(projectId))
-            .ReturnsAsync([]);
 
-        var service = CreateService();
+        await ExecuteInScopeAsync(async db =>
+        {
+            db.Projects.Add(new Project
+            {
+                Id = projectId,
+                Name = $"PDF Report Project {Guid.NewGuid():N}",
+                IsActive = true,
+                CreatedByUserId = user.Id,
+                ProjectStatusId = 1,
+                ProjectPriorityId = 1
+            });
+            await db.SaveChangesAsync();
+        });
+
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
 
         // Act
         var result = await service.GenerateProjectReportAsync(new ProjectReportFilterDto { ProjectId = projectId });
@@ -53,23 +54,29 @@ public class PdfReportServiceTests
         result.Length.Should().BeGreaterThan(0);
     }
 
-    [Fact]
+    [Fact(DisplayName = "GenerateProjectObservationsReportAsync_DebeRetornarByteArrayNoVacio")]
     public async Task GenerateProjectObservationsReportAsync_ShouldReturnNonEmptyByteArray()
     {
         // Arrange
+        var user = await CreateTestUserAsync("pdf_user_obs");
         var projectId = Guid.NewGuid();
-        var project = new Project { Id = projectId, Name = "Test Project" };
-        
-        _mockProjectRepo.Setup(r => r.FindWithDetailsAsync(It.IsAny<Expression<Func<Project, bool>>>()))
-            .ReturnsAsync([project]);
-        _mockExecRepo.Setup(r => r.GetByProjectAsync(projectId))
-            .ReturnsAsync([]);
-        _mockObservationRepo.Setup(r => r.GetByProjectAsync(It.IsAny<List<Guid>>()))
-            .ReturnsAsync([]);
-        _mockEvidenceRepo.Setup(r => r.GetByStepResultsAsync(It.IsAny<List<Guid>>()))
-            .ReturnsAsync([]);
 
-        var service = CreateService();
+        await ExecuteInScopeAsync(async db =>
+        {
+            db.Projects.Add(new Project
+            {
+                Id = projectId,
+                Name = $"PDF Observations Project {Guid.NewGuid():N}",
+                IsActive = true,
+                CreatedByUserId = user.Id,
+                ProjectStatusId = 1,
+                ProjectPriorityId = 1
+            });
+            await db.SaveChangesAsync();
+        });
+
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
 
         // Act
         var result = await service.GenerateProjectObservationsReportAsync(projectId);

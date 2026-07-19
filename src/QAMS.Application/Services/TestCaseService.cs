@@ -187,7 +187,7 @@ namespace QAMS.Application.Services
             testCase.EstimatedTimeHours = dto.EstimatedTimeHours;
             testCase.StartDate = dto.StartDate;
             testCase.EndDate = dto.EndDate;
-            testCase.TestTypeId = dto.TestTypeId;
+            testCase.TestTypeId = dto.TestTypeId > 0 ? dto.TestTypeId : testCase.TestTypeId;
             testCase.UpdatedAt = DateTime.UtcNow;
 
             // Reemplazar pasos: mezclar para evitar violaciones de clave única en TestSteps
@@ -209,7 +209,6 @@ namespace QAMS.Application.Services
                     testCase.TestSteps.Add(
                         new TestStep
                         {
-                            Id = Guid.NewGuid(),
                             TestCaseId = testCase.Id,
                             StepOrder = incoming.StepOrder,
                             Action = incoming.Action,
@@ -248,7 +247,6 @@ namespace QAMS.Application.Services
                 );
             }
 
-            testCaseRepo.Update(testCase);
             await uow.SaveChangesAsync();
 
             var updated = await testCaseRepo.GetWithStepsAsync(id);

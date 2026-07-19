@@ -35,8 +35,9 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Ignore(u => u.UpdatedByUserId);     // No existe + evita auditoría recursiva
             builder.Ignore(u => u.AccessFailedCount);   // No existe en la tabla users de tests
             builder.Ignore(u => u.LockoutEnd);          // No existe en la tabla users de tests
-            builder.Ignore(u => u.PasswordResetToken);  // No existe en la tabla users de tests
-            builder.Ignore(u => u.PasswordResetTokenExpiryTime); // No existe
+
+            builder.Property(u => u.PasswordResetToken).HasColumnName("PasswordResetToken").HasMaxLength(100);
+            builder.Property(u => u.PasswordResetTokenExpiryTime).HasColumnName("PasswordResetTokenExpiryTime");
 
             // Índices únicos
             builder.HasIndex(u => u.Email).IsUnique();

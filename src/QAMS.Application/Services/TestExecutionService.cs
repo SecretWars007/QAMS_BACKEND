@@ -107,7 +107,7 @@ namespace QAMS.Application.Services
                 TesterId = testerId,
                 StatusId = pendingStatus.Id,
                 Notes = dto.Notes,
-                ActualTimeHours = dto.ActualTimeHours,
+                ActualTimeHours = dto.ActualTimeHours ?? 0m,
                 ExecutionDate = DateTime.UtcNow,
             };
 
@@ -224,7 +224,7 @@ namespace QAMS.Application.Services
                 TesterId = testerId,
                 StatusId = executionStatus.Id,
                 Notes = dto.Notes,
-                ActualTimeHours = dto.ActualTimeHours,
+                ActualTimeHours = dto.ActualTimeHours ?? 0m,
                 ExecutionDate = DateTime.UtcNow,
                 CompletedAt = (allPassed || anyFailed) ? DateTime.UtcNow : null
             };
@@ -491,7 +491,7 @@ namespace QAMS.Application.Services
 
             // 1. Actualizar datos generales
             execution.Notes = dto.Notes;
-            execution.ActualTimeHours = dto.ActualTimeHours;
+            execution.ActualTimeHours = dto.ActualTimeHours ?? 0m;
 
             // 2. Actualizar resultados de pasos
             foreach (var stepResultInput in dto.StepResults)
@@ -657,11 +657,10 @@ namespace QAMS.Application.Services
             decimal totalExecuted = 0;
             foreach (var testCase in project.TestCases)
             {
-                // Tomamos la última ejecución exitosa o fallida (si existen)
-                var relevantExecs = testCase.TestExecutions
-                    .Where(te => te.Status != null && (te.Status.Code == "PASSED" || te.Status.Code == "FAILED"));
-                
-                totalExecuted += relevantExecs.Sum(te => te.ActualTimeHours ?? 0);
+                var relevantExecs = testCase.TestExecutions.Where(te =>
+                    te.Status != null && (te.Status.Code == "PASSED" || te.Status.Code == "FAILED")
+                );
+                totalExecuted += relevantExecs.Sum(te => te.ActualTimeHours);
             }
             project.ExecutedHours = totalExecuted;
 
