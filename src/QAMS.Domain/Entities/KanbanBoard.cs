@@ -10,7 +10,7 @@ namespace QAMS.Domain.Entities
         public string Name { get; set; } = string.Empty;
         public Guid ProjectId { get; set; }
         public Project? Project { get; set; }
-        
+
         // ISoftDelete
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }

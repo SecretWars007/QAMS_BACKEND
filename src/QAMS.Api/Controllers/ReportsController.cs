@@ -28,9 +28,9 @@ namespace QAMS.Api.Controllers
         public async Task<IActionResult> GetProjectReport([FromQuery] ProjectReportFilterDto filter)
         {
             _logger.LogInformation("Solicitando reporte PDF para el proyecto: {ProjectId}", filter.ProjectId);
-            
+
             var pdfData = await _reportService.GenerateProjectReportAsync(filter);
-            
+
             if (pdfData == null || pdfData.Length == 0)
             {
                 return NotFound("No se encontró información para generar el reporte.");
@@ -50,9 +50,9 @@ namespace QAMS.Api.Controllers
         public async Task<IActionResult> GetBurndownReport(Guid projectId)
         {
             _logger.LogInformation("Solicitando reporte PDF de Burndown para el proyecto: {ProjectId}", projectId);
-            
+
             var pdfData = await _reportService.GenerateBurndownReportAsync(projectId);
-            
+
             if (pdfData == null || pdfData.Length == 0)
             {
                 return NotFound("No se encontró información para generar el reporte de Burndown.");
@@ -72,14 +72,14 @@ namespace QAMS.Api.Controllers
         public async Task<IActionResult> GetObservationsReport(Guid projectId)
         {
             _logger.LogInformation("Solicitando reporte PDF de Observaciones para el proyecto: {ProjectId}", projectId);
-            
+
             var pdfData = await _reportService.GenerateProjectObservationsReportAsync(projectId);
-            
+
             if (pdfData == null || pdfData.Length == 0)
             {
                 return NotFound("No se encontró información para generar el reporte de Observaciones.");
             }
- 
+
             string fileName = $"Reporte_Observaciones_{DateTime.Now:yyyyMMddHHmm}.pdf";
             return File(pdfData, "application/pdf", fileName);
         }
@@ -94,14 +94,14 @@ namespace QAMS.Api.Controllers
         public async Task<IActionResult> GetComplianceReport(Guid projectId)
         {
             _logger.LogInformation("Solicitando reporte PDF de Cumplimiento Final para el proyecto: {ProjectId}", projectId);
-            
+
             var pdfData = await _reportService.GenerateFinalComplianceReportAsync(projectId);
-            
+
             if (pdfData == null || pdfData.Length == 0)
             {
                 return NotFound("No se encontró información para generar el reporte de Cumplimiento.");
             }
- 
+
             string fileName = $"Certificado_Cumplimiento_{DateTime.Now:yyyyMMddHHmm}.pdf";
             return File(pdfData, "application/pdf", fileName);
         }

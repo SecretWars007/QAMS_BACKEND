@@ -85,7 +85,7 @@ namespace QAMS.Application.Services
 
             // Recargar el proyecto con detalles para el mapeo (Status, Priority, etc)
             var createdProject = await projectRepo.GetWithDetailsAsync(project.Id);
-            
+
             logger.LogInformation("Proyecto '{Name}' creado con ID {Id}.", project.Name, project.Id);
 
             // Notificación (opcional/asíncrona en el try-catch)
@@ -154,7 +154,7 @@ namespace QAMS.Application.Services
 
             // Incrementar contador
             project.DevolucionesCounter++;
-            
+
             // Cambiar estado a DEVOLUCION (ID 5 según configuration)
             project.ProjectStatusId = 5;
             project.UpdatedAt = DateTime.UtcNow;
@@ -162,7 +162,7 @@ namespace QAMS.Application.Services
             // Calcular cantidad de observaciones para el reporte histórico
             var executions = await execRepo.GetByProjectAsync(projectId);
             var executionIds = executions.Select(e => e.Id).ToList();
-            var observationsCount = await observationRepo.CountAsync(o => 
+            var observationsCount = await observationRepo.CountAsync(o =>
                 o.ExecutionStepResult != null && executionIds.Contains(o.ExecutionStepResult.TestExecutionId));
 
             var devolution = new ProjectDevolution
@@ -181,12 +181,12 @@ namespace QAMS.Application.Services
             await uow.SaveChangesAsync();
 
             // Send devolution notification to creator
-            try 
+            try
             {
                 if (project.CreatedByUserId.HasValue)
                 {
                     var creator = await userRepo.GetByIdAsync(project.CreatedByUserId.Value);
-                    if (creator != null) 
+                    if (creator != null)
                     {
                         var subject = $"Nueva Devolución en el proyecto: {project.Name}";
                         var body = $@"<h2>Devolución Registrada</h2>
@@ -197,7 +197,7 @@ namespace QAMS.Application.Services
                     }
                 }
             }
-            catch(Exception ex) { logger.LogWarning(ex, "Error sending devolution email"); }
+            catch (Exception ex) { logger.LogWarning(ex, "Error sending devolution email"); }
 
             var result = await devolutionRepo.GetByIdAsync(devolution.Id);
             return mapper.Map<ProjectDevolutionDto>(result);
@@ -217,12 +217,12 @@ namespace QAMS.Application.Services
             await uow.SaveChangesAsync();
 
             // Send response notification
-            try 
+            try
             {
-                var responder = devolution.CreatedByUserId.HasValue 
+                var responder = devolution.CreatedByUserId.HasValue
                     ? await userRepo.GetByIdAsync(devolution.CreatedByUserId.Value)
                     : null;
-                if (responder != null) 
+                if (responder != null)
                 {
                     var project = await projectRepo.GetByIdAsync(devolution.ProjectId);
                     var subject = $"Respuesta a Devolución: {project?.Name}";
@@ -232,16 +232,16 @@ namespace QAMS.Application.Services
                     await emailService.SendEmailAsync(responder.Email, subject, body);
                 }
             }
-            catch(Exception ex) { logger.LogWarning(ex, "Error sending devolution response email"); }
+            catch (Exception ex) { logger.LogWarning(ex, "Error sending devolution response email"); }
 
             return mapper.Map<ProjectDevolutionDto>(devolution);
         }
-        
+
 
         private async Task AssignTestersAsync(Project project, List<Guid> testerIds)
         {
             var testers = await userRepo.GetByIdsWithRolesAsync(testerIds);
-            
+
             foreach (var testerId in testerIds)
             {
                 var user = testers.FirstOrDefault(u => u.Id == testerId)
@@ -266,9 +266,9 @@ namespace QAMS.Application.Services
         {
             logger.LogInformation("Obteniendo mis proyectos para UserId {UserId}", userId);
             // Proyectos donde el usuario es el creador o es un tester asignado
-            var projects = await projectRepo.FindWithDetailsAsync(p => 
+            var projects = await projectRepo.FindWithDetailsAsync(p =>
                 p.IsActive && (p.CreatedByUserId == userId || p.ProjectTesters.Any(pt => pt.UserId == userId)));
-            
+
             return mapper.Map<List<ProjectDto>>(projects);
         }
 
@@ -277,7 +277,7 @@ namespace QAMS.Application.Services
             try
             {
                 var testerIds = project.ProjectTesters.Select(pt => pt.UserId).ToList();
-                
+
                 if (project.CreatedByUserId.HasValue)
                 {
                     testerIds.Add(project.CreatedByUserId.Value);

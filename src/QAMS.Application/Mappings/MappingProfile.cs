@@ -20,23 +20,36 @@ namespace QAMS.Application.Mappings
     {
         public MappingProfile()
         {
-            // RBAC
+            ConfigureRbacMappings();
+            ConfigureCatalogMappings();
+            ConfigureProjectMappings();
+            ConfigureTestCaseMappings();
+            ConfigureExecutionMappings();
+            ConfigureKanbanMappings();
+        }
+
+        private void ConfigureRbacMappings()
+        {
             CreateMap<Permission, PermissionDto>();
-            
+
             CreateMap<Role, RoleDto>()
                 .ForMember(d => d.Permissions, o => o.MapFrom(s => s.RolePermissions.Select(rp => rp.Permission)));
-            
+
             CreateMap<User, UserDto>()
                 .ForMember(d => d.Roles, o => o.MapFrom(s => s.UserRoles.Select(ur => ur.Role != null ? ur.Role.Name : string.Empty)));
+        }
 
-            // CATÁLOGOS
+        private void ConfigureCatalogMappings()
+        {
             CreateMap<ExecutionStatus, CatalogItemDto>();
             CreateMap<EvidenceType, CatalogItemDto>();
             CreateMap<StepResultStatus, CatalogItemDto>();
             CreateMap<TaskPriority, CatalogItemDto>();
             CreateMap<TestCasePriority, CatalogItemDto>();
+        }
 
-            // PROYECTOS
+        private void ConfigureProjectMappings()
+        {
             CreateMap<Project, ProjectDto>()
                 .ForMember(d => d.TestSuiteCount, o => o.MapFrom(s => s.TestSuites.Count))
                 .ForMember(d => d.KanbanBoardCount, o => o.MapFrom(s => s.KanbanBoards.Count))
@@ -58,8 +71,10 @@ namespace QAMS.Application.Mappings
 
             CreateMap<ProjectDevolution, ProjectDevolutionDto>()
                 .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty));
-            
-            // TEST CASES
+        }
+
+        private void ConfigureTestCaseMappings()
+        {
             CreateMap<TestCase, TestCaseDto>()
                 .ForMember(d => d.PriorityName, o => o.MapFrom(s => s.Priority != null ? s.Priority.Name : string.Empty))
                 .ForMember(d => d.PriorityCode, o => o.MapFrom(s => s.Priority != null ? s.Priority.Code : string.Empty))
@@ -76,21 +91,23 @@ namespace QAMS.Application.Mappings
                 .ForMember(d => d.StatusName, o => o.MapFrom(s => s.Status != null ? s.Status.Name : string.Empty));
 
             CreateMap<TestStep, TestStepDto>();
-            
-            // EJECUCIONES
+        }
+
+        private void ConfigureExecutionMappings()
+        {
             CreateMap<TestExecution, TestExecutionDto>()
                 .ForMember(d => d.TestCaseTitle, o => o.MapFrom(s => s.TestCase != null ? s.TestCase.Title : string.Empty))
                 .ForMember(d => d.TesterName, o => o.MapFrom(s => s.Tester != null ? s.Tester.FullName : string.Empty))
                 .ForMember(d => d.StatusName, o => o.MapFrom(s => s.Status != null ? s.Status.Name : string.Empty))
                 .ForMember(d => d.StatusCode, o => o.MapFrom(s => s.Status != null ? s.Status.Code : string.Empty))
                 .ForMember(d => d.StepResults, o => o.MapFrom(s => s.StepResults.OrderBy(sr => sr.TestStep != null ? sr.TestStep.StepOrder : 0)));
-                
+
             CreateMap<ExecutionStepResult, StepResultDto>()
                 .ForMember(d => d.StatusName, o => o.MapFrom(s => s.Status != null ? s.Status.Name : string.Empty))
                 .ForMember(d => d.StepOrder, o => o.MapFrom(s => s.TestStep != null ? s.TestStep.StepOrder : 0))
                 .ForMember(d => d.Action, o => o.MapFrom(s => s.TestStep != null ? s.TestStep.Action : string.Empty))
                 .ForMember(d => d.Evidences, o => o.MapFrom(s => s.Evidences));
-                
+
             CreateMap<ExecutionStepObservation, ObservationDto>()
                 .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty))
                 .ForMember(d => d.RespondedByUserName, o => o.MapFrom(s => s.RespondedBy != null ? s.RespondedBy.FullName : string.Empty));
@@ -99,8 +116,10 @@ namespace QAMS.Application.Mappings
                 .ForMember(d => d.ExecutionStepResultId, o => o.MapFrom(s => s.ExecutionStepResultId))
                 .ForMember(d => d.FileTypeName, o => o.MapFrom(s => s.FileType != null ? s.FileType.Name : string.Empty))
                 .ForMember(d => d.FileUrl, o => o.Ignore());
+        }
 
-            // KANBAN
+        private void ConfigureKanbanMappings()
+        {
             CreateMap<KanbanBoard, KanbanBoardDto>();
             CreateMap<KanbanColumn, KanbanColumnDto>();
 

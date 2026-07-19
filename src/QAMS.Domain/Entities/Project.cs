@@ -12,12 +12,11 @@ namespace QAMS.Domain.Entities
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public bool IsActive { get; set; } = true;
-        
         public string Version { get; set; } = "1.0";
         public decimal Budget { get; set; } = 0m;
         public string? Risks { get; set; }
         public Guid? LeaderId { get; set; }
-        
+
         // ISoftDelete implementation
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
@@ -59,6 +58,7 @@ namespace QAMS.Domain.Entities
         public virtual ICollection<ProjectDevolution> HistoricDevolutions { get; set; } = [];
         public virtual ICollection<ProjectObservation> Observations { get; set; } = [];
         public virtual ICollection<Requirement> Requirements { get; set; } = [];
+        public virtual ICollection<SystemUnderTest> SystemsUnderTest { get; set; } = [];
 
         /// <summary>Calcula las horas totales estimadas basadas en días hábiles (L-V) y WorkHoursPerDay.</summary>
         public decimal GetCalculatedTotalHours()

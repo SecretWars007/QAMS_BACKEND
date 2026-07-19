@@ -36,7 +36,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 .WithMany()
                 .HasForeignKey(esr => esr.StatusId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
+
             // Indice único para evitar repetir resultados del mismo paso en la misma ejecución
             builder.HasIndex(esr => new { esr.TestExecutionId, esr.TestStepId }).IsUnique();
         }

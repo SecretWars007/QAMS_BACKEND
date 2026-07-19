@@ -35,12 +35,12 @@ namespace QAMS.Application.Services
             _logger.LogInformation("Intento de login: '{Username}'.", request.Username);
 
             var user = await _userRepo.GetWithRolesAndPermissionsAsync(request.Username);
-            
+
             // 1. Verificar si el usuario existe y si está bloqueado
             if (user != null && user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow)
             {
                 var remaining = user.LockoutEnd.Value - DateTime.UtcNow;
-                _logger.LogWarning("Intento de login en cuenta bloqueada: '{Username}'. Faltan {Minutes} min.", 
+                _logger.LogWarning("Intento de login en cuenta bloqueada: '{Username}'. Faltan {Minutes} min.",
                     request.Username, (int)remaining.TotalMinutes);
                 throw new UnauthorizedException($"La cuenta está bloqueada temporalmente. Intente de nuevo en {(int)Math.Ceiling(remaining.TotalMinutes)} minutos.");
             }
@@ -55,7 +55,7 @@ namespace QAMS.Application.Services
             if (!_hasher.VerifyPassword(request.Password, user.PasswordHash))
             {
                 user.AccessFailedCount++;
-                _logger.LogWarning("Contraseña incorrecta para '{Username}'. Intento #{Count}.", 
+                _logger.LogWarning("Contraseña incorrecta para '{Username}'. Intento #{Count}.",
                     request.Username, user.AccessFailedCount);
 
                 if (user.AccessFailedCount >= 5)
@@ -66,14 +66,14 @@ namespace QAMS.Application.Services
 
                 _userRepo.Update(user);
                 await _uow.SaveChangesAsync();
-                
+
                 throw new UnauthorizedException("Credenciales inválidas.");
             }
 
             // 3. Login exitoso: Resetear contadores
             user.AccessFailedCount = 0;
             user.LockoutEnd = null;
-            
+
             var permissions = await _rbacService.GetUserPermissionsAsync(user.Id);
             var accessToken = _jwt.GenerateAccessToken(user, permissions);
             var refreshToken = _jwt.GenerateRefreshToken();
@@ -101,42 +101,42 @@ namespace QAMS.Application.Services
             _logger.LogInformation("Intento de registro: '{Username}' con email '{Email}'.", request.Username, request.Email);
 
             // 1. Validar conflictos ACTIVOS primero (para arrojar 400 Bad Request)
-            var activeConflicts = await _userRepo.FindAsync(u => 
-                u.Email!.ToLower() == request.Email.ToLower() || 
-                u.Username!.ToLower() == request.Username.ToLower() ||
+            var activeConflicts = await _userRepo.FindAsync(u =>
+                string.Equals(u.Email, request.Email, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(u.Username, request.Username, StringComparison.OrdinalIgnoreCase) ||
                 (u.DocumentoIdentidad == request.DocumentoIdentidad && u.FechaNacimiento == request.FechaNacimiento));
 
-            if (activeConflicts.Any())
+            if (activeConflicts.Count > 0)
             {
-                var conflict = activeConflicts.First();
-                if (conflict.Email!.ToLower() == request.Email.ToLower())
+                var conflict = activeConflicts[0];
+                if (string.Equals(conflict.Email, request.Email, StringComparison.OrdinalIgnoreCase))
                     throw new DomainException("El correo electrónico ya está en uso.");
-                if (conflict.Username!.ToLower() == request.Username.ToLower())
+                if (string.Equals(conflict.Username, request.Username, StringComparison.OrdinalIgnoreCase))
                     throw new DomainException("El nombre de usuario ya está en uso.");
                 throw new DomainException("El documento de identidad ya está registrado.");
             }
 
             // 2. Buscar TODOS los conflictos físicos (incluyendo borrados) para limpieza total
             var physicalConflicts = await _userRepo.GetPhysicalConflictsAsync(request.Email, request.Username, request.DocumentoIdentidad);
-            
+
             if (physicalConflicts.Any())
             {
                 _logger.LogInformation("Se encontraron {Count} conflictos en el historial. Iniciando anonimización masiva...", physicalConflicts.Count);
-                
+
                 foreach (var clashingUser in physicalConflicts)
                 {
                     // Solo anonimizamos registros que estén marcados como ELIMINADOS
                     // Los activos ya fueron filtrados arriba (aunque por redundancia lo validamos)
                     if (clashingUser.IsDeleted)
                     {
-                        var suffix = Guid.NewGuid().ToString().Substring(0, 8);
-                        
+                        var suffix = Guid.NewGuid().ToString()[..8];
+
                         // Liberar campos únicos
                         clashingUser.Email = $"del_{suffix}_{clashingUser.Email}";
-                        if (clashingUser.Email.Length > 150) clashingUser.Email = clashingUser.Email.Substring(0, 150);
-                        
+                        if (clashingUser.Email.Length > 150) clashingUser.Email = clashingUser.Email[..150];
+
                         clashingUser.Username = $"del_{suffix}_{clashingUser.Username}";
-                        if (clashingUser.Username.Length > 100) clashingUser.Username = clashingUser.Username.Substring(0, 100);
+                        if (clashingUser.Username.Length > 100) clashingUser.Username = clashingUser.Username[..100];
 
                         // Max length DocumentoIdentidad es 20
                         if (clashingUser.DocumentoIdentidad.Length <= 11)
@@ -148,7 +148,7 @@ namespace QAMS.Application.Services
                         _userRepo.Update(clashingUser);
                     }
                 }
-                
+
                 await _uow.SaveChangesAsync(); // Limpiar historial definitivamente
                 _logger.LogInformation("Historial limpiado exitosamente.");
             }
@@ -180,7 +180,7 @@ namespace QAMS.Application.Services
             };
 
             await _userRepo.AddAsync(user);
-            await _uow.SaveChangesAsync(); 
+            await _uow.SaveChangesAsync();
 
             _logger.LogInformation("Usuario registrado como NUEVO registro: '{Username}' ({Id}).", user.Username, user.Id);
 
@@ -221,9 +221,11 @@ namespace QAMS.Application.Services
 
             return new LoginResponseDto
             {
-                AccessToken = newAccess, RefreshToken = newRefresh,
+                AccessToken = newAccess,
+                RefreshToken = newRefresh,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(60),
-                FullName = user.FullName, Permissions = [.. permissions]
+                FullName = user.FullName,
+                Permissions = [.. permissions]
             };
         }
 
@@ -276,13 +278,13 @@ namespace QAMS.Application.Services
             _logger.LogInformation("Token de reset generado para '{Email}'.", request.Email);
 
             // Enviar email con token
-            try 
+            try
             {
                 var resetLink = $"https://qams-web.onrender.com/reset-password?token={token}&email={Uri.EscapeDataString(user.Email)}";
                 var body = QAMS.Application.Templates.EmailTemplates.GetForgotPasswordEmailHtml(user.FullName, resetLink);
                 await _emailService.SendEmailAsync(user.Email, "Restablecer tu contraseña de QAMS", body);
             }
-            catch(Exception emailEx) 
+            catch (Exception emailEx)
             {
                 _logger.LogWarning(emailEx, "No se pudo enviar el correo de Forgot Password a '{Email}'.", request.Email);
             }
@@ -317,12 +319,12 @@ namespace QAMS.Application.Services
 
             _logger.LogInformation("Contraseña restablecida para '{Email}'.", request.Email);
 
-            try 
+            try
             {
                 var body = QAMS.Application.Templates.EmailTemplates.GetPasswordResetSuccessEmailHtml(user.FullName);
                 await _emailService.SendEmailAsync(user.Email, "Contraseña actualizada exitosamente", body);
             }
-            catch(Exception emailEx) 
+            catch (Exception emailEx)
             {
                 _logger.LogWarning(emailEx, "No se pudo enviar el correo de confirmación de Reset Password a '{Email}'.", request.Email);
             }
@@ -351,12 +353,12 @@ namespace QAMS.Application.Services
 
             _logger.LogInformation("Contraseña cambiada para UserId '{UserId}'.", userId);
 
-            try 
+            try
             {
                 var body = QAMS.Application.Templates.EmailTemplates.GetPasswordChangeSuccessEmailHtml(user.FullName);
                 await _emailService.SendEmailAsync(user.Email, "Contraseña cambiada exitosamente", body);
             }
-            catch(Exception emailEx) 
+            catch (Exception emailEx)
             {
                 _logger.LogWarning(emailEx, "No se pudo enviar el correo de confirmación de Change Password a '{Email}'.", user.Email);
             }

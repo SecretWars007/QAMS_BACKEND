@@ -50,7 +50,7 @@ namespace QAMS.Application.Services
 
                 // Casos de prueba pendientes: No tienen ninguna ejecución exitosa (PASSED, ID=3)
                 var allTestCaseIds = allTestCases.Select(tc => tc.Id).ToList();
-                var passedTestCaseIds = (await execRepo.FindAsync(e => 
+                var passedTestCaseIds = (await execRepo.FindAsync(e =>
                     allTestCaseIds.Contains(e.TestCaseId)))
                     .Where(e => e.IsSuccessful())
                     .Select(e => e.TestCaseId)
@@ -130,7 +130,7 @@ namespace QAMS.Application.Services
                 if (summary.TotalRequirements > 0)
                 {
                     var allReqIds = allRequirements.Select(r => r.Id).ToList();
-                    
+
                     // Buscar en tabla puente cuántos requerimientos tienen al menos un caso de prueba
                     var links = await reqTestCaseRepo.FindAsync(rt => allReqIds.Contains(rt.RequirementId));
                     var coveredReqIds = links.Select(rt => rt.RequirementId).Distinct().ToList();
@@ -167,7 +167,7 @@ namespace QAMS.Application.Services
 
             // Obtenemos las ejecuciones del proyecto con detalles de estados y resultados de pasos
             var projectExecutions = await execRepo.GetByProjectAsync(projectId);
-            
+
             // Ordenamos por fecha de ejecución
             var sortedExecs = projectExecutions
                 .OrderBy(e => e.ExecutionDate)
@@ -239,7 +239,7 @@ namespace QAMS.Application.Services
             {
                 result.MinHour = events.Min(e => e.Hour);
                 result.MaxHour = events.Max(e => e.Hour);
-                
+
                 // Generamos etiquetas de días únicos DD/MM
                 result.DayLabels = [.. events
                     .OrderBy(e => e.ExecutionDate)
@@ -260,11 +260,11 @@ namespace QAMS.Application.Services
 
             var totalHours = projectEntity.GetCalculatedTotalHours();
             var executions = await execRepo.GetByProjectAsync(projectId);
-            
+
             // Determinar rango de fechas
             var startDate = projectEntity.StartDate ?? projectEntity.CreatedAt;
             var endDate = projectEntity.EndDate ?? (executions.Any() ? executions.Max(e => e.ExecutionDate) : DateTime.Now);
-            
+
             if (endDate < startDate) endDate = startDate.AddDays(7);
 
             var burndown = new List<BurndownPointDto>();
@@ -298,15 +298,15 @@ namespace QAMS.Application.Services
                     {
                         actualRemaining -= burnedToday;
                     }
-                    
+
                     idealRemaining -= burnRate;
                 }
 
                 current = current.AddDays(1);
-                
+
                 // Limites de seguridad para evitar loops infinitos
                 if (current > finalDate && current > DateTime.Now.Date) break;
-                if (current > startDate.AddDays(365)) break; 
+                if (current > startDate.AddDays(365)) break;
             }
 
             return burndown;
@@ -321,7 +321,7 @@ namespace QAMS.Application.Services
 
             var totalCases = project.TestCases.Count;
             var executions = await execRepo.GetByProjectAsync(projectId);
-            
+
             // Agrupar por fecha (solo fecha, sin hora)
             var execsByDay = executions
                 .OrderBy(e => e.ExecutionDate)

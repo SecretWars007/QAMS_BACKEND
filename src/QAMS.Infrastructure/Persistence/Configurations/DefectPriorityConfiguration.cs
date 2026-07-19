@@ -23,10 +23,10 @@ namespace QAMS.Infrastructure.Persistence.Configurations
 
             // Seed data: prioridades ISTQB
             builder.HasData(
-                new DefectPriority { Id = 1, Code = "LOW",      Name = "Baja",     SortOrder = 1 },
-                new DefectPriority { Id = 2, Code = "MEDIUM",   Name = "Media",    SortOrder = 2 },
-                new DefectPriority { Id = 3, Code = "HIGH",     Name = "Alta",     SortOrder = 3 },
-                new DefectPriority { Id = 4, Code = "CRITICAL", Name = "Crítica",  SortOrder = 4 }
+                new DefectPriority { Id = 1, Code = "LOW", Name = "Baja", SortOrder = 1 },
+                new DefectPriority { Id = 2, Code = "MEDIUM", Name = "Media", SortOrder = 2 },
+                new DefectPriority { Id = 3, Code = "HIGH", Name = "Alta", SortOrder = 3 },
+                new DefectPriority { Id = 4, Code = "CRITICAL", Name = "Crítica", SortOrder = 4 }
             );
         }
     }

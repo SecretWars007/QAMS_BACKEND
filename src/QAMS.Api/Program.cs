@@ -128,12 +128,13 @@ builder.Services.AddScoped<ITestExecutionService, TestExecutionService>();
 builder.Services.AddScoped<IKanbanService, KanbanService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IDefectService, DefectService>();
+builder.Services.AddScoped<ISystemUnderTestService, SystemUnderTestService>();
 
 // AutoMapper - Escaneo explícito de la capa de Application
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
 // FluentValidation
-// builder.Services.AddValidatorsFromAssemblyContaining<MappingProfile>();
+builder.Services.AddValidatorsFromAssemblyContaining<MappingProfile>();
 
 // Controllers + API Explorer + Swagger
 builder.Services.AddControllers(options =>

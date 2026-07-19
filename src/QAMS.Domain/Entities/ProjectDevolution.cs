@@ -11,7 +11,7 @@ namespace QAMS.Domain.Entities
         public string Notes { get; set; } = string.Empty;
         public int ObservationsCount { get; set; }
         public DateTime DevolutionDate { get; set; } = DateTime.UtcNow;
-        
+
         public string? ResponseNotes { get; set; }
         public DateTime? ResponseDate { get; set; }
 

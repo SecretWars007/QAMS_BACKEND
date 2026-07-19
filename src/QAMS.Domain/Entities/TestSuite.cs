@@ -12,10 +12,10 @@ namespace QAMS.Domain.Entities
         public string? Description { get; set; }
         public Guid ProjectId { get; set; }
         public Project? Project { get; set; }
-        
+
         public int StatusId { get; set; }
         public TestSuiteStatus? Status { get; set; }
-        
+
         // ISoftDelete
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }

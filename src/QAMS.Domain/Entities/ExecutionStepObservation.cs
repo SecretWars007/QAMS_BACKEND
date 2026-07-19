@@ -9,9 +9,9 @@ namespace QAMS.Domain.Entities
         public Guid Id { get; set; }
         public Guid ExecutionStepResultId { get; set; }
         public ExecutionStepResult? ExecutionStepResult { get; set; }
-        
+
         public string Observation { get; set; } = string.Empty;
-        
+
         // Adjuntos
         public int? FileTypeId { get; set; }
         public EvidenceType? FileType { get; set; }

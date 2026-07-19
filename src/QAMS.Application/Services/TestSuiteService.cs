@@ -28,7 +28,7 @@ namespace QAMS.Application.Services
         public async Task<TestSuiteDto> CreateAsync(CreateTestSuiteDto dto)
         {
             logger.LogInformation("Creando suite de pruebas '{Name}' para el proyecto {ProjectId}.", dto.Name, dto.ProjectId);
-            
+
             // Validar nombre duplicado en el mismo proyecto
             var dtoNameLower = dto.Name.ToLower();
             var existing = await testSuiteRepo.FindAsync(s => s.ProjectId == dto.ProjectId && s.Name.ToLower() == dtoNameLower);
@@ -55,10 +55,10 @@ namespace QAMS.Application.Services
 
             // Recargar para incluir el Status para el mapeo
             var createdSuite = await testSuiteRepo.GetByIdAsync(suite.Id);
-            
+
             // Notificar al usuario logeado
-            await NotifyCurrentUserAsync("Nueva Suite de Pruebas", 
-                (u, s, p) => EmailTemplates.GetTestSuiteCreatedEmailHtml(u, s, p), 
+            await NotifyCurrentUserAsync("Nueva Suite de Pruebas",
+                (u, s, p) => EmailTemplates.GetTestSuiteCreatedEmailHtml(u, s, p),
                 createdSuite!.Name, project.Name);
 
             return mapper.Map<TestSuiteDto>(createdSuite);
@@ -67,17 +67,17 @@ namespace QAMS.Application.Services
         public async Task<TestSuiteDto> GetByIdAsync(Guid id)
         {
             logger.LogInformation("Obteniendo suite de pruebas {SuiteId}.", id);
-            
+
             var suite = await testSuiteRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestSuite), id);
-            
+
             return mapper.Map<TestSuiteDto>(suite);
         }
 
         public async Task<List<TestSuiteDto>> GetByProjectIdAsync(Guid projectId)
         {
             logger.LogInformation("Obteniendo suites de pruebas para proyecto {ProjectId}.", projectId);
-            
+
             var suites = await testSuiteRepo.GetByProjectWithTestCasesAsync(projectId);
             return mapper.Map<List<TestSuiteDto>>(suites);
         }
@@ -85,7 +85,7 @@ namespace QAMS.Application.Services
         public async Task DeleteAsync(Guid id)
         {
             logger.LogInformation("Eliminando suite de pruebas {SuiteId}.", id);
-            
+
             var suite = await testSuiteRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestSuite), id);
 
@@ -93,15 +93,15 @@ namespace QAMS.Application.Services
             await uow.SaveChangesAsync();
 
             // Notificar al usuario logeado (antes de perder info si fuera necesario, pero tenemos el objeto)
-            await NotifyCurrentUserAsync("Suite Eliminada", 
-                (u, s, p) => EmailTemplates.GetTestSuiteDeletedEmailHtml(u, s, p), 
+            await NotifyCurrentUserAsync("Suite Eliminada",
+                (u, s, p) => EmailTemplates.GetTestSuiteDeletedEmailHtml(u, s, p),
                 suite.Name, suite.Project?.Name ?? "N/A");
         }
 
         public async Task<TestSuiteDto> UpdateAsync(Guid id, CreateTestSuiteDto dto)
         {
             logger.LogInformation("Actualizando suite de pruebas {SuiteId}.", id);
-            
+
             var suite = await testSuiteRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestSuite), id);
 
@@ -127,8 +127,8 @@ namespace QAMS.Application.Services
             var updatedSuite = await testSuiteRepo.GetByIdAsync(suite.Id);
 
             // Notificar al usuario logeado
-            await NotifyCurrentUserAsync("Suite Actualizada", 
-                (u, s, p) => EmailTemplates.GetTestSuiteUpdatedEmailHtml(u, s, p), 
+            await NotifyCurrentUserAsync("Suite Actualizada",
+                (u, s, p) => EmailTemplates.GetTestSuiteUpdatedEmailHtml(u, s, p),
                 updatedSuite!.Name, updatedSuite.Project?.Name ?? "N/A");
 
             return mapper.Map<TestSuiteDto>(updatedSuite);
@@ -139,7 +139,7 @@ namespace QAMS.Application.Services
             // First find the suite to get its ProjectId
             var suiteBase = await testSuiteRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestSuite), id);
-            
+
             // Now load all suites in that project with their test cases (since repo has the specialized method)
             var suitesInProject = await testSuiteRepo.GetByProjectWithTestCasesAsync(suiteBase.ProjectId);
             var fullSuite = suitesInProject.FirstOrDefault(s => s.Id == id) ?? suiteBase;
@@ -180,7 +180,7 @@ namespace QAMS.Application.Services
         {
             var sourceSuite = (await testSuiteRepo.GetByProjectWithTestCasesAsync(Guid.Empty))
                               .FirstOrDefault(s => s.Id == id); // This is inefficient but avoids repo changes for now
-            
+
             // If Guid.Empty doesn't work well (it likely won't if the repo filters strictly), let's get project ID first
             if (sourceSuite == null)
             {
@@ -245,12 +245,12 @@ namespace QAMS.Application.Services
                 ?? throw new EntityNotFoundException(nameof(Project), targetProjectId);
 
             suite.ProjectId = targetProjectId;
-            
+
             // Need to update ProjectId in all linked test cases too
             // Ef Core should handle this if they are loaded, but let's be explicit if needed
             // Since we didn't load TestCases here, we might need a more robust approach
             // However, most of the time we just update the FK.
-            
+
             testSuiteRepo.Update(suite);
             await uow.SaveChangesAsync();
         }

@@ -8,9 +8,9 @@ namespace QAMS.Api.Models.TestExecutions
     {
         [Required(ErrorMessage = "El archivo es obligatorio.")]
         public IFormFile File { get; set; } = null!;
-        
+
         public string? Description { get; set; }
-        
+
         public Guid? StepResultId { get; set; }
     }
 }

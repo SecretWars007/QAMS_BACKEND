@@ -20,13 +20,11 @@ namespace QAMS.Domain.Entities
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
         public Guid? DeletedByUserId { get; set; }
-        
         // IAuditable implementation
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public Guid? CreatedByUserId { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public Guid? UpdatedByUserId { get; set; }
-        
         // Nuevos atributos de usuario
         public string DocumentoIdentidad { get; set; } = string.Empty;
         public DateOnly FechaNacimiento { get; set; }
@@ -43,7 +41,6 @@ namespace QAMS.Domain.Entities
         public ICollection<TestExecution> TestExecutions { get; set; } = [];
         [System.ComponentModel.DataAnnotations.Schema.InverseProperty("ResponsibleUser")]
         public ICollection<KanbanTask> ResponsibleForTasks { get; set; } = [];
-        
         // Proyectos a los que está asignado el usuario
         public ICollection<ProjectTester> ProjectAssignments { get; set; } = [];
 

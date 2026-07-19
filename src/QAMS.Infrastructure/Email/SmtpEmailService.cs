@@ -56,7 +56,7 @@ namespace QAMS.Infrastructure.Email
             catch (SmtpException smtpEx)
             {
                 _logger.LogError(smtpEx, "Fallo SMTP (StatusCode: {StatusCode}) al enviar a '{To}'. " +
-                                        "Host: {Host}, Port: {Port}, SSL: {SSL}, User: {User}", 
+                                        "Host: {Host}, Port: {Port}, SSL: {SSL}, User: {User}",
                                         smtpEx.StatusCode, to, _settings.Host, _settings.Port, _settings.EnableSsl, _settings.Username);
                 throw; // Re-lanzamos para que el llamador pueda manejarlo si lo desea (pero AuthService lo captura)
             }

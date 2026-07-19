@@ -36,7 +36,7 @@ namespace QAMS.Application.Services
         public async Task<RequirementDto> CreateAsync(Guid projectId, CreateRequirementDto dto)
         {
             logger.LogInformation("Agregando requisito al proyecto {ProjectId}.", projectId);
-            
+
             var project = await projectRepo.GetByIdAsync(projectId)
                 ?? throw new EntityNotFoundException(nameof(Project), projectId);
 
@@ -52,7 +52,7 @@ namespace QAMS.Application.Services
         public async Task<RequirementDto> UpdateAsync(Guid id, CreateRequirementDto dto)
         {
             logger.LogInformation("Actualizando requisito {RequirementId}.", id);
-            
+
             var requirement = await requirementRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(Requirement), id);
 
@@ -74,7 +74,7 @@ namespace QAMS.Application.Services
         public async Task DeleteAsync(Guid id)
         {
             logger.LogInformation("Eliminando requisito {RequirementId}.", id);
-            
+
             var requirement = await requirementRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(Requirement), id);
 
@@ -94,7 +94,7 @@ namespace QAMS.Application.Services
 
             // Verificar si ya existe
             var existingLink = (await reqTestCaseRepo.FindAsync(rt => rt.RequirementId == requirementId && rt.TestCaseId == testCaseId)).FirstOrDefault();
-            
+
             if (existingLink == null)
             {
                 var link = new RequirementTestCase
@@ -116,7 +116,7 @@ namespace QAMS.Application.Services
             logger.LogInformation("Desvinculando caso de prueba {TestCaseId} del requisito {RequirementId}.", testCaseId, requirementId);
 
             var existingLink = (await reqTestCaseRepo.FindAsync(rt => rt.RequirementId == requirementId && rt.TestCaseId == testCaseId)).FirstOrDefault();
-            
+
             if (existingLink != null)
             {
                 reqTestCaseRepo.Delete(existingLink);

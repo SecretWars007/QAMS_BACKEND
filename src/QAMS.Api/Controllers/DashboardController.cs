@@ -31,7 +31,7 @@ namespace QAMS.Api.Controllers
             var currentUserId = currentUserIdStr != null ? Guid.Parse(currentUserIdStr) : Guid.Empty;
 
             var targetUserId = userId ?? currentUserId;
-            
+
             _logger.LogInformation("GET /api/Dashboard - Obteniendo resumen para usuario {UserId}", targetUserId);
             var summary = await _dashboardService.GetSummaryAsync(targetUserId);
             return Ok(summary);
@@ -47,7 +47,7 @@ namespace QAMS.Api.Controllers
         {
             var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             var userId = userIdStr != null ? Guid.Parse(userIdStr) : Guid.Empty;
-            
+
             _logger.LogInformation("GET /api/Dashboard/summary - Obteniendo resumen para usuario logueado {UserId}", userId);
             var summary = await _dashboardService.GetSummaryAsync(userId);
             return Ok(summary);

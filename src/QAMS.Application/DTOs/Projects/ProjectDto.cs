@@ -9,13 +9,13 @@ namespace QAMS.Application.DTOs.Projects
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public bool IsActive { get; set; }
-        
+
         public string Version { get; set; } = "1.0";
         public decimal Budget { get; set; } = 0m;
         public string? Risks { get; set; }
         public Guid? LeaderId { get; set; }
         public string? LeaderName { get; set; }
-        
+
         public int ProjectPriorityId { get; set; }
         public string ProjectPriorityName { get; set; } = string.Empty;
         public int ProjectStatusId { get; set; }

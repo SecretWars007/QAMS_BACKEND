@@ -13,7 +13,7 @@ namespace QAMS.Infrastructure.Repositories
         protected readonly DbSet<T> _dbSet = context.Set<T>();
 
         public virtual async Task<T?> GetByIdAsync(Guid id) => await _dbSet.FindAsync(id);
-        
+
         public virtual async Task<IReadOnlyList<T>> GetAllAsync() =>
             await _dbSet.AsNoTracking().ToListAsync();
 

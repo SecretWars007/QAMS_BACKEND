@@ -167,7 +167,7 @@ namespace QAMS.Api.Controllers
                 // Validar tamaño máximo (50 MB)
                 if (request.File.Length > 50 * 1024 * 1024)
                     return BadRequest(new { error = "El archivo excede el tamaño máximo de 50 MB." });
-                
+
                 fileStream = request.File.OpenReadStream();
             }
 
@@ -183,10 +183,10 @@ namespace QAMS.Api.Controllers
                 await using (fileStream) // 'await using' for IAsyncDisposable
                 {
                     var obs = await _service.AddObservationAsync(
-                        GetUserId(), 
-                        dto, 
-                        fileStream, 
-                        request.File?.FileName, 
+                        GetUserId(),
+                        dto,
+                        fileStream,
+                        request.File?.FileName,
                         request.File?.ContentType);
 
                     return Created("", obs);
@@ -195,10 +195,10 @@ namespace QAMS.Api.Controllers
             else
             {
                 var obs = await _service.AddObservationAsync(
-                    GetUserId(), 
-                    dto, 
+                    GetUserId(),
+                    dto,
                     null, // No file stream
-                    null, 
+                    null,
                     null);
 
                 return Created("", obs);

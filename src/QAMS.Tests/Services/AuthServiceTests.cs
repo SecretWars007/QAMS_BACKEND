@@ -27,7 +27,7 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         // Arrange
         var user = await CreateTestUserAsync("validloginuser");
         var request = new LoginRequestDto { Username = user.Username, Password = "password123" };
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetAuthService(scope);
 
@@ -44,7 +44,7 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
     {
         // Arrange
         var request = new LoginRequestDto { Username = "unknown_user", Password = "password123" };
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetAuthService(scope);
 
@@ -57,17 +57,17 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
     {
         // Arrange
         var user = await CreateTestUserAsync("existinguser");
-        var request = new RegisterRequestDto 
-        { 
+        var request = new RegisterRequestDto
+        {
             Username = user.Username, // Mismo username
-            Email = "another@test.com", 
+            Email = "another@test.com",
             Password = "Password123!",
             DocumentoIdentidad = "12345678",
             FullName = "New User",
             FechaNacimiento = new DateOnly(1995, 1, 1),
             Telefono = "+12345678"
         };
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetAuthService(scope);
 
@@ -80,9 +80,9 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
     {
         // Arrange
         var uniqueId = Guid.NewGuid().ToString("N")[..8];
-        var request = new RegisterRequestDto 
-        { 
-            Username = $"young_{uniqueId}", 
+        var request = new RegisterRequestDto
+        {
+            Username = $"young_{uniqueId}",
             Email = $"young_{uniqueId}@test.com",
             Password = "Password123!",
             FullName = "Young User",
@@ -90,7 +90,7 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
             FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-17)),
             Telefono = "+12345678"
         };
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetAuthService(scope);
 
@@ -104,9 +104,9 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
     {
         // Arrange
         var uniqueId = Guid.NewGuid().ToString("N")[..8];
-        var request = new RegisterRequestDto 
-        { 
-            Username = $"old_{uniqueId}", 
+        var request = new RegisterRequestDto
+        {
+            Username = $"old_{uniqueId}",
             Email = $"old_{uniqueId}@test.com",
             Password = "Password123!",
             FullName = "Old User",
@@ -114,7 +114,7 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
             FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-81)),
             Telefono = "+12345678"
         };
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetAuthService(scope);
 
@@ -128,7 +128,7 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
     {
         // Arrange
         var user = await CreateTestUserAsync("forgotuser");
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetAuthService(scope);
 
@@ -137,8 +137,8 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
 
         // Assert
         token.Should().NotBeNullOrEmpty();
-        
-        await ExecuteInScopeAsync(async db => 
+
+        await ExecuteInScopeAsync(async db =>
         {
             var dbUser = await db.Users.FindAsync(user.Id);
             dbUser.Should().NotBeNull();
@@ -152,7 +152,7 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         // Arrange
         var user = await CreateTestUserAsync("resetuser");
         string token = "";
-        
+
         using (var scope = Factory.Services.CreateScope())
         {
             var service = GetAuthService(scope);
@@ -162,24 +162,24 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         using (var scope = Factory.Services.CreateScope())
         {
             var service = GetAuthService(scope);
-            
+
             // Act
-            await service.ResetPasswordAsync(new ResetPasswordRequestDto 
-            { 
-                Email = user.Email, 
-                ResetToken = token, 
-                NewPassword = "NewPassword123!" 
+            await service.ResetPasswordAsync(new ResetPasswordRequestDto
+            {
+                Email = user.Email,
+                ResetToken = token,
+                NewPassword = "NewPassword123!"
             });
         }
 
         // Assert
-        await ExecuteInScopeAsync(async db => 
+        await ExecuteInScopeAsync(async db =>
         {
             var dbUser = await db.Users.FindAsync(user.Id);
             dbUser.Should().NotBeNull();
             dbUser!.PasswordResetToken.Should().BeNull(); // Token limpiado
         });
-        
+
         // Comprobar que el login con nueva contraseña funciona
         using (var scope = Factory.Services.CreateScope())
         {
@@ -194,15 +194,15 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
     {
         // Arrange
         var user = await CreateTestUserAsync("revokeuser");
-        
+
         // Asignar un refresh token manualmente
-        await ExecuteInScopeAsync(async db => 
+        await ExecuteInScopeAsync(async db =>
         {
             var dbUser = await db.Users.FindAsync(user.Id);
             dbUser!.RefreshToken = "some-refresh-token";
             await db.SaveChangesAsync();
         });
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetAuthService(scope);
 
@@ -210,7 +210,7 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         await service.RevokeRefreshTokenAsync(user.Id);
 
         // Assert
-        await ExecuteInScopeAsync(async db => 
+        await ExecuteInScopeAsync(async db =>
         {
             var dbUser = await db.Users.FindAsync(user.Id);
             dbUser!.RefreshToken.Should().BeNull();
@@ -222,7 +222,7 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
     {
         // Arrange
         var user = await CreateTestUserAsync("adminresetuser");
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetAuthService(scope);
 
@@ -244,12 +244,12 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
     {
         // Arrange
         var fakeId = Guid.NewGuid();
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetAuthService(scope);
 
         // Act & Assert
-        await Assert.ThrowsAsync<EntityNotFoundException>(() => 
+        await Assert.ThrowsAsync<EntityNotFoundException>(() =>
             service.AdminResetPasswordAsync(fakeId, "any-password"));
     }
 }

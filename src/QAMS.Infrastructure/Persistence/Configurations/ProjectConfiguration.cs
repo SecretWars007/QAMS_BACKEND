@@ -24,6 +24,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(p => p.RemainingHours).HasColumnName("remaining_hours").HasColumnType("numeric(10,2)").HasDefaultValue(0m);
             builder.Property(p => p.ProjectPriorityId).HasColumnName("project_priority_id").HasDefaultValue(1);
             builder.Property(p => p.ProjectStatusId).HasColumnName("project_status_id").HasDefaultValue(1);
+            builder.HasIndex(p => p.ProjectStatusId).HasDatabaseName("ix_projects_project_status_id");
 
             // Nuevos Campos requeridos
             builder.Property(p => p.Version).HasColumnName("version").HasMaxLength(50).HasDefaultValue("1.0");

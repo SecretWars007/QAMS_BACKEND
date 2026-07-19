@@ -216,7 +216,8 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         /// Permite calcular la cobertura de requisitos (ISTQB).
         /// Tabla PostgreSQL: requirement_test_cases
         /// </summary>
-        public DbSet<RequirementTestCase> RequirementTestCases => Set<RequirementTestCase>();
+        public virtual DbSet<RequirementTestCase> RequirementTestCases { get; set; } = null!;
+        public virtual DbSet<SystemUnderTest> SystemsUnderTest { get; set; } = null!;
 
         /// <summary>
         /// Tabla de defectos/bugs detectados durante ejecuciones de prueba.

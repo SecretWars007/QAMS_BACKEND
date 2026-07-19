@@ -17,7 +17,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations.Catalogs
             builder.Property(t => t.Code).HasMaxLength(30).IsRequired();
             builder.Property(t => t.Name).HasMaxLength(50).IsRequired();
             builder.Property(t => t.Description).HasMaxLength(250);
-            
+
             // Seed Data
             builder.HasData(
                 new TestType { Id = 1, Code = "FUNCTIONAL_MANUAL", Name = "Funcional Manual", Description = "Prueba funcional ejecutada manualmente", SortOrder = 1, IsActive = true, CreatedAt = DateTime.UtcNow },

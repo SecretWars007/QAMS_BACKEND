@@ -21,7 +21,7 @@ namespace QAMS.Application.Interfaces
             string fileName, string contentType, string? description, Guid? stepResultId = null);
 
         // Observaciones
-        Task<ObservationDto> AddObservationAsync(Guid createdByUserId, CreateObservationDto dto, 
+        Task<ObservationDto> AddObservationAsync(Guid createdByUserId, CreateObservationDto dto,
             Stream? fileStream = null, string? fileName = null, string? contentType = null);
         Task<ObservationDto> AddResponseToObservationAsync(Guid responderUserId, Guid observationId, ResponseObservationDto dto);
     }

@@ -17,7 +17,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations.Catalogs
             builder.Property(s => s.Code).HasMaxLength(20).IsRequired();
             builder.Property(s => s.Name).HasMaxLength(50).IsRequired();
             builder.Property(s => s.Description).HasMaxLength(250);
-            
+
             // Seed Data
             builder.HasData(
                 new ProjectStatus { Id = 1, Code = "PENDIENTE", Name = "Pendiente", Description = "Proyecto registrado pero no iniciado", SortOrder = 1, IsActive = true, CreatedAt = DateTime.UtcNow },

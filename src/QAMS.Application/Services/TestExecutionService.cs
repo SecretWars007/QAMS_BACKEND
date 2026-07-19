@@ -119,7 +119,7 @@ namespace QAMS.Application.Services
             foreach (var step in testCase.TestSteps)
             {
                 var input = inputStepResults.GetValueOrDefault(step.Id);
-                
+
                 execution.StepResults.Add(
                     new ExecutionStepResult
                     {
@@ -204,11 +204,11 @@ namespace QAMS.Application.Services
             // Determinar el estado de la ejecución basado en los resultados de los pasos
             var passedStatus = await stepStatusRepo.GetByCodeAsync("PASSED");
             var failedStatus = await stepStatusRepo.GetByCodeAsync("FAILED");
-            
+
             var allPassed = dto.StepResults.All(sr => sr.StatusId == passedStatus!.Id);
             var anyFailed = dto.StepResults.Any(sr => sr.StatusId == failedStatus!.Id);
 
-            var executionStatusCode = 
+            var executionStatusCode =
                 anyFailed ? "FAILED" :
                 allPassed ? "PASSED" :
                 "IN_PROGRESS";
@@ -485,7 +485,7 @@ namespace QAMS.Application.Services
         public async Task<TestExecutionDto> UpdateCompleteAsync(Guid id, UpdateCompleteExecutionDto dto)
         {
             logger.LogInformation("Actualización completa de la ejecución {Id}.", id);
-            
+
             var execution = await execRepo.GetFullExecutionAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestExecution), id);
 
@@ -514,7 +514,7 @@ namespace QAMS.Application.Services
 
             // Sincronizar estado con el TestCase y horas del proyecto si terminó
             await SyncTestCaseStatusAsync(execution.TestCaseId, execution.StatusId);
-            
+
             var status = await execStatusRepo.GetByIdAsync(execution.StatusId);
             if (status?.Code == "PASSED" || status?.Code == "FAILED")
             {
@@ -534,7 +534,7 @@ namespace QAMS.Application.Services
             var pasoBlocked = await stepStatusRepo.GetByCodeAsync("BLOCKED");
 
             // Si no existen los códigos, la re-evaluación no puede continuar de forma segura
-            if (pasoPassed == null || pasoFailed == null) 
+            if (pasoPassed == null || pasoFailed == null)
             {
                 logger.LogWarning("Cólogos de estado 'PASSED' o 'FAILED' no encontrados en catálogo de pasos.");
                 return;
@@ -554,7 +554,7 @@ namespace QAMS.Application.Services
             if (newStatus != null)
             {
                 execution.StatusId = newStatus.Id;
-                
+
                 if (newExecStatusCode == "PASSED" || newExecStatusCode == "FAILED")
                 {
                     execution.CompletedAt = DateTime.UtcNow;
@@ -589,7 +589,7 @@ namespace QAMS.Application.Services
                     : "LOG_FILE";
 
                 var evidenceType = await evidenceTypeRepo.GetByCodeAsync(typeCode);
-                
+
                 // Guardar archivo
                 var filePath = await fileStorage.SaveFileAsync(
                     fileStream,
@@ -641,7 +641,7 @@ namespace QAMS.Application.Services
             // Por ahora, como TestCase no tiene un catálogo de estados explícito más allá de IsActive,
             // podríamos agregar lógica futura aquí. El usuario mencionó "actualizar su estado",
             // lo cual implica que TestCase debería tener un StatusId.
-            
+
             // por ahora solo registramos la intención
             logger.LogInformation("Sincronizando estado de TestCase {TestCaseId} con ejecución {Status}.", testCaseId, status.Code);
         }
@@ -649,7 +649,7 @@ namespace QAMS.Application.Services
         private async Task SyncProjectHoursAsync(Guid projectId)
         {
             logger.LogInformation("Sincronizando horas del proyecto {ProjectId}.", projectId);
-            
+
             var project = await projectRepo.GetByIdTrackedAsync(projectId);
             if (project == null) return;
 
@@ -684,8 +684,8 @@ namespace QAMS.Application.Services
 
             projectRepo.Update(project);
             await uow.SaveChangesAsync();
-            
-            logger.LogInformation("Proyecto {ProjectId} actualizado: Ejecutadas {Executed}, Remanentes {Remaining}.", 
+
+            logger.LogInformation("Proyecto {ProjectId} actualizado: Ejecutadas {Executed}, Remanentes {Remaining}.",
                 projectId, project.ExecutedHours, project.RemainingHours);
         }
     }

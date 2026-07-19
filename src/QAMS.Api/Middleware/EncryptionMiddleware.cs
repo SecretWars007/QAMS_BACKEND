@@ -17,18 +17,20 @@ public class EncryptionMiddleware(RequestDelegate next, ILogger<EncryptionMiddle
 
     public async Task InvokeAsync(HttpContext context, IEncryptionService encryptionService)
     {
-        // Skip encryption for Swagger, Health checks or if explicitly requested via header (for integration tests)
-        if (context.Request.Path.StartsWithSegments("/swagger") || 
+        // Skip encryption for Swagger, Health checks, Evidences or if explicitly requested via header (for integration tests)
+        if (context.Request.Path.StartsWithSegments("/swagger") ||
             context.Request.Path.StartsWithSegments("/health") ||
+            context.Request.Path.StartsWithSegments("/api/evidences") ||
             context.Request.Method == "OPTIONS" ||
-            context.Request.Headers.ContainsKey("X-Skip-Encryption"))
+            context.Request.Headers.ContainsKey("X-Skip-Encryption") ||
+            context.Request.HasFormContentType)
         {
             await _next(context);
             return;
         }
 
         // 1. Decrypt Request Body
-        if (context.Request.ContentLength > 0 && 
+        if (context.Request.ContentLength > 0 &&
             (context.Request.Method == "POST" || context.Request.Method == "PUT" || context.Request.Method == "PATCH"))
         {
             try
@@ -36,10 +38,10 @@ public class EncryptionMiddleware(RequestDelegate next, ILogger<EncryptionMiddle
                 context.Request.EnableBuffering();
                 using var reader = new StreamReader(context.Request.Body, leaveOpen: true);
                 var encryptedBody = await reader.ReadToEndAsync();
-                
+
                 // Intenta deserializar el sobre de cifrado (soporta Data/data por CaseInsensitive)
                 string? cipherText = null;
-                try 
+                try
                 {
                     var envelope = JsonSerializer.Deserialize<EncryptionEnvelope>(encryptedBody, _jsonOptions);
                     if (envelope != null && !string.IsNullOrEmpty(envelope.Data))
@@ -54,7 +56,7 @@ public class EncryptionMiddleware(RequestDelegate next, ILogger<EncryptionMiddle
 
                 var decryptedBody = encryptionService.Decrypt(cipherText);
                 var requestData = Encoding.UTF8.GetBytes(decryptedBody);
-                
+
                 context.Request.Body = new MemoryStream(requestData);
                 context.Request.ContentLength = requestData.Length;
                 context.Request.ContentType = "application/json";
@@ -87,7 +89,7 @@ public class EncryptionMiddleware(RequestDelegate next, ILogger<EncryptionMiddle
                 var encryptedResponse = encryptionService.Encrypt(plainTextResponse);
                 var envelope = new EncryptionEnvelope { Data = encryptedResponse };
                 var jsonResponse = JsonSerializer.Serialize(envelope);
-                
+
                 var responseData = Encoding.UTF8.GetBytes(jsonResponse);
                 context.Response.ContentLength = responseData.Length;
                 await context.Response.Body.WriteAsync(responseData);

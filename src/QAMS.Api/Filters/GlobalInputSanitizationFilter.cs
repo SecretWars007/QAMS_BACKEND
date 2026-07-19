@@ -26,8 +26,8 @@ namespace QAMS.Api.Filters
             {
                 if (arg != null && ContainsInvalidData(arg, out string errorMessage))
                 {
-                    context.Result = new BadRequestObjectResult(new 
-                    { 
+                    context.Result = new BadRequestObjectResult(new
+                    {
                         Message = errorMessage,
                         ErrorCode = "INVALID_INPUT_DATA"
                     });
@@ -56,9 +56,9 @@ namespace QAMS.Api.Filters
             }
 
             var type = obj.GetType();
-            
+
             // Ignorar tipos primitivos base a menos que queramos validarlos explícitamente
-            if (type.Namespace?.StartsWith("System") == true && !type.Name.Contains("Date") && !type.IsPrimitive) 
+            if (type.Namespace?.StartsWith("System") == true && !type.Name.Contains("Date") && !type.IsPrimitive)
                 return false;
 
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -67,8 +67,8 @@ namespace QAMS.Api.Filters
             foreach (var prop in properties)
             {
                 // Omitir campos que legítimamente necesitan caracteres especiales
-                if (prop.Name.Contains("Password", StringComparison.OrdinalIgnoreCase) || 
-                    prop.Name.Contains("Token", StringComparison.OrdinalIgnoreCase)) 
+                if (prop.Name.Contains("Password", StringComparison.OrdinalIgnoreCase) ||
+                    prop.Name.Contains("Token", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 var val = prop.GetValue(obj);
@@ -77,7 +77,7 @@ namespace QAMS.Api.Filters
                 // Validación de cadenas de texto
                 if (val is string s)
                 {
-                    if (UnsafeRegex().IsMatch(s)) 
+                    if (UnsafeRegex().IsMatch(s))
                     {
                         errorMessage = $"El campo {prop.Name} contiene caracteres prohibidos por seguridad (' ` < > = \\).";
                         return true;
@@ -88,7 +88,7 @@ namespace QAMS.Api.Filters
                 {
                     foreach (var item in list)
                     {
-                        if (item is string ls && UnsafeRegex().IsMatch(ls)) 
+                        if (item is string ls && UnsafeRegex().IsMatch(ls))
                         {
                             errorMessage = $"Un elemento de la lista {prop.Name} contiene caracteres prohibidos (' ` < > = \\).";
                             return true;
@@ -130,8 +130,8 @@ namespace QAMS.Api.Filters
         {
             return Type.GetTypeCode(Nullable.GetUnderlyingType(type) ?? type) switch
             {
-                TypeCode.Byte or TypeCode.SByte or TypeCode.UInt16 or TypeCode.UInt32 or 
-                TypeCode.UInt64 or TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 or 
+                TypeCode.Byte or TypeCode.SByte or TypeCode.UInt16 or TypeCode.UInt32 or
+                TypeCode.UInt64 or TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 or
                 TypeCode.Decimal or TypeCode.Double or TypeCode.Single => true,
                 _ => false,
             };

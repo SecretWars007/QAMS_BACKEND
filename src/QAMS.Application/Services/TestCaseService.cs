@@ -123,7 +123,7 @@ namespace QAMS.Application.Services
                     // Recargar tablero completo para tener las columnas
                     var fullBoard = await kanbanBoardRepo.GetFullBoardAsync(board.Id);
                     var todoColumn = fullBoard?.Columns.FirstOrDefault(c => c.Name == "Por Hacer");
-                    
+
                     if (todoColumn != null)
                     {
                         await kanbanService.CreateTaskAsync(new QAMS.Application.DTOs.Kanban.CreateKanbanTaskDto
@@ -258,7 +258,7 @@ namespace QAMS.Application.Services
             logger.LogInformation("Obteniendo pasos del caso {Id}.", id);
             var testCase = await testCaseRepo.GetWithStepsAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestCase), id);
-                
+
             return mapper.Map<List<TestStepDto>>(testCase.TestSteps);
         }
 

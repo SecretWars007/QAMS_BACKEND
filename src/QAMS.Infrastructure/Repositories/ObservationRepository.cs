@@ -24,7 +24,7 @@ namespace QAMS.Infrastructure.Repositories
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
         }
-        
+
         public override async Task<ExecutionStepObservation?> GetByIdAsync(Guid id)
         {
             return await _dbSet

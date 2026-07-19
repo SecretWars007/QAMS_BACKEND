@@ -84,7 +84,7 @@ namespace QAMS.Application.Services
 
             // 1. Validar conflictos ACTIVOS primero (para arrojar 400 Bad Request)
             var allConflicts = await _userRepo.GetPhysicalConflictsAsync(dto.Email, dto.Username, dto.DocumentoIdentidad);
-            
+
             var activeConflicts = allConflicts.Where(u => !u.IsDeleted).ToList();
             if (activeConflicts.Count > 0)
             {
@@ -102,7 +102,7 @@ namespace QAMS.Application.Services
             foreach (var oldUser in historicalConflicts)
             {
                 _logger.LogInformation("Anonimizando registro histórico conflictivo (ID: {UserId}) para permitir nueva creación admin.", oldUser.Id);
-                
+
                 // Limpiar campos únicos para que no choquen con el registro físico nuevo
                 var timestamp = DateTime.UtcNow.Ticks;
                 oldUser.Email = $"deleted_{timestamp}_{oldUser.Email}";
@@ -189,7 +189,7 @@ namespace QAMS.Application.Services
             // 1. Validar conflictos (Email, Documento) e ignorar históricos durante la validación de activos
             var doc = dto.DocumentoIdentidad ?? user.DocumentoIdentidad;
             var allConflicts = await _userRepo.GetPhysicalConflictsAsync(dto.Email, user.Username, doc);
-            
+
             // Validar conflictos ACTIVOS (excluyendo al usuario actual)
             var activeConflicts = allConflicts.Where(u => !u.IsDeleted && u.Id != id).ToList();
             if (activeConflicts.Count > 0)
@@ -386,12 +386,12 @@ namespace QAMS.Application.Services
 
             _logger.LogInformation("Contraseña restablecida exitosamente para {UserId}.", userId);
 
-            try 
+            try
             {
                 var body = QAMS.Application.Templates.EmailTemplates.GetAdminPasswordResetEmailHtml(user.FullName, newPassword);
                 await _emailService.SendEmailAsync(user.Email, "Contraseña actualizada por administrador", body);
             }
-            catch(Exception emailEx) 
+            catch (Exception emailEx)
             {
                 _logger.LogWarning(emailEx, "No se pudo enviar el correo de confirmación de Reset Password a '{Email}'.", user.Email);
             }

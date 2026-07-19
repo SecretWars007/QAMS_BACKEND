@@ -41,7 +41,7 @@ namespace QAMS.Api.Controllers
         {
             var existing = await defectService.GetByIdAsync(id);
             if (existing == null || existing.ProjectId != projectId) return NotFound();
-            
+
             var updated = await defectService.UpdateAsync(id, dto);
             return Ok(updated);
         }

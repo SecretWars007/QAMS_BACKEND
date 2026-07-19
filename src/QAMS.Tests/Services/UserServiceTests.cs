@@ -25,9 +25,9 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         {
             var httpContextAccessor = scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>();
             var context = new DefaultHttpContext();
-            var identity = new ClaimsIdentity(new[] 
-            { 
-                new Claim(ClaimTypes.NameIdentifier, currentUserId.Value.ToString()) 
+            var identity = new ClaimsIdentity(new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, currentUserId.Value.ToString())
             }, "TestAuth");
             context.User = new ClaimsPrincipal(identity);
             httpContextAccessor.HttpContext = context;
@@ -41,8 +41,8 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         // Arrange
         var user = await CreateTestUserAsync("assignuser");
         Guid roleId = Guid.NewGuid();
-        
-        await ExecuteInScopeAsync(async db => 
+
+        await ExecuteInScopeAsync(async db =>
         {
             db.Roles.Add(new Role { Id = roleId, Name = "TestRoleAssign", Description = "Desc" });
             await db.SaveChangesAsync();
@@ -55,7 +55,7 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         await service.AssignRoleAsync(user.Id, roleId);
 
         // Assert
-        await ExecuteInScopeAsync(async db => 
+        await ExecuteInScopeAsync(async db =>
         {
             var userRole = await db.UserRoles.FirstOrDefaultAsync(ur => ur.UserId == user.Id && ur.RoleId == roleId);
             userRole.Should().NotBeNull();
@@ -68,7 +68,7 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         // Arrange
         Guid fakeUserId = Guid.NewGuid();
         Guid roleId = Guid.NewGuid();
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetUserService(scope);
 
@@ -82,7 +82,7 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         // Arrange
         var user = await CreateTestUserAsync("assignuser2");
         Guid fakeRoleId = Guid.NewGuid();
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetUserService(scope);
 
@@ -96,8 +96,8 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         // Arrange
         var user = await CreateTestUserAsync("removerole");
         Guid roleId = Guid.NewGuid();
-        
-        await ExecuteInScopeAsync(async db => 
+
+        await ExecuteInScopeAsync(async db =>
         {
             db.Roles.Add(new Role { Id = roleId, Name = "TestRoleRemove", Description = "Desc" });
             db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = roleId });
@@ -111,7 +111,7 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         await service.RemoveRoleAsync(user.Id, roleId);
 
         // Assert
-        await ExecuteInScopeAsync(async db => 
+        await ExecuteInScopeAsync(async db =>
         {
             var userRole = await db.UserRoles.FirstOrDefaultAsync(ur => ur.UserId == user.Id && ur.RoleId == roleId && !ur.IsDeleted);
             userRole.Should().BeNull();
@@ -125,8 +125,8 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         var user = await CreateTestUserAsync("removeall");
         Guid roleId1 = Guid.NewGuid();
         Guid roleId2 = Guid.NewGuid();
-        
-        await ExecuteInScopeAsync(async db => 
+
+        await ExecuteInScopeAsync(async db =>
         {
             db.Roles.Add(new Role { Id = roleId1, Name = "R1", Description = "Desc" });
             db.Roles.Add(new Role { Id = roleId2, Name = "R2", Description = "Desc" });
@@ -142,7 +142,7 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         await service.RemoveAllRolesAsync(user.Id);
 
         // Assert
-        await ExecuteInScopeAsync(async db => 
+        await ExecuteInScopeAsync(async db =>
         {
             var count = await db.UserRoles.CountAsync(ur => ur.UserId == user.Id && !ur.IsDeleted);
             count.Should().Be(0);
@@ -163,7 +163,7 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         await service.DeleteAsync(targetUser.Id);
 
         // Assert
-        await ExecuteInScopeAsync(async db => 
+        await ExecuteInScopeAsync(async db =>
         {
             var updatedUser = await db.Users.FindAsync(targetUser.Id);
             updatedUser!.IsActive.Should().BeFalse();
@@ -190,8 +190,8 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         // Arrange
         var targetUser = await CreateTestUserAsync("targetdelete2");
         var currentUser = await CreateTestUserAsync("currentuser2");
-        
-        await ExecuteInScopeAsync(async db => 
+
+        await ExecuteInScopeAsync(async db =>
         {
             var roleId = Guid.NewGuid();
             db.Roles.Add(new Role { Id = roleId, Name = "RoleForDeleteTest", Description = "Desc" });
@@ -213,7 +213,7 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         // Arrange
         await CreateTestUserAsync("getall1");
         await CreateTestUserAsync("getall2");
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetUserService(scope);
 
@@ -231,13 +231,13 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         // Arrange
         var user1 = await CreateTestUserAsync("user1");
         var user2 = await CreateTestUserAsync("user2");
-        
-        var dto = new UpdateUserDto 
-        { 
+
+        var dto = new UpdateUserDto
+        {
             Email = user1.Email, // Usar el email del user1
-            FullName = "New Name", 
-            IsActive = true, 
-            RoleIds = [] 
+            FullName = "New Name",
+            IsActive = true,
+            RoleIds = []
         };
 
         using var scope = Factory.Services.CreateScope();
@@ -252,9 +252,9 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
     {
         // Arrange
         var uniqueId = Guid.NewGuid().ToString("N")[..8];
-        var dto = new CreateUserDto 
-        { 
-            Username = $"young_create_{uniqueId}", 
+        var dto = new CreateUserDto
+        {
+            Username = $"young_create_{uniqueId}",
             Email = $"young_create_{uniqueId}@y.com",
             DocumentoIdentidad = $"DOC-{uniqueId}",
             FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-17)),
@@ -274,9 +274,9 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
     {
         // Arrange
         var user = await CreateTestUserAsync("updateage");
-        var dto = new UpdateUserDto 
-        { 
-            Email = user.Email, 
+        var dto = new UpdateUserDto
+        {
+            Email = user.Email,
             FechaNacimiento = DateOnly.FromDateTime(DateTime.Today.AddYears(-85)),
             RoleIds = []
         };
@@ -295,7 +295,7 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         // Arrange
         var user = await CreateTestUserAsync("resetpasstest");
         var oldHash = user.PasswordHash;
-        
+
         using var scope = Factory.Services.CreateScope();
         var service = GetUserService(scope);
 
@@ -303,7 +303,7 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         await service.ResetPasswordAsync(user.Id, "NewPassword123!");
 
         // Assert
-        await ExecuteInScopeAsync(async db => 
+        await ExecuteInScopeAsync(async db =>
         {
             var dbUser = await db.Users.FindAsync(user.Id);
             dbUser!.PasswordHash.Should().NotBe(oldHash); // El hash debe haber cambiado

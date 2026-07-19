@@ -40,7 +40,7 @@ public class QamsIntegrationTestFactory : WebApplicationFactory<Program>, IAsync
             // Remover la BD normal
             var descriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<QamsDbContext>));
-            
+
             if (descriptor != null)
                 services.Remove(descriptor);
 
@@ -79,12 +79,12 @@ public class QamsIntegrationTestFactory : WebApplicationFactory<Program>, IAsync
         // 2. Ejecutar EnsureCreated / Migraciones para que la DB esté lista para los tests
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<QamsDbContext>();
-        
+
         // EnsureCreated elimina restos si un test anterior falló gravemente, 
         // pero con un contenedor Docker fresco usualmente no hace falta.
         // Cambiamos a MigrateAsync() para asegurar que el esquema coincida con las migraciones,
         // incluyendo la columna 'documento_identidad'.
-        await db.Database.MigrateAsync(); 
+        await db.Database.MigrateAsync();
     }
 
     async Task IAsyncLifetime.DisposeAsync()

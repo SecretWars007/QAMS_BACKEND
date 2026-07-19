@@ -36,18 +36,18 @@ namespace QAMS.Application.Services
         public async Task<CatalogItemDto> CreateAsync(string catalogName, CreateCatalogItemDto dto)
         {
             logger.LogInformation("Creando valor en catálogo '{Name}': {Code}.", catalogName, dto.Code);
-            var result = await ResolveRepo<CatalogBase>(catalogName, async repo => 
+            var result = await ResolveRepo<CatalogBase>(catalogName, async repo =>
             {
                 if (await repo.ExistsByCodeAsync(dto.Code))
                     throw new DomainException($"Código '{dto.Code}' ya existe.");
-                
+
                 var entity = CreateEntityInstance(catalogName);
                 entity.Code = dto.Code.ToUpper();
                 entity.Name = dto.Name;
                 entity.Description = dto.Description;
                 entity.SortOrder = dto.SortOrder;
                 entity.IsActive = dto.IsActive;
-                
+
                 await repo.AddAsync(entity);
                 return (CatalogBase)entity;
             });
@@ -59,17 +59,17 @@ namespace QAMS.Application.Services
         public async Task<CatalogItemDto> UpdateAsync(string catalogName, int id, CreateCatalogItemDto dto)
         {
             logger.LogInformation("Actualizando ID={Id} en catálogo '{Name}'.", id, catalogName);
-            var result = await ResolveRepo<CatalogBase>(catalogName, async repo => 
+            var result = await ResolveRepo<CatalogBase>(catalogName, async repo =>
             {
                 var entity = await repo.GetByIdAsync(id)
                     ?? throw new EntityNotFoundException(catalogName, id);
-                
+
                 entity.Code = dto.Code.ToUpper();
                 entity.Name = dto.Name;
                 entity.Description = dto.Description;
                 entity.SortOrder = dto.SortOrder;
                 entity.IsActive = dto.IsActive;
-                
+
                 repo.Update(entity);
                 return (CatalogBase)entity;
             });

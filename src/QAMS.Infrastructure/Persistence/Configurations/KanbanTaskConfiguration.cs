@@ -20,6 +20,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(t => t.OrderIndex).HasColumnName("order_index").IsRequired();
             builder.Property(t => t.DueDate).HasColumnName("due_date");
             builder.Property(t => t.AssigneeId).HasColumnName("assignee_id");
+            builder.HasIndex(t => t.AssigneeId).HasDatabaseName("ix_kanban_tasks_assignee_id");
             builder.Property(t => t.TestCaseId).HasColumnName("test_case_id");
             builder.Property(t => t.PriorityId).HasColumnName("priority_id").IsRequired();
 

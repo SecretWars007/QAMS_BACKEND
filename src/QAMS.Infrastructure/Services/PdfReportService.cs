@@ -1,16 +1,16 @@
 // src/QAMS.Infrastructure/Services/PdfReportService.cs
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Microsoft.Extensions.Logging;
+using QAMS.Application.DTOs.Reports;
+using QAMS.Application.Interfaces;
+using QAMS.Domain.Entities;
+using QAMS.Domain.Ports.Repositories;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using QAMS.Application.Interfaces;
-using QAMS.Application.DTOs.Reports;
-using QAMS.Domain.Ports.Repositories;
-using QAMS.Domain.Entities;
-using System.Collections.Generic;
-using System.Linq;
-using System.IO;
-using System;
-using Microsoft.Extensions.Logging;
 
 namespace QAMS.Infrastructure.Services
 {
@@ -27,6 +27,19 @@ namespace QAMS.Infrastructure.Services
         private readonly IEvidenceRepository _evidenceRepo = evidenceRepo;
         private readonly ILogger<PdfReportService> _logger = logger;
         private readonly string _uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        private const string ColorPrimary = "#1A237E";
+        private const string ColorSuccess = "#2E7D32";
+        private const string ColorLightPrimary = "#E8EAF6";
+        private const string ColorBorder = "#E0E0E0";
+        private const string ColorDanger = "#C62828";
+        private const string ColorLightSuccess = "#E8F5E9";
+        private const string ColorGrey = "#757575";
+        private const string ColorGreen = "#4CAF50";
+        private const string ColorRed = "#F44336";
+        private const string DateFormat = "dd/MM/yyyy";
+        private const string TypeImage = "IMAGE";
+        private const string StatusPassed = "PASSED";
+        private const string StatusAprobado = "Aprobado";
 
         static PdfReportService()
         {
@@ -48,7 +61,7 @@ namespace QAMS.Infrastructure.Services
         public async Task<byte[]> GenerateProjectObservationsReportAsync(Guid projectId)
         {
             _logger.LogInformation("Generando reporte de observaciones para el proyecto {ProjectId}.", projectId);
-            
+
             var projectList = await _projectRepo.FindWithDetailsAsync(p => p.Id == projectId);
             var project = projectList.FirstOrDefault();
             if (project == null) return [];
@@ -79,7 +92,7 @@ namespace QAMS.Infrastructure.Services
                         row.RelativeItem().Column(col =>
                         {
                             col.Item().Text("QAMS - QUALITY ASSURANCE MANAGEMENT SYSTEM").FontSize(10).SemiBold().FontColor("#3F51B5");
-                            col.Item().Text("REPORT DE HALLAZGOS Y OBSERVACIONES").FontSize(24).ExtraBold().FontColor("#1A237E");
+                            col.Item().Text("REPORT DE HALLAZGOS Y OBSERVACIONES").FontSize(24).ExtraBold().FontColor(ColorPrimary);
                             col.Item().Text($"Proyecto: {project.Name}").FontSize(14).SemiBold().FontColor("#5C6BC0");
                         });
 
@@ -93,7 +106,7 @@ namespace QAMS.Infrastructure.Services
                     page.Content().PaddingVertical(20).Column(col =>
                     {
                         // SECCIÓN 1: RESUMEN EJECUTIVO
-                        col.Item().BorderBottom(2).BorderColor("#1A237E").PaddingBottom(5).Text("1. RESUMEN DEL PROYECTO").FontSize(14).Bold().FontColor("#1A237E");
+                        col.Item().BorderBottom(2).BorderColor(ColorPrimary).PaddingBottom(5).Text("1. RESUMEN DEL PROYECTO").FontSize(14).Bold().FontColor(ColorPrimary);
                         col.Item().PaddingTop(10).Table(table =>
                         {
                             table.ColumnsDefinition(columns =>
@@ -106,15 +119,15 @@ namespace QAMS.Infrastructure.Services
                             table.Cell().Text(project.Description ?? "Sin descripción");
 
                             table.Cell().PaddingTop(5).Text("Fecha de Inicio:").Bold();
-                            table.Cell().PaddingTop(5).Text(project.StartDate?.ToString("dd/MM/yyyy") ?? "N/A");
+                            table.Cell().PaddingTop(5).Text(project.StartDate?.ToString(DateFormat) ?? "N/A");
 
                             table.Cell().PaddingTop(5).Text("Estado Actual:").Bold();
-                            table.Cell().PaddingTop(5).Text(project.ProjectStatus?.Name ?? "N/A").FontColor("#2E7D32").Bold();
+                            table.Cell().PaddingTop(5).Text(project.ProjectStatus?.Name ?? "N/A").FontColor(ColorSuccess).Bold();
                         });
 
                         // SECCIÓN 2: HISTÓRICO DE DEVOLUCIONES
-                        col.Item().PaddingTop(25).BorderBottom(2).BorderColor("#1A237E").PaddingBottom(5).Text("2. HISTORIAL DE DEVOLUCIONES").FontSize(14).Bold().FontColor("#1A237E");
-                        
+                        col.Item().PaddingTop(25).BorderBottom(2).BorderColor(ColorPrimary).PaddingBottom(5).Text("2. HISTORIAL DE DEVOLUCIONES").FontSize(14).Bold().FontColor(ColorPrimary);
+
                         if (project.HistoricDevolutions == null || project.HistoricDevolutions.Count == 0)
                         {
                             col.Item().PaddingTop(10).Text("No existen registros históricos de devoluciones.").Italic().FontColor(Colors.Grey.Darken1);
@@ -133,17 +146,17 @@ namespace QAMS.Infrastructure.Services
 
                                 table.Header(header =>
                                 {
-                                    header.Cell().Background("#E8EAF6").Padding(5).Text("F. Devolución").Bold().FontSize(9);
-                                    header.Cell().Background("#E8EAF6").Padding(5).Text("Motivo / Notas").Bold().FontSize(9);
-                                    header.Cell().Background("#E8EAF6").Padding(5).Text("F. Respuesta").Bold().FontSize(9);
-                                    header.Cell().Background("#E8EAF6").Padding(5).Text("Respuesta").Bold().FontSize(9);
+                                    header.Cell().Background(ColorLightPrimary).Padding(5).Text("F. Devolución").Bold().FontSize(9);
+                                    header.Cell().Background(ColorLightPrimary).Padding(5).Text("Motivo / Notas").Bold().FontSize(9);
+                                    header.Cell().Background(ColorLightPrimary).Padding(5).Text("F. Respuesta").Bold().FontSize(9);
+                                    header.Cell().Background(ColorLightPrimary).Padding(5).Text("Respuesta").Bold().FontSize(9);
                                 });
 
                                 foreach (var dev in project.HistoricDevolutions.OrderByDescending(d => d.DevolutionDate))
                                 {
-                                    table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(dev.DevolutionDate.ToString("dd/MM/yyyy")).FontSize(8);
+                                    table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(dev.DevolutionDate.ToString(DateFormat)).FontSize(8);
                                     table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(dev.Notes).FontSize(8);
-                                    table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(dev.ResponseDate?.ToString("dd/MM/yyyy") ?? "-").FontSize(8);
+                                    table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(dev.ResponseDate?.ToString(DateFormat) ?? "-").FontSize(8);
                                     table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(dev.ResponseNotes ?? "Pendiente").FontSize(8);
                                 }
                             });
@@ -151,10 +164,10 @@ namespace QAMS.Infrastructure.Services
 
                         // SECCIÓN 3: DETALLE DE OBSERVACIONES Y EVIDENCIAS
                         page.Footer().AlignCenter().Text(x => { x.Span("Página "); x.CurrentPageNumber(); });
-                        
+
                         col.Item().PageBreak(); // Comenzar observaciones en nueva página para claridad
 
-                        col.Item().BorderBottom(2).BorderColor("#1A237E").PaddingBottom(5).Text("3. DETALLE DE OBSERVACIONES Y EVIDENCIAS").FontSize(14).Bold().FontColor("#1A237E");
+                        col.Item().BorderBottom(2).BorderColor(ColorPrimary).PaddingBottom(5).Text("3. DETALLE DE OBSERVACIONES Y EVIDENCIAS").FontSize(14).Bold().FontColor(ColorPrimary);
 
                         if (allObservations.Count == 0)
                         {
@@ -164,12 +177,12 @@ namespace QAMS.Infrastructure.Services
                         {
                             foreach (var obs in allObservations.OrderByDescending(o => o.CreatedAt))
                             {
-                                col.Item().PaddingTop(20).Border(1).BorderColor("#E0E0E0").Padding(0).Column(obsCol =>
+                                col.Item().PaddingTop(20).Border(1).BorderColor(ColorBorder).Padding(0).Column(obsCol =>
                                 {
                                     // Encabezado de la observación
                                     obsCol.Item().Background("#F5F5F5").Padding(8).Row(r =>
                                     {
-                                        r.RelativeItem().Text($"Caso: {obs.ExecutionStepResult?.TestExecution?.TestCase?.Title ?? "N/A"}").FontSize(11).Bold().FontColor("#1A237E");
+                                        r.RelativeItem().Text($"Caso: {obs.ExecutionStepResult?.TestExecution?.TestCase?.Title ?? "N/A"}").FontSize(11).Bold().FontColor(ColorPrimary);
                                         r.AutoItem().Text(obs.CreatedAt.ToString("dd/MM/yyyy HH:mm")).FontSize(9).Italic();
                                     });
 
@@ -183,22 +196,22 @@ namespace QAMS.Infrastructure.Services
 
                                         inner.Item().PaddingTop(10).Background("#FFEBEE").Padding(8).Column(fault =>
                                         {
-                                            fault.Item().Text("HALLAZGO / OBSERVACIÓN:").Bold().FontColor("#C62828").FontSize(9);
+                                            fault.Item().Text("HALLAZGO / OBSERVACIÓN:").Bold().FontColor(ColorDanger).FontSize(9);
                                             fault.Item().PaddingTop(2).Text(obs.Observation).FontSize(10);
                                         });
 
                                         if (!string.IsNullOrEmpty(obs.Response))
                                         {
-                                            inner.Item().PaddingTop(10).Background("#E8F5E9").Padding(8).Column(resp =>
+                                            inner.Item().PaddingTop(10).Background(ColorLightSuccess).Padding(8).Column(resp =>
                                             {
-                                                resp.Item().Text("RESPUESTA DE INGENIERÍA:").Bold().FontColor("#2E7D32").FontSize(9);
+                                                resp.Item().Text("RESPUESTA DE INGENIERÍA:").Bold().FontColor(ColorSuccess).FontSize(9);
                                                 resp.Item().PaddingTop(2).Text(obs.Response).FontSize(10);
                                             });
                                         }
 
                                         // EVIDENCIAS (Imágenes)
-                                        var evidences = allEvidences.Where(e => e.ExecutionStepResultId == obs.ExecutionStepResultId && 
-                                            (e.FileType?.Code == "IMAGE" || e.FileType?.Code == "VIDEO")).ToList();
+                                        var evidences = allEvidences.Where(e => e.ExecutionStepResultId == obs.ExecutionStepResultId &&
+                                            (e.FileType?.Code == TypeImage || e.FileType?.Code == "VIDEO")).ToList();
 
                                         if (evidences.Count > 0)
                                         {
@@ -212,17 +225,20 @@ namespace QAMS.Infrastructure.Services
                                                 });
 
                                                 // 1. Mostrar el archivo propio de la observación si existe y es imagen/video
-                                                if (!string.IsNullOrEmpty(obs.FilePath) && (obs.FileType?.Code == "IMAGE" || obs.FileType?.Code == "VIDEO"))
+                                                if (!string.IsNullOrEmpty(obs.FilePath) && (obs.FileType?.Code == TypeImage || obs.FileType?.Code == "VIDEO"))
                                                 {
                                                     var obsFilePath = Path.Combine(_uploadsPath, obs.FilePath);
                                                     if (File.Exists(obsFilePath))
                                                     {
                                                         table.Cell().Border(0.5f).BorderColor(Colors.Grey.Lighten2).Column(imgCol =>
                                                         {
-                                                            try {
+                                                            try
+                                                            {
                                                                 imgCol.Item().Image(obsFilePath).FitHeight();
                                                                 imgCol.Item().Padding(2).AlignCenter().Text(obs.FileName ?? "Captura de observación").FontSize(7).Italic();
-                                                            } catch {
+                                                            }
+                                                            catch
+                                                            {
                                                                 imgCol.Item().Padding(10).Text("[Error al cargar imagen]").FontSize(8);
                                                             }
                                                         });
@@ -237,10 +253,13 @@ namespace QAMS.Infrastructure.Services
                                                     {
                                                         table.Cell().Border(0.5f).BorderColor(Colors.Grey.Lighten2).Column(imgCol =>
                                                         {
-                                                            try {
+                                                            try
+                                                            {
                                                                 imgCol.Item().Image(filePath).FitHeight();
                                                                 imgCol.Item().Padding(2).AlignCenter().Text(ev.Description ?? "Captura de evidencia").FontSize(7).Italic();
-                                                            } catch {
+                                                            }
+                                                            catch
+                                                            {
                                                                 imgCol.Item().Padding(10).Text("[Error al cargar imagen]").FontSize(8);
                                                             }
                                                         });
@@ -262,7 +281,7 @@ namespace QAMS.Infrastructure.Services
         public async Task<byte[]> GenerateFinalComplianceReportAsync(Guid projectId)
         {
             _logger.LogInformation("Generando reporte de cumplimiento final para el proyecto {ProjectId}.", projectId);
-            
+
             var project = await _projectRepo.GetFullProjectForComplianceReportAsync(projectId);
             if (project == null) return [];
 
@@ -276,22 +295,22 @@ namespace QAMS.Infrastructure.Services
                     page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
 
                     // HEADER - Estilo Certificado
-                    page.Header().BorderBottom(1).BorderColor("#2E7D32").PaddingBottom(5).Row(row =>
+                    page.Header().BorderBottom(1).BorderColor(ColorSuccess).PaddingBottom(5).Row(row =>
                     {
                         row.RelativeItem().Column(col =>
                         {
-                            col.Item().Text("CERTIFICADO DE CUMPLIMIENTO QA").FontSize(20).ExtraBold().FontColor("#2E7D32");
+                            col.Item().Text("CERTIFICADO DE CUMPLIMIENTO QA").FontSize(20).ExtraBold().FontColor(ColorSuccess);
                             col.Item().Text($"Proyecto: {project.Name}").FontSize(12).SemiBold();
                             col.Item().Text($"Fecha de Emisión: {DateTime.Now:dd/MM/yyyy}").FontSize(9).Italic();
                         });
 
-                        row.AutoItem().Height(40).AlignCenter().Text("QAMS").FontSize(24).ExtraBold().FontColor("#2E7D32");
+                        row.AutoItem().Height(40).AlignCenter().Text("QAMS").FontSize(24).ExtraBold().FontColor(ColorSuccess);
                     });
 
                     page.Content().PaddingTop(20).Column(col =>
                     {
                         // 1. RESUMEN EJECUTIVO
-                        col.Item().Text("1. RESUMEN EJECUTIVO").FontSize(14).Bold().FontColor("#2E7D32");
+                        col.Item().Text("1. RESUMEN EJECUTIVO").FontSize(14).Bold().FontColor(ColorSuccess);
                         col.Item().PaddingTop(5).Text(project.Description ?? "Este documento certifica que el proyecto ha pasado por las fases de validación de calidad correspondientes.");
 
                         // 2. PANEL DE RESULTADOS
@@ -309,14 +328,14 @@ namespace QAMS.Infrastructure.Services
 
                             row.RelativeItem().PaddingLeft(5).Border(1).BorderColor("#C8E6C9").Background("#F1F8E9").Padding(10).Column(stat =>
                             {
-                                stat.Item().AlignCenter().Text("CUMPLIDOS").FontSize(9).FontColor("#2E7D32");
-                                stat.Item().AlignCenter().Text(passedCases.ToString()).FontSize(18).Bold().FontColor("#2E7D32");
+                                stat.Item().AlignCenter().Text("CUMPLIDOS").FontSize(9).FontColor(ColorSuccess);
+                                stat.Item().AlignCenter().Text(passedCases.ToString()).FontSize(18).Bold().FontColor(ColorSuccess);
                             });
 
                             row.RelativeItem().PaddingLeft(5).Border(1).BorderColor("#FFCDD2").Background("#FFEBEE").Padding(10).Column(stat =>
                             {
-                                stat.Item().AlignCenter().Text("CON FALLOS").FontSize(9).FontColor("#C62828");
-                                stat.Item().AlignCenter().Text(failedCases.ToString()).FontSize(18).Bold().FontColor("#C62828");
+                                stat.Item().AlignCenter().Text("CON FALLOS").FontSize(9).FontColor(ColorDanger);
+                                stat.Item().AlignCenter().Text(failedCases.ToString()).FontSize(18).Bold().FontColor(ColorDanger);
                             });
 
                             row.RelativeItem().PaddingLeft(5).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).Column(stat =>
@@ -328,7 +347,7 @@ namespace QAMS.Infrastructure.Services
                         });
 
                         // 3. DETALLE DE CUMPLIMIENTO
-                        col.Item().PaddingTop(25).Text("2. EVIDENCIAS DE CUMPLIMIENTO POR CASO DE PRUEBA").FontSize(14).Bold().FontColor("#2E7D32");
+                        col.Item().PaddingTop(25).Text("2. EVIDENCIAS DE CUMPLIMIENTO POR CASO DE PRUEBA").FontSize(14).Bold().FontColor(ColorSuccess);
 
                         foreach (var tc in project.TestCases.OrderBy(t => t.Title))
                         {
@@ -340,7 +359,7 @@ namespace QAMS.Infrastructure.Services
 
                                     var lastExec = tc.TestExecutions.OrderByDescending(e => (e as QAMS.Domain.Entities.TestExecution).ExecutionDate).FirstOrDefault() as QAMS.Domain.Entities.TestExecution;
                                     string statusName = lastExec?.Status?.Name ?? "PENDIENTE";
-                                    string statusColor = lastExec?.Status?.Code == "PASSED" ? "#2E7D32" : (lastExec == null ? "#757575" : "#C62828");
+                                    string statusColor = lastExec?.Status?.Code == StatusPassed ? ColorSuccess : (lastExec == null ? ColorGrey : ColorDanger);
 
                                     r.AutoItem().Text(statusName).Bold().FontColor(statusColor);
                                 });
@@ -349,8 +368,8 @@ namespace QAMS.Infrastructure.Services
                                     tcBox.Item().PaddingTop(2).Text(tc.Description).FontSize(8).Italic().FontColor(Colors.Grey.Darken1);
 
                                 // Evidencias del último resultado
-                                if (tc.TestExecutions.OrderByDescending(e => (e as TestExecution).ExecutionDate).FirstOrDefault() is TestExecution { Evidences.Count: > 0 } lastExecResults && 
-                                    lastExecResults.Evidences.Any(e => e.FileType is { Code: "IMAGE" }))
+                                if (tc.TestExecutions.OrderByDescending(e => (e as TestExecution).ExecutionDate).FirstOrDefault() is TestExecution { Evidences.Count: > 0 } lastExecResults &&
+                                    lastExecResults.Evidences.Any(e => e.FileType is { Code: TypeImage }))
                                 {
                                     tcBox.Item().PaddingTop(8).Table(table =>
                                     {
@@ -361,12 +380,13 @@ namespace QAMS.Infrastructure.Services
                                             columns.RelativeColumn();
                                         });
 
-                                        foreach (var ev in lastExecResults.Evidences.Where(e => e.FileType?.Code == "IMAGE").Take(6))
+                                        foreach (var ev in lastExecResults.Evidences.Where(e => e.FileType?.Code == TypeImage).Take(6))
                                         {
                                             var path = Path.Combine(_uploadsPath, ev.FilePath);
                                             if (File.Exists(path))
                                             {
-                                                table.Cell().Border(0.2f).BorderColor(Colors.Grey.Lighten2).Column(imgCol => {
+                                                table.Cell().Border(0.2f).BorderColor(Colors.Grey.Lighten2).Column(imgCol =>
+                                                {
                                                     imgCol.Item().Image(path).FitWidth();
                                                     imgCol.Item().AlignCenter().Text(ev.Description ?? "Captura").FontSize(6);
                                                 });
@@ -381,7 +401,7 @@ namespace QAMS.Infrastructure.Services
                         if (project.HistoricDevolutions.Count > 0)
                         {
                             col.Item().PageBreak();
-                            col.Item().Text("3. TRAZABILIDAD DE DEVOLUCIONES Y REPORTE DE HALLAZGOS").FontSize(14).Bold().FontColor("#2E7D32");
+                            col.Item().Text("3. TRAZABILIDAD DE DEVOLUCIONES Y REPORTE DE HALLAZGOS").FontSize(14).Bold().FontColor(ColorSuccess);
                             col.Item().PaddingTop(10).Table(table =>
                             {
                                 table.ColumnsDefinition(columns =>
@@ -393,15 +413,15 @@ namespace QAMS.Infrastructure.Services
                                 });
                                 table.Header(h =>
                                 {
-                                    h.Cell().Background("#E8F5E9").Padding(5).Text("Fecha").Bold().FontSize(9);
-                                    h.Cell().Background("#E8F5E9").Padding(5).Text("Motivo Devolución").Bold().FontSize(9);
-                                    h.Cell().Background("#E8F5E9").Padding(5).Text("Obs. QA").Bold().FontSize(9);
-                                    h.Cell().Background("#E8F5E9").Padding(5).Text("Estado / Respuesta").Bold().FontSize(9);
+                                    h.Cell().Background(ColorLightSuccess).Padding(5).Text("Fecha").Bold().FontSize(9);
+                                    h.Cell().Background(ColorLightSuccess).Padding(5).Text("Motivo Devolución").Bold().FontSize(9);
+                                    h.Cell().Background(ColorLightSuccess).Padding(5).Text("Obs. QA").Bold().FontSize(9);
+                                    h.Cell().Background(ColorLightSuccess).Padding(5).Text("Estado / Respuesta").Bold().FontSize(9);
                                 });
 
                                 foreach (var dev in project.HistoricDevolutions.OrderByDescending(d => d.DevolutionDate))
                                 {
-                                    table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(dev.DevolutionDate.ToString("dd/MM/yyyy")).FontSize(8);
+                                    table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(dev.DevolutionDate.ToString(DateFormat)).FontSize(8);
                                     table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(dev.Notes).FontSize(8);
                                     table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(dev.ObservationsCount.ToString()).FontSize(8).AlignCenter();
                                     table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(dev.ResponseNotes ?? "Pendiente de atención").FontSize(8);
@@ -424,10 +444,10 @@ namespace QAMS.Infrastructure.Services
         private async Task<byte[]> GenerateProjectReportInternalAsync(Guid projectId, bool isBurndownOnly = false)
         {
             _logger.LogInformation("Generando reporte interno (BurndownOnly: {IsBurndownOnly}) para {ProjectId}.", isBurndownOnly, projectId);
-            
+
             var projectList = await _projectRepo.FindWithDetailsAsync(p => p.Id == projectId);
             var project = projectList.FirstOrDefault();
-            
+
             if (project == null) return [];
 
             var executions = await _execRepo.GetByProjectAsync(projectId);
@@ -452,10 +472,10 @@ namespace QAMS.Infrastructure.Services
                     {
                         row.RelativeItem().Column(col =>
                         {
-                            col.Item().Text(project.Name.ToUpper()).FontSize(24).ExtraBold().FontColor("#1A237E");
+                            col.Item().Text(project.Name.ToUpper()).FontSize(24).ExtraBold().FontColor(ColorPrimary);
                             col.Item().PaddingTop(-5).Text(isBurndownOnly ? "REPORTE DE PROGRESO Y BURNDOWN (ENFOQUE DE TIEMPO)" : "REPORTE EJECUTIVO DE PROYECTO Y DETALLE QA").FontSize(10).SemiBold().FontColor("#5C6BC0");
                         });
-                        
+
                         row.AutoItem().Column(col =>
                         {
                             col.Item().Text(DateTime.Now.ToString("dd/MM/yyyy HH:mm")).FontSize(9).FontColor("#9E9E9E");
@@ -466,24 +486,24 @@ namespace QAMS.Infrastructure.Services
                     page.Content().PaddingVertical(20).Column(col =>
                     {
                         // Sección 1: Información General
-                        col.Item().Row(row => 
+                        col.Item().Row(row =>
                         {
-                            row.RelativeItem().Column(infoCol => 
+                            row.RelativeItem().Column(infoCol =>
                             {
-                                infoCol.Item().BorderBottom(1).BorderColor("#1A237E").PaddingBottom(2).Text("INFORMACIÓN GENERAL").FontSize(12).Bold().FontColor("#1A237E");
-                                infoCol.Item().PaddingTop(5).Table(table => 
+                                infoCol.Item().BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2).Text("INFORMACIÓN GENERAL").FontSize(12).Bold().FontColor(ColorPrimary);
+                                infoCol.Item().PaddingTop(5).Table(table =>
                                 {
                                     table.ColumnsDefinition(c => { c.ConstantColumn(100); c.RelativeColumn(); });
-                                    
+
                                     table.Cell().Text("Descripción:").Bold().FontSize(9);
                                     table.Cell().Text(project.Description ?? "N/A").FontSize(9);
-                                    
+
                                     table.Cell().Text("Fecha Inicio:").Bold().FontSize(9);
-                                    table.Cell().Text(project.StartDate?.ToString("dd/MM/yyyy") ?? "N/A").FontSize(9);
-                                    
+                                    table.Cell().Text(project.StartDate?.ToString(DateFormat) ?? "N/A").FontSize(9);
+
                                     table.Cell().Text("Fecha Fin:").Bold().FontSize(9);
-                                    table.Cell().Text(project.EndDate?.ToString("dd/MM/yyyy") ?? "N/A").FontSize(9);
-                                    
+                                    table.Cell().Text(project.EndDate?.ToString(DateFormat) ?? "N/A").FontSize(9);
+
                                     table.Cell().Text("Prioridad:").Bold().FontSize(9);
                                     table.Cell().Text(project.ProjectPriority?.Name ?? "N/A").FontSize(9);
                                 });
@@ -491,51 +511,57 @@ namespace QAMS.Infrastructure.Services
 
                             row.ConstantItem(20);
 
-                            row.RelativeItem().Column(metricCol => 
+                            row.RelativeItem().Column(metricCol =>
                             {
-                                metricCol.Item().BorderBottom(1).BorderColor("#1A237E").PaddingBottom(2).Text("MÉTRICAS CLAVE").FontSize(12).Bold().FontColor("#1A237E");
-                                metricCol.Item().PaddingTop(5).Row(mRow => 
+                                metricCol.Item().BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2).Text("MÉTRICAS CLAVE").FontSize(12).Bold().FontColor(ColorPrimary);
+                                metricCol.Item().PaddingTop(5).Row(mRow =>
                                 {
-                                    mRow.RelativeItem().Element(MetricBlock).Column(c => {
-                                        c.Item().AlignCenter().Text("Total Horas").FontSize(8).FontColor("#757575");
+                                    mRow.RelativeItem().Element(MetricBlock).Column(c =>
+                                    {
+                                        c.Item().AlignCenter().Text("Total Horas").FontSize(8).FontColor(ColorGrey);
                                         c.Item().AlignCenter().Text(project.GetCalculatedTotalHours().ToString("N1")).FontSize(14).Bold();
                                     });
                                     mRow.ConstantItem(5);
-                                    mRow.RelativeItem().Element(MetricBlock).Column(c => {
-                                        c.Item().AlignCenter().Text("Total Días").FontSize(8).FontColor("#757575");
+                                    mRow.RelativeItem().Element(MetricBlock).Column(c =>
+                                    {
+                                        c.Item().AlignCenter().Text("Total Días").FontSize(8).FontColor(ColorGrey);
                                         c.Item().AlignCenter().Text(project.GetCalculatedTotalDays().ToString()).FontSize(14).Bold();
                                     });
                                     mRow.ConstantItem(5);
-                                    mRow.RelativeItem().Element(MetricBlock).Column(c => {
-                                        c.Item().AlignCenter().Text("Casos").FontSize(8).FontColor("#757575");
+                                    mRow.RelativeItem().Element(MetricBlock).Column(c =>
+                                    {
+                                        c.Item().AlignCenter().Text("Casos").FontSize(8).FontColor(ColorGrey);
                                         c.Item().AlignCenter().Text(project.TestCases.Count.ToString()).FontSize(14).Bold();
                                     });
                                     mRow.ConstantItem(5);
-                                    mRow.RelativeItem().Element(MetricBlock).Column(c => {
+                                    mRow.RelativeItem().Element(MetricBlock).Column(c =>
+                                    {
                                         var rate = CalculatePassRate(executionList);
-                                        c.Item().AlignCenter().Text("Pass Rate").FontSize(8).FontColor("#757575");
-                                        c.Item().AlignCenter().Text($"{rate}%").FontSize(14).Bold().FontColor(rate >= 80 ? "#4CAF50" : "#F44336");
+                                        c.Item().AlignCenter().Text("Pass Rate").FontSize(8).FontColor(ColorGrey);
+                                        c.Item().AlignCenter().Text($"{rate}%").FontSize(14).Bold().FontColor(rate >= 80 ? ColorGreen : ColorRed);
                                     });
                                 });
                             });
                         });
 
                         // Sección 2: Gráfico Burndown (El protagonista)
-                        col.Item().PaddingTop(25).BorderBottom(1).BorderColor("#1A237E").PaddingBottom(2).Text("TENDENCIA DE TRABAJO (BURNDOWN CHART - DÍAS HÁBILES)").FontSize(14).Bold().FontColor("#1A237E");
+                        col.Item().PaddingTop(25).BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2).Text("TENDENCIA DE TRABAJO (BURNDOWN CHART - DÍAS HÁBILES)").FontSize(14).Bold().FontColor(ColorPrimary);
                         col.Item().PaddingTop(10).Element(c => DrawBurndownChart(c, project, executionList));
 
                         if (!isBurndownOnly)
                         {
                             // Sección 3: Otros Gráficos
-                            col.Item().PaddingTop(25).BorderBottom(1).BorderColor("#1A237E").PaddingBottom(2).Text("PROGRESO Y LÍNEA DE TIEMPO").FontSize(12).Bold().FontColor("#1A237E");
-                            col.Item().PaddingTop(10).Row(row => 
+                            col.Item().PaddingTop(25).BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2).Text("PROGRESO Y LÍNEA DE TIEMPO").FontSize(12).Bold().FontColor(ColorPrimary);
+                            col.Item().PaddingTop(10).Row(row =>
                             {
-                                row.RelativeItem().Column(c => {
+                                row.RelativeItem().Column(c =>
+                                {
                                     c.Item().PaddingBottom(5).AlignCenter().Text("Drawdown (Casos)").FontSize(9).SemiBold();
                                     c.Item().Element(e => DrawDrawdownChart(e, project, executionList));
                                 });
                                 row.ConstantItem(15);
-                                row.RelativeItem().Column(c => {
+                                row.RelativeItem().Column(c =>
+                                {
                                     c.Item().PaddingBottom(5).AlignCenter().Text("Timeline de Ejecuciones").FontSize(9).SemiBold();
                                     c.Item().Element(e => DrawTimeline(e, executionList));
                                 });
@@ -545,33 +571,33 @@ namespace QAMS.Infrastructure.Services
                         if (!isBurndownOnly)
                         {
                             // Sección 4: Detalle de Escenarios y Casos de Prueba
-                            col.Item().PaddingTop(25).BorderBottom(1).BorderColor("#1A237E").PaddingBottom(2).Text("DETALLE DE ESCENARIOS (SUITES) Y CASOS DE PRUEBA").FontSize(12).Bold().FontColor("#1A237E");
-                            
+                            col.Item().PaddingTop(25).BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2).Text("DETALLE DE ESCENARIOS (SUITES) Y CASOS DE PRUEBA").FontSize(12).Bold().FontColor(ColorPrimary);
+
                             foreach (var suite in project.TestSuites.OrderBy(s => s.Name))
                             {
-                                col.Item().PaddingTop(15).Background("#E8EAF6").Padding(5).Column(suiteCol => 
+                                col.Item().PaddingTop(15).Background(ColorLightPrimary).Padding(5).Column(suiteCol =>
                                 {
-                                    suiteCol.Item().Text($"ESCENARIO: {suite.Name.ToUpper()}").FontSize(11).Bold().FontColor("#1A237E");
+                                    suiteCol.Item().Text($"ESCENARIO: {suite.Name.ToUpper()}").FontSize(11).Bold().FontColor(ColorPrimary);
                                     if (!string.IsNullOrEmpty(suite.Description))
                                         suiteCol.Item().Text(suite.Description).FontSize(9).Italic().FontColor("#3F51B5");
                                 });
 
                                 var suiteTestCases = project.TestCases.Where(tc => tc.TestSuiteId == suite.Id).OrderBy(tc => tc.Title).ToList();
-                                
+
                                 foreach (var testCase in suiteTestCases)
                                 {
                                     col.Item().PaddingVertical(10).PaddingLeft(10).Column(caseCol =>
                                     {
-                                        caseCol.Item().Row(row => 
+                                        caseCol.Item().Row(row =>
                                         {
                                             row.RelativeItem().Text($"CASO DE PRUEBA: {testCase.Title.ToUpper()}").FontSize(10).Bold().FontColor("#1976D2");
                                         });
-                                        
-                                        caseCol.Item().PaddingLeft(5).Column(tcDetails => 
+
+                                        caseCol.Item().PaddingLeft(5).Column(tcDetails =>
                                         {
                                             if (!string.IsNullOrEmpty(testCase.Description))
                                                 tcDetails.Item().Text($"Descripción: {testCase.Description}").FontSize(9);
-                                            
+
                                             tcDetails.Item().Text($"Precondiciones: {testCase.Preconditions ?? "N/A"}").FontSize(9);
                                             tcDetails.Item().Text($"Resultado Esperado: {testCase.ExpectedResult ?? "N/A"}").FontSize(9);
                                         });
@@ -614,7 +640,7 @@ namespace QAMS.Infrastructure.Services
                                             {
                                                 caseCol.Item().PaddingLeft(10).PaddingVertical(5).BorderLeft(2).BorderColor("#EEEEEE").PaddingLeft(5).Column(execCol =>
                                                 {
-                                                    execCol.Item().Row(row => 
+                                                    execCol.Item().Row(row =>
                                                     {
                                                         row.RelativeItem().Text($"Ejecución #{exec.Id.ToString()[..8].ToUpper()}").FontSize(9).SemiBold();
                                                         row.AutoItem().Text(exec.ExecutionDate.ToString("dd/MM/yyyy HH:mm")).FontSize(9).Italic();
@@ -627,11 +653,11 @@ namespace QAMS.Infrastructure.Services
                                                     var isTrulyPassed = exec.IsSuccessful();
                                                     var isEnProgreso = exec.StatusId == 2 || exec.Status?.Code == "IN_PROGRESS";
                                                     var isInReview = exec.IsInReview();
-                                                    
-                                                    var statusName = isTrulyPassed ? "Aprobado" : (isEnProgreso ? (isInReview ? "Completado/En Revisión" : "En Progreso") : (exec.Status?.Name ?? (exec.StatusId == 4 ? "Fallido" : (exec.StatusId == 1 ? "Pendiente" : exec.StatusId.ToString()))));
-                                                    var statusColor = isTrulyPassed || isInReview ? "#4CAF50" : (isEnProgreso ? "#2196F3" : (exec.IsFailed() ? "#F44336" : "#757575"));
 
-                                                    execCol.Item().Text(text => 
+                                                    var statusName = isTrulyPassed ? StatusAprobado : (isEnProgreso ? (isInReview ? "Completado/En Revisión" : "En Progreso") : (exec.Status?.Name ?? (exec.StatusId == 4 ? "Fallido" : (exec.StatusId == 1 ? "Pendiente" : exec.StatusId.ToString()))));
+                                                    var statusColor = isTrulyPassed || isInReview ? ColorGreen : (isEnProgreso ? "#2196F3" : (exec.IsFailed() ? ColorRed : ColorGrey));
+
+                                                    execCol.Item().Text(text =>
                                                     {
                                                         text.Span("Estado Global: ").FontSize(8);
                                                         text.Span(statusName).FontSize(8).Bold().FontColor(statusColor);
@@ -641,7 +667,7 @@ namespace QAMS.Infrastructure.Services
                                                     if (exec.StepResults is { Count: > 0 })
                                                     {
                                                         execCol.Item().PaddingTop(3).Text("Resultados de Pasos:").FontSize(8).SemiBold();
-                                                        execCol.Item().Table(resTable => 
+                                                        execCol.Item().Table(resTable =>
                                                         {
                                                             resTable.ColumnsDefinition(columns =>
                                                             {
@@ -653,14 +679,15 @@ namespace QAMS.Infrastructure.Services
                                                             foreach (var res in exec.StepResults.OrderBy(sr => sr.TestStep?.StepOrder))
                                                             {
                                                                 resTable.Cell().Element(CellStyle).Text(res.TestStep?.StepOrder.ToString() ?? "-").FontSize(7);
-                                                                resTable.Cell().Element(CellStyle).Column(c => {
+                                                                resTable.Cell().Element(CellStyle).Column(c =>
+                                                                {
                                                                     c.Item().Text($"Resultado Actual: {res.ActualResult ?? "Sin resultado"}").FontSize(7);
                                                                     if (!string.IsNullOrEmpty(res.Notes)) c.Item().Text($"Descripción del Resultado (Notas): {res.Notes}").FontSize(7).Italic().FontColor("#455A64");
                                                                 });
-                                                                
-                                                                var sName = res.Status?.Name ?? (res.StatusId == 2 ? "Aprobado" : (res.StatusId == 3 ? "Fallido" : (res.StatusId == 1 ? "No Ejecutado" : res.StatusId.ToString())));
-                                                                var sColor = (sName == "Aprobado" || res.StatusId == 2) ? "#4CAF50" : ((sName == "Fallido" || res.StatusId == 3) ? "#F44336" : "#757575");
-                                                                
+
+                                                                var sName = res.Status?.Name ?? (res.StatusId == 2 ? StatusAprobado : (res.StatusId == 3 ? "Fallido" : (res.StatusId == 1 ? "No Ejecutado" : res.StatusId.ToString())));
+                                                                var sColor = (sName == StatusAprobado || res.StatusId == 2) ? ColorGreen : ((sName == "Fallido" || res.StatusId == 3) ? ColorRed : ColorGrey);
+
                                                                 resTable.Cell().Element(CellStyle).Text(sName).FontSize(7).Bold().FontColor(sColor);
 
                                                                 // Evidencias del PASO de ejecución específica
@@ -671,7 +698,7 @@ namespace QAMS.Infrastructure.Services
                                                                         var p = Path.Combine(_uploadsPath, ev.FilePath);
                                                                         if (File.Exists(p) && ((ev.ContentType != null && ev.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)) || IsImageExtension(ev.FileName ?? "")))
                                                                         {
-                                                                            resTable.Cell().ColumnSpan(3).PaddingTop(5).Column(evCol => 
+                                                                            resTable.Cell().ColumnSpan(3).PaddingTop(5).Column(evCol =>
                                                                             {
                                                                                 if (!string.IsNullOrEmpty(ev.Description))
                                                                                     evCol.Item().PaddingLeft(10).Text($"Evidencia: {ev.Description}").FontSize(6).Italic();
@@ -693,7 +720,7 @@ namespace QAMS.Infrastructure.Services
                                                             var fullPath = Path.Combine(_uploadsPath, evidence.FilePath);
                                                             if (File.Exists(fullPath) && ((evidence.ContentType != null && evidence.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)) || IsImageExtension(evidence.FileName ?? "")))
                                                             {
-                                                                execCol.Item().PaddingVertical(5).Column(evCol => 
+                                                                execCol.Item().PaddingVertical(5).Column(evCol =>
                                                                 {
                                                                     if (!string.IsNullOrEmpty(evidence.Description))
                                                                         evCol.Item().Text($"Descripción Evidencia: {evidence.Description}").FontSize(7).Italic();
@@ -707,7 +734,7 @@ namespace QAMS.Infrastructure.Services
                                         }
                                         else
                                         {
-                                            caseCol.Item().PaddingLeft(5).Text("Sin ejecuciones registradas.").Italic().FontSize(9).FontColor("#757575");
+                                            caseCol.Item().PaddingLeft(5).Text("Sin ejecuciones registradas.").Italic().FontSize(9).FontColor(ColorGrey);
                                         }
                                     });
                                 }
@@ -717,7 +744,7 @@ namespace QAMS.Infrastructure.Services
                         if (!isBurndownOnly)
                         {
                             // Sección 5: Kanban
-                            col.Item().PaddingTop(25).BorderBottom(1).BorderColor("#1A237E").PaddingBottom(2).Text("ESTADO DE TAREAS KANBAN").FontSize(12).Bold().FontColor("#1A237E");
+                            col.Item().PaddingTop(25).BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2).Text("ESTADO DE TAREAS KANBAN").FontSize(12).Bold().FontColor(ColorPrimary);
                             col.Item().PaddingTop(10).Table(table =>
                             {
                                 table.ColumnsDefinition(columns =>
@@ -744,12 +771,13 @@ namespace QAMS.Infrastructure.Services
                         }
                     });
 
-                    page.Footer().Column(fCol => 
+                    page.Footer().Column(fCol =>
                     {
-                        fCol.Item().PaddingTop(10).BorderTop(0.5f).BorderColor("#EEEEEE").Row(row => 
+                        fCol.Item().PaddingTop(10).BorderTop(0.5f).BorderColor("#EEEEEE").Row(row =>
                         {
                             row.RelativeItem().Text("Documento generado automáticamente por QAMS").FontSize(8).Italic().FontColor("#BDBDBD");
-                            row.AutoItem().Text(x => {
+                            row.AutoItem().Text(x =>
+                            {
                                 x.Span("Página ").FontSize(8);
                                 x.CurrentPageNumber().FontSize(8);
                             });
@@ -767,16 +795,16 @@ namespace QAMS.Infrastructure.Services
                 .Background("#F5F5F5")
                 .Padding(8)
                 .Border(0.5f)
-                .BorderColor("#E0E0E0");
+                .BorderColor(ColorBorder);
         }
 
         private static bool IsImageExtension(string fileName)
         {
             var ext = Path.GetExtension(fileName);
-            return string.Equals(ext, ".jpg", StringComparison.OrdinalIgnoreCase) || 
-                   string.Equals(ext, ".jpeg", StringComparison.OrdinalIgnoreCase) || 
-                   string.Equals(ext, ".png", StringComparison.OrdinalIgnoreCase) || 
-                   string.Equals(ext, ".gif", StringComparison.OrdinalIgnoreCase) || 
+            return string.Equals(ext, ".jpg", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(ext, ".jpeg", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(ext, ".png", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(ext, ".gif", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(ext, ".bmp", StringComparison.OrdinalIgnoreCase);
         }
 
@@ -802,7 +830,7 @@ namespace QAMS.Infrastructure.Services
         {
             return container
                 .BorderBottom(1)
-                .BorderColor("#e0e0e0")
+                .BorderColor(ColorBorder)
                 .PaddingVertical(5)
                 .AlignCenter();
         }
@@ -811,23 +839,23 @@ namespace QAMS.Infrastructure.Services
         {
             if (executions == null || executions.Count == 0)
             {
-                container.Text("Sin histórico de ejecuciones para mostrar en la línea de tiempo.").Italic().FontSize(9).FontColor("#757575");
+                container.Text("Sin histórico de ejecuciones para mostrar en la línea de tiempo.").Italic().FontSize(9).FontColor(ColorGrey);
                 return;
             }
 
             var sortedExecs = executions.OrderBy(e => e.ExecutionDate).ToList();
             var minDate = sortedExecs.First().ExecutionDate.Date;
             var uniqueDays = sortedExecs.Select(e => e.ExecutionDate.Date).Distinct().OrderBy(d => d).Take(14).ToList();
-            
+
             // Definimos el rango de horas (Ej. de 8:00 a 20:00 o según los datos)
             var minHour = Math.Max(0, sortedExecs.Min(e => e.ExecutionDate.Hour) - 1);
             var maxHour = Math.Min(23, sortedExecs.Max(e => e.ExecutionDate.Hour) + 1);
-            
+
             if (maxHour - minHour < 5) { minHour = 8; maxHour = 20; } // Rango mínimo estético
 
             container.Column(col =>
             {
-                col.Item().PaddingBottom(5).Text("Eje X: Días del Proyecto | Eje Y: Horas").FontSize(8).Italic().FontColor("#757575").AlignCenter();
+                col.Item().PaddingBottom(5).Text("Eje X: Días del Proyecto | Eje Y: Horas").FontSize(8).Italic().FontColor(ColorGrey).AlignCenter();
 
                 col.Item().Table(table =>
                 {
@@ -854,17 +882,17 @@ namespace QAMS.Infrastructure.Services
                     // Filas por cada Hora
                     for (int hour = minHour; hour <= maxHour; hour++)
                     {
-                        table.Cell().Element(MatrixAxisStyle).Text($"{hour:D2}:00").FontSize(7).FontColor("#757575");
+                        table.Cell().Element(MatrixAxisStyle).Text($"{hour:D2}:00").FontSize(7).FontColor(ColorGrey);
 
                         foreach (var day in uniqueDays)
                         {
                             var cellExecs = sortedExecs.Where(e => e.ExecutionDate.Date == day && e.ExecutionDate.Hour == hour).ToList();
-                            
+
                             var cell = table.Cell().Element(MatrixCellStyle);
-                            
+
                             if (cellExecs.Count > 0)
                             {
-                                cell.Row(row => 
+                                cell.Row(row =>
                                 {
                                     row.Spacing(2);
                                     foreach (var exec in cellExecs.Take(3)) // Max 3 puntos por celda para no romper layout
@@ -883,7 +911,7 @@ namespace QAMS.Infrastructure.Services
         {
             return container
                 .Border(0.5f)
-                .BorderColor("#E0E0E0")
+                .BorderColor(ColorBorder)
                 .Background("#F5F5F5")
                 .PaddingVertical(2)
                 .AlignCenter()
@@ -894,7 +922,7 @@ namespace QAMS.Infrastructure.Services
         {
             return container
                 .Border(0.5f)
-                .BorderColor("#E0E0E0")
+                .BorderColor(ColorBorder)
                 .Background("#FAFAFA")
                 .PaddingVertical(2)
                 .AlignCenter()
@@ -952,9 +980,9 @@ namespace QAMS.Infrastructure.Services
                     {
                         foreach (QAMS.Domain.Entities.TestExecution exec in day)
                         {
-                            var isTrulyPassed = (exec.StatusId == 3) || 
+                            var isTrulyPassed = (exec.StatusId == 3) ||
                                                (exec.StatusId == 2 && exec.StepResults != null && exec.StepResults.Count > 0 && exec.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult))) ||
-                                               (exec.Status != null && (exec.Status.Code == "PASSED" || exec.Status.Name == "Aprobado"));
+                                               (exec.Status != null && (exec.Status.Code == StatusPassed || exec.Status.Name == StatusAprobado));
 
                             if (isTrulyPassed)
                                 passedTestCases.Add(exec.TestCaseId);
@@ -963,17 +991,17 @@ namespace QAMS.Infrastructure.Services
                         var remaining = totalCases - passedTestCases.Count;
                         var progressPercent = (double)passedTestCases.Count / totalCases;
 
-                        table.Cell().Element(CellStyle).Text(day.Key.ToString("dd/MM/yyyy")).FontSize(8);
-                        
+                        table.Cell().Element(CellStyle).Text(day.Key.ToString(DateFormat)).FontSize(8);
+
                         // Visualización del progreso (Barra)
                         table.Cell().Element(CellStyle).PaddingVertical(4).Row(row =>
                         {
-                            row.RelativeItem(progressPercent > 0 ? (float)progressPercent : 0.001f).Height(8).Background("#4CAF50");
+                            row.RelativeItem(progressPercent > 0 ? (float)progressPercent : 0.001f).Height(8).Background(ColorGreen);
                             row.RelativeItem(1 - (float)progressPercent > 0 ? 1 - (float)progressPercent : 0.001f).Height(8).Background("#EEEEEE");
                         });
 
                         table.Cell().Element(CellStyle).Text(remaining.ToString()).FontSize(8).Bold();
-                        table.Cell().Element(CellStyle).Text($"{Math.Round((1 - progressPercent) * 100, 1)}%").FontSize(8).FontColor("#757575");
+                        table.Cell().Element(CellStyle).Text($"{Math.Round((1 - progressPercent) * 100, 1)}%").FontSize(8).FontColor(ColorGrey);
                     }
                 });
 
@@ -988,7 +1016,7 @@ namespace QAMS.Infrastructure.Services
         private static void DrawBurndownChart(IContainer container, Project project, List<QAMS.Domain.Entities.TestExecution> executions)
         {
             var totalHours = project.GetCalculatedTotalHours();
-            if (totalHours == 0) 
+            if (totalHours == 0)
             {
                 container.Text("No hay horas estimadas para este proyecto o el rango de fechas es inválido.").Italic().FontSize(9);
                 return;
@@ -999,11 +1027,11 @@ namespace QAMS.Infrastructure.Services
             if (endDate < startDate) endDate = startDate.AddDays(7);
 
             var burnRate = project.WorkHoursPerDay > 0 ? project.WorkHoursPerDay : 7;
-            
+
             var completedHoursByDay = executions
-                .Where(e => (e.StatusId == 3) || 
+                .Where(e => (e.StatusId == 3) ||
                             (e.StatusId == 2 && e.StepResults != null && e.StepResults.Count > 0 && e.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult))) ||
-                            (e.Status != null && (e.Status.Code == "PASSED" || e.Status.Name == "Aprobado")))
+                            (e.Status != null && (e.Status.Code == StatusPassed || e.Status.Name == StatusAprobado)))
                 .GroupBy(e => e.ExecutionDate.Date)
                 .ToDictionary(g => g.Key, g => g.Select(e => e.TestCase?.EstimatedTimeHours ?? 0).Sum());
 
@@ -1037,8 +1065,8 @@ namespace QAMS.Infrastructure.Services
                         // Excluir fines de semana de las filas del PDF
                         if (current.DayOfWeek != DayOfWeek.Saturday && current.DayOfWeek != DayOfWeek.Sunday)
                         {
-                            table.Cell().Element(CellStyle).Text(current.ToString("dd/MM/yyyy")).FontSize(8);
-                            
+                            table.Cell().Element(CellStyle).Text(current.ToString(DateFormat)).FontSize(8);
+
                             var idealPercent = (float)(idealRemaining / totalHours);
                             var actualPercent = (float)(actualRemaining / totalHours);
 
@@ -1054,7 +1082,7 @@ namespace QAMS.Infrastructure.Services
                                 bCol.Item().PaddingTop(2).Row(row =>
                                 {
                                     row.RelativeItem(actualPercent > 0 ? actualPercent : 0.001f).Height(5).Background("#43A047");
-                                    row.RelativeItem(1 - actualPercent > 0 ? 1 - actualPercent : 0.001f).Height(5).Background("#E8F5E9");
+                                    row.RelativeItem(1 - actualPercent > 0 ? 1 - actualPercent : 0.001f).Height(5).Background(ColorLightSuccess);
                                 });
                             });
 
@@ -1063,7 +1091,7 @@ namespace QAMS.Infrastructure.Services
 
                             if (completedHoursByDay.TryGetValue(current, out var burnedToday))
                                 actualRemaining -= burnedToday;
-                            
+
                             idealRemaining -= burnRate;
                         }
 
@@ -1085,12 +1113,12 @@ namespace QAMS.Infrastructure.Services
 
         private static string GetStatusColor(QAMS.Domain.Entities.TestExecution exec)
         {
-            if (exec.StatusId == 3) return "#4CAF50"; // Aprobado
-            if (exec.StatusId == 4) return "#F44336"; // Fallido
-            if (exec.StatusId == 2) 
+            if (exec.StatusId == 3) return ColorGreen; // Aprobado
+            if (exec.StatusId == 4) return ColorRed; // Fallido
+            if (exec.StatusId == 2)
             {
                 if (exec.StepResults != null && exec.StepResults.Count > 0 && exec.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult)))
-                    return "#4CAF50"; // Completado
+                    return ColorGreen; // Completado
                 return "#2196F3"; // En Progreso
             }
             return "#9E9E9E"; // Pendiente
@@ -1100,8 +1128,9 @@ namespace QAMS.Infrastructure.Services
         {
             if (executions == null || !executions.Any()) return 0;
             var list = executions.ToList();
-            var passedCount = list.Count(e => e.Status?.Code == "PASSED" || e.StatusId == 3 || (e.StatusId == 2 && e.StepResults != null && e.StepResults.Count > 0 && e.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult))));
+            var passedCount = list.Count(e => e.Status?.Code == StatusPassed || e.StatusId == 3 || (e.StatusId == 2 && e.StepResults != null && e.StepResults.Count > 0 && e.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult))));
             return Math.Round((double)passedCount / list.Count * 100, 2);
         }
     }
 }
+
