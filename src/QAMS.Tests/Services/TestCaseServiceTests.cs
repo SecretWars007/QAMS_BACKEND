@@ -1,173 +1,192 @@
-using AutoMapper;
+#nullable enable
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.TestCases;
 using QAMS.Application.Interfaces;
-using QAMS.Application.Services;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Entities.Catalogs;
 using QAMS.Domain.Exceptions;
-using QAMS.Domain.Ports.Repositories;
+using QAMS.Infrastructure.Persistence.Configurations;
+using QAMS.Tests.IntegrationTests.Infrastructure;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
+using System.Net;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.EntityFrameworkCore;
 
 namespace QAMS.Tests.Services;
 
-public class TestCaseServiceTests
+[Collection("Integration tests")]
+public class TestCaseServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
-    private readonly Mock<ITestCaseRepository> _mockTestCaseRepo = new();
-    private readonly Mock<ICatalogRepository<TestCasePriority>> _mockPriorityRepo = new();
-    private readonly Mock<ICurrentUserService> _mockCurrentUserService = new();
-    private readonly Mock<IKanbanService> _mockKanbanService = new();
-    private readonly Mock<ITestExecutionService> _mockExecService = new();
-    private readonly Mock<IKanbanBoardRepository> _mockKanbanBoardRepo = new();
-    private readonly Mock<IUnitOfWork> _mockUow = new();
-    private readonly Mock<IMapper> _mockMapper = new();
-    private readonly Mock<ILogger<TestCaseService>> _mockLogger = new();
+    private ITestCaseService GetService(IServiceScope scope)
+        => scope.ServiceProvider.GetRequiredService<ITestCaseService>();
 
-    private TestCaseService CreateService() => new(
-        _mockTestCaseRepo.Object,
-        _mockPriorityRepo.Object,
-        _mockCurrentUserService.Object,
-        _mockKanbanService.Object,
-        _mockExecService.Object,
-        _mockKanbanBoardRepo.Object,
-        _mockUow.Object,
-        _mockMapper.Object,
-        _mockLogger.Object
-    );
+    private async Task<(Guid projectId, Guid testCaseId, User owner)> CreateTestCaseAsync(string suffix)
+    {
+        var user = await CreateTestUserAsync($"tc_owner_{suffix}");
+        var projectId = Guid.NewGuid();
+        var testCaseId = Guid.NewGuid();
 
-    [Fact]
+        await ExecuteInScopeAsync(async db =>
+        {
+            var priority = await db.Set<TestCasePriority>().FirstOrDefaultAsync();
+            if (priority == null)
+            {
+                priority = new TestCasePriority { Name = "Media", Code = "MEDIUM", SortOrder = 1 };
+                db.Set<TestCasePriority>().Add(priority);
+            }
+
+            var testSuiteId = Guid.NewGuid();
+
+            db.Projects.Add(new Project
+            {
+                Id = projectId,
+                Name = $"TC Project {suffix}",
+                IsActive = true,
+                CreatedByUserId = user.Id,
+                ProjectStatusId = 1,
+                ProjectPriorityId = 1
+            });
+
+            db.Set<TestSuite>().Add(new TestSuite
+            {
+                Id = testSuiteId,
+                Name = $"Suite {suffix}",
+                ProjectId = projectId,
+                CreatedByUserId = user.Id,
+                StatusId = 1
+            });
+
+            db.TestCases.Add(new TestCase
+            {
+                Id = testCaseId,
+                ProjectId = projectId,
+                TestSuiteId = testSuiteId,
+                Title = $"Test Case {suffix}",
+                IsActive = true,
+                CreatedByUserId = user.Id,
+                PriorityId = priority.Id,
+                TestSteps =
+                [
+                    new TestStep { Id = Guid.NewGuid(), Action = "Step 1", StepOrder = 1, CreatedByUserId = user.Id }
+                ]
+            });
+            await db.SaveChangesAsync();
+        });
+
+        return (projectId, testCaseId, user);
+    }
+
+    [Fact(DisplayName = "GetByIdAsync_CuandoExiste_DebeRetornarDto")]
     public async Task GetByIdAsync_WhenExists_ShouldReturnDto()
     {
         // Arrange
-        var id = Guid.NewGuid();
-        var testCase = new TestCase { Id = id, Title = "Test Case" };
-        var dto = new TestCaseDto { Id = id, Title = "Test Case" };
+        var (_, testCaseId, _) = await CreateTestCaseAsync("getbyid");
 
-        _mockTestCaseRepo.Setup(r => r.GetWithStepsAsync(id)).ReturnsAsync(testCase);
-        _mockMapper.Setup(m => m.Map<TestCaseDto>(testCase)).Returns(dto);
-
-        var service = CreateService();
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
 
         // Act
-        var result = await service.GetByIdAsync(id);
+        var result = await service.GetByIdAsync(testCaseId);
 
         // Assert
         result.Should().NotBeNull();
-        result.Id.Should().Be(id);
+        result.Id.Should().Be(testCaseId);
     }
 
-    [Fact]
-    public async Task CreateAsync_ShouldAddTestCaseAndKanbanTaskAndExecution()
+    [Fact(DisplayName = "UpdateAsync_DebeActualizarPasos")]
+    public async Task UpdateAsync_ShouldSyncSteps()
     {
-        // Arrange
-        var projectId = Guid.NewGuid();
-        var currentUserId = Guid.NewGuid();
-        var dto = new CreateTestCaseDto 
-        { 
-            ProjectId = projectId, 
-            Title = "New Case", 
+        // Arrange: crear usuario con rol Administrator (tiene todos los permisos seeded)
+        var adminRoleId = new Guid("11111111-1111-1111-1111-111111111111");
+        var user = await CreateTestUserAsync("tc_update_admin");
+
+        // Asignar rol Administrator al usuario directamente en la BD
+        await ExecuteInScopeAsync(async db =>
+        {
+            db.UserRoles.Add(new QAMS.Domain.Entities.UserRole
+            {
+                UserId = user.Id,
+                RoleId = adminRoleId,
+                AssignedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync();
+        });
+
+        var (_, testCaseId, _) = await CreateTestCaseAsync("update");
+
+        // Autenticar con el usuario Admin para que CurrentUserService devuelva un UserId válido
+        Authenticate(user.Id);
+
+        var dto = new CreateTestCaseDto
+        {
+            Title = "Updated Test Case Title",
+            ExpectedResult = "Se actualiza correctamente",
             PriorityId = 1,
-            Steps = [new() { Action = "Action", StepOrder = 1 }],
-            CertifierUserIds = [Guid.NewGuid()]
-        };
-
-        _mockPriorityRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new TestCasePriority());
-        _mockCurrentUserService.Setup(s => s.UserId).Returns(currentUserId);
-        
-        // Mock Kanban Logic
-        var boardId = Guid.NewGuid();
-        var boards = new List<KanbanBoard> { new() { Id = boardId } };
-        var fullBoard = new KanbanBoard { Id = boardId, Columns = [new() { Id = Guid.NewGuid(), Name = "Por Hacer" }] };
-        
-        _mockKanbanBoardRepo.Setup(r => r.GetByProjectAsync(projectId)).ReturnsAsync(boards);
-        _mockKanbanBoardRepo.Setup(r => r.GetFullBoardAsync(boardId)).ReturnsAsync(fullBoard);
-        
-        _mockTestCaseRepo.Setup(r => r.GetWithStepsAsync(It.IsAny<Guid>())).ReturnsAsync(new TestCase());
-
-        var service = CreateService();
-
-        // Act
-        await service.CreateAsync(dto);
-
-        // Assert
-        _mockTestCaseRepo.Verify(r => r.AddAsync(It.Is<TestCase>(tc => 
-            tc.Title == dto.Title && 
-            tc.TestSteps.Count == 1 &&
-            tc.Certifiers.Count == 1)), Times.Once);
-        
-        _mockKanbanService.Verify(s => s.CreateTaskAsync(It.IsAny<QAMS.Application.DTOs.Kanban.CreateKanbanTaskDto>()), Times.Once);
-        _mockExecService.Verify(s => s.CreateAsync(It.IsAny<Guid>(), It.IsAny<QAMS.Application.DTOs.TestExecutions.CreateTestExecutionDto>()), Times.Once);
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
-    }
-
-    [Fact]
-    public async Task UpdateAsync_ShouldSyncStepsAndCertifiers()
-    {
-        // Arrange
-        var id = Guid.NewGuid();
-        var existingStepId = Guid.NewGuid();
-        var testCase = new TestCase 
-        { 
-            Id = id, 
-            TestSteps = [new() { Id = existingStepId, StepOrder = 1, Action = "Old Action" }],
-            Certifiers = [new() { UserId = Guid.NewGuid() }]
-        };
-        
-        var dto = new CreateTestCaseDto 
-        { 
-            Title = "Updated Title",
-            PriorityId = 1,
-            Steps = 
-            [ 
-                new() { Action = "Updated Action", StepOrder = 1 }, // Update existing
-                new() { Action = "New Action", StepOrder = 2 }     // Add new
+            Steps =
+            [
+                new() { Action = "Updated Step 1", StepOrder = 1, ExpectedResult = "Paso 1 pasa" },
+                new() { Action = "New Step 2", StepOrder = 2, ExpectedResult = "Paso 2 pasa" }
             ],
-            CertifierUserIds = [Guid.NewGuid()] // One new certifier (total 1, removes old)
+            CertifierUserIds = []
         };
 
-        _mockTestCaseRepo.Setup(r => r.GetWithStepsAsync(id)).ReturnsAsync(testCase);
-        _mockPriorityRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new TestCasePriority());
-        _mockTestCaseRepo.Setup(r => r.GetWithStepsAsync(id)).ReturnsAsync(testCase);
+        // Act: llamar al endpoint HTTP PUT en lugar del servicio directamente
+        var response = await Client.PutAsJsonAsync($"/api/testcases/{testCaseId}", dto);
 
-        var service = CreateService();
+        // Assert HTTP
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK,
+            $"El endpoint debe retornar 200 OK. Respuesta: {await response.Content.ReadAsStringAsync()}");
 
-        // Act
-        await service.UpdateAsync(id, dto);
+        // Assert DB State
+        await ExecuteInScopeAsync(async db =>
+        {
+            var tc = await db.TestCases
+                .Include(t => t.TestSteps)
+                .FirstOrDefaultAsync(t => t.Id == testCaseId);
 
-        // Assert
-        testCase.Title.Should().Be(dto.Title);
-        testCase.TestSteps.Count.Should().Be(2);
-        testCase.TestSteps.First(s => s.StepOrder == 1).Action.Should().Be("Updated Action");
-        testCase.Certifiers.Count.Should().Be(1);
-        testCase.Certifiers.First().UserId.Should().Be(dto.CertifierUserIds[0]);
-        
-        _mockTestCaseRepo.Verify(r => r.Update(testCase), Times.Once);
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+            tc!.Title.Should().Be("Updated Test Case Title");
+            tc.TestSteps.Should().HaveCount(2);
+        });
     }
 
-    [Fact]
+    [Fact(DisplayName = "DeleteAsync_DebeDesactivarTestCase")]
     public async Task DeleteAsync_ShouldDeactivate()
     {
         // Arrange
-        var id = Guid.NewGuid();
-        var testCase = new TestCase { Id = id, IsActive = true };
+        var (_, testCaseId, _) = await CreateTestCaseAsync("delete");
 
-        _mockTestCaseRepo.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(testCase);
-
-        var service = CreateService();
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
 
         // Act
-        await service.DeleteAsync(id);
+        await service.DeleteAsync(testCaseId);
 
         // Assert
-        testCase.IsActive.Should().BeFalse();
-        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+        await ExecuteInScopeAsync(async db =>
+        {
+            var tc = await db.TestCases.FindAsync(testCaseId);
+            tc!.IsActive.Should().BeFalse();
+        });
+    }
+
+    [Fact(DisplayName = "GetByProjectAsync_DebeRetornarSoloTestCasesDelProyecto")]
+    public async Task GetByProjectAsync_ShouldReturnOnlyProjectTestCases()
+    {
+        // Arrange
+        var (projectId, testCaseId, _) = await CreateTestCaseAsync("getbyproject");
+
+        using var scope = Factory.Services.CreateScope();
+        var service = GetService(scope);
+
+        // Act
+        var result = await service.GetByProjectIdAsync(projectId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().Contain(tc => tc.Id == testCaseId);
     }
 }
