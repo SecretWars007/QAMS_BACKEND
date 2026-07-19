@@ -208,6 +208,30 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         public DbSet<KanbanTask> KanbanTasks => Set<KanbanTask>();
 
         // =======================================================================
+        // MÓDULO ISTQB — DEFECTOS Y COBERTURA
+        // =======================================================================
+
+        /// <summary>
+        /// Tabla puente M:N entre Requisitos y Casos de Prueba.
+        /// Permite calcular la cobertura de requisitos (ISTQB).
+        /// Tabla PostgreSQL: requirement_test_cases
+        /// </summary>
+        public DbSet<RequirementTestCase> RequirementTestCases => Set<RequirementTestCase>();
+
+        /// <summary>
+        /// Tabla de defectos/bugs detectados durante ejecuciones de prueba.
+        /// Trazabilidad: Defecto → Ejecución → Caso de Prueba → Requisito.
+        /// Tabla PostgreSQL: defects
+        /// </summary>
+        public DbSet<Defect> Defects => Set<Defect>();
+
+        /// <summary>Catálogo de prioridades de defecto (LOW/MEDIUM/HIGH/CRITICAL)</summary>
+        public DbSet<DefectPriority> DefectPriorities => Set<DefectPriority>();
+
+        /// <summary>Catálogo de estados de defecto (OPEN/IN_PROGRESS/RESOLVED/CLOSED/REJECTED)</summary>
+        public DbSet<DefectStatus> DefectStatuses => Set<DefectStatus>();
+
+        // =======================================================================
         // CONFIGURACIÓN DEL MODELO (Fluent API)
         // =======================================================================
 

@@ -5,8 +5,9 @@ namespace QAMS.Domain.Entities
 {
     /// <summary>
     /// Entidad raíz de usuario. 4FN: roles en tabla puente.
+    /// Implementa IAuditable e ISoftDelete para activar el interceptor global de auditoría.
     /// </summary>
-    public class User // TEMPORALMENTE REMOVIDO: IAuditable, ISoftDelete para evitar errores de esquema en tests
+    public class User : IAuditable, ISoftDelete
     {
         public Guid Id { get; set; }
         public string Username { get; set; } = string.Empty;

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using QAMS.Application.DTOs.Dashboard;
 using QAMS.Application.Interfaces;
+using QAMS.Domain.Entities;
 using QAMS.Domain.Entities.Catalogs;
 using QAMS.Domain.Ports.Repositories;
 
@@ -14,6 +15,8 @@ namespace QAMS.Application.Services
         IProjectRepository projectRepo,
         ITestExecutionRepository execRepo,
         ICatalogRepository<ExecutionStatus> statusRepo,
+        IGenericRepository<RequirementTestCase> reqTestCaseRepo,
+        IDefectRepository defectRepo,
         ILogger<DashboardService> logger
     ) : IDashboardService
     {
@@ -110,6 +113,36 @@ namespace QAMS.Application.Services
                     .ToList();
 
                 summary.TaskProgress.AddRange(userTasks);
+
+                // ── ISTQB: Métricas de Defectos ──
+                var projectIds = userProjects.Select(p => p.Id).ToList();
+                int openDefectsCount = 0;
+                foreach (var pId in projectIds)
+                {
+                    openDefectsCount += await defectRepo.CountOpenDefectsByProjectAsync(pId);
+                }
+                summary.OpenDefects = openDefectsCount;
+
+                // ── ISTQB: Cobertura de Requisitos ──
+                var allRequirements = userProjects.SelectMany(p => p.Requirements ?? []).ToList();
+                summary.TotalRequirements = allRequirements.Count;
+
+                if (summary.TotalRequirements > 0)
+                {
+                    var allReqIds = allRequirements.Select(r => r.Id).ToList();
+                    
+                    // Buscar en tabla puente cuántos requerimientos tienen al menos un caso de prueba
+                    var links = await reqTestCaseRepo.FindAsync(rt => allReqIds.Contains(rt.RequirementId));
+                    var coveredReqIds = links.Select(rt => rt.RequirementId).Distinct().ToList();
+
+                    summary.CoveredRequirements = coveredReqIds.Count;
+                    summary.RequirementCoverageRate = Math.Round((double)summary.CoveredRequirements / summary.TotalRequirements * 100, 2);
+                }
+                else
+                {
+                    summary.CoveredRequirements = 0;
+                    summary.RequirementCoverageRate = 0;
+                }
             }
             catch (Exception ex)
             {

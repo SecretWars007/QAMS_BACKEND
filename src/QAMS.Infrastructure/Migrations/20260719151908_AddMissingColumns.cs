@@ -9,40 +9,11 @@ namespace QAMS.Infrastructure.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<Guid>(
-                name: "created_by_user_id",
-                table: "test_steps",
-                type: "uuid",
-                nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "actual_time_hours",
-                table: "test_executions",
-                type: "numeric(10,2)",
-                nullable: false,
-                defaultValue: 0m);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "executed_hours",
-                table: "projects",
-                type: "numeric(10,2)",
-                nullable: false,
-                defaultValue: 0m);
-
-            migrationBuilder.AddColumn<decimal>(
-                name: "remaining_hours",
-                table: "projects",
-                type: "numeric(10,2)",
-                nullable: false,
-                defaultValue: 0m);
-
-            migrationBuilder.AddColumn<int>(
-                name: "work_hours_per_day",
-                table: "projects",
-                type: "integer",
-                nullable: false,
-                defaultValue: 7);
+            migrationBuilder.Sql("ALTER TABLE test_steps ADD COLUMN IF NOT EXISTS created_by_user_id uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';");
+            migrationBuilder.Sql("ALTER TABLE test_executions ADD COLUMN IF NOT EXISTS actual_time_hours numeric(10,2) NOT NULL DEFAULT 0.0;");
+            migrationBuilder.Sql("ALTER TABLE projects ADD COLUMN IF NOT EXISTS executed_hours numeric(10,2) NOT NULL DEFAULT 0.0;");
+            migrationBuilder.Sql("ALTER TABLE projects ADD COLUMN IF NOT EXISTS remaining_hours numeric(10,2) NOT NULL DEFAULT 0.0;");
+            migrationBuilder.Sql("ALTER TABLE projects ADD COLUMN IF NOT EXISTS work_hours_per_day integer NOT NULL DEFAULT 7;");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

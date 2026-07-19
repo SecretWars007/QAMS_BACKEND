@@ -104,6 +104,16 @@ builder
     });
 builder.Services.AddAuthorization();
 
+builder.Services.AddMemoryCache(); // ✅ Caché en memoria para permisos RBAC
+
+// Health Checks: permite a Docker/Kubernetes verificar si la app está lista
+builder.Services.AddHealthChecks()
+    .AddNpgSql(
+        builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty,
+        name: "postgresql",
+        tags: ["db", "ready"]
+    );
+
 // Application Services (registrar TODOS)
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRbacService, RbacService>();
@@ -117,6 +127,7 @@ builder.Services.AddScoped<ITestSuiteService, TestSuiteService>();
 builder.Services.AddScoped<ITestExecutionService, TestExecutionService>();
 builder.Services.AddScoped<IKanbanService, KanbanService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IDefectService, DefectService>();
 
 // AutoMapper - Escaneo explícito de la capa de Application
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
@@ -305,7 +316,7 @@ using (var scope = app.Services.CreateScope())
         if (environment.IsProduction())
         {
             app.Logger.LogInformation("Ambiente de Producción detectado. Esperando 5 segundos para asegurar disponibilidad de DB...");
-            Thread.Sleep(5000);
+            await Task.Delay(5000); // ✅ No bloquea el thread pool (reemplaza Thread.Sleep)
         }
 
         app.Logger.LogInformation("Iniciando aplicación de migraciones...");
@@ -381,6 +392,7 @@ app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health"); // ✅ Endpoint de Health Check para Docker/Kubernetes
 
 app.Logger.LogInformation("QAMS API iniciada en {Env}.", app.Environment.EnvironmentName);
 app.Run();

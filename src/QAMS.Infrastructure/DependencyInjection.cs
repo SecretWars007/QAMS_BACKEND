@@ -42,6 +42,7 @@ namespace QAMS.Infrastructure
             services.AddScoped<IEvidenceRepository, EvidenceRepository>();
             services.AddScoped<IObservationRepository, ObservationRepository>();
             services.AddScoped<IKanbanBoardRepository, KanbanBoardRepository>();
+            services.AddScoped<IDefectRepository, DefectRepository>();
 
             // Unit of Work
             services.AddScoped<IUnitOfWork, UnitOfWork>();

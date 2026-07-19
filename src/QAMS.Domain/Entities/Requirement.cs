@@ -46,5 +46,8 @@ namespace QAMS.Domain.Entities
         public virtual User? CreatedBy { get; set; }
         public virtual User? UpdatedBy { get; set; }
         public virtual User? DeletedBy { get; set; }
+
+        /// <summary>Casos de prueba vinculados a este requisito (M:N) — trazabilidad ISTQB</summary>
+        public virtual ICollection<RequirementTestCase> RequirementTestCases { get; set; } = [];
     }
 }

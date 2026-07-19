@@ -12,6 +12,8 @@ namespace QAMS.Application.Services
     public class RequirementService(
         IGenericRepository<Requirement> requirementRepo,
         IProjectRepository projectRepo,
+        IGenericRepository<TestCase> testCaseRepo,
+        IGenericRepository<RequirementTestCase> reqTestCaseRepo,
         IUnitOfWork uow,
         IMapper mapper,
         ILogger<RequirementService> logger) : IRequirementService
@@ -78,6 +80,55 @@ namespace QAMS.Application.Services
 
             requirementRepo.Delete(requirement);
             await uow.SaveChangesAsync();
+        }
+
+        public async Task LinkTestCaseAsync(Guid requirementId, Guid testCaseId, Guid linkedByUserId)
+        {
+            logger.LogInformation("Vinculando caso de prueba {TestCaseId} al requisito {RequirementId}.", testCaseId, requirementId);
+
+            var requirement = await requirementRepo.GetByIdAsync(requirementId)
+                ?? throw new EntityNotFoundException(nameof(Requirement), requirementId);
+
+            var testCase = await testCaseRepo.GetByIdAsync(testCaseId)
+                ?? throw new EntityNotFoundException(nameof(TestCase), testCaseId);
+
+            // Verificar si ya existe
+            var existingLink = (await reqTestCaseRepo.FindAsync(rt => rt.RequirementId == requirementId && rt.TestCaseId == testCaseId)).FirstOrDefault();
+            
+            if (existingLink == null)
+            {
+                var link = new RequirementTestCase
+                {
+                    RequirementId = requirementId,
+                    TestCaseId = testCaseId,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = linkedByUserId
+                };
+
+                await reqTestCaseRepo.AddAsync(link);
+                await uow.SaveChangesAsync();
+                logger.LogInformation("Vinculación exitosa.");
+            }
+        }
+
+        public async Task UnlinkTestCaseAsync(Guid requirementId, Guid testCaseId)
+        {
+            logger.LogInformation("Desvinculando caso de prueba {TestCaseId} del requisito {RequirementId}.", testCaseId, requirementId);
+
+            var existingLink = (await reqTestCaseRepo.FindAsync(rt => rt.RequirementId == requirementId && rt.TestCaseId == testCaseId)).FirstOrDefault();
+            
+            if (existingLink != null)
+            {
+                reqTestCaseRepo.Delete(existingLink);
+                await uow.SaveChangesAsync();
+                logger.LogInformation("Desvinculación exitosa.");
+            }
+        }
+
+        public async Task<List<Guid>> GetLinkedTestCaseIdsAsync(Guid requirementId)
+        {
+            var links = await reqTestCaseRepo.FindAsync(rt => rt.RequirementId == requirementId);
+            return links.Select(rt => rt.TestCaseId).ToList();
         }
     }
 }

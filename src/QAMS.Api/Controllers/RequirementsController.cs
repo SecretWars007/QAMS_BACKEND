@@ -1,6 +1,7 @@
 // src/QAMS.Api/Controllers/RequirementsController.cs
 using Microsoft.AspNetCore.Mvc;
 using QAMS.Api.Filters;
+using QAMS.Api.Extensions;
 using QAMS.Application.DTOs.Projects;
 using QAMS.Application.Interfaces;
 
@@ -67,6 +68,38 @@ namespace QAMS.Api.Controllers
             logger.LogInformation("DELETE /api/requirements/{Id}", id);
             await requirementService.DeleteAsync(id);
             return NoContent();
+        }
+
+        // ====================================================================
+        // ISTQB: Trazabilidad de Requisitos y Casos de Prueba
+        // ====================================================================
+
+        [HttpPost("{id:guid}/test-cases/{testCaseId:guid}")]
+        [HasPermission("PROJECTS_UPDATE")]
+        public async Task<IActionResult> LinkTestCase(Guid id, Guid testCaseId)
+        {
+            logger.LogInformation("POST /api/requirements/{Id}/test-cases/{TestCaseId}", id, testCaseId);
+            var userId = User.GetUserId();
+            await requirementService.LinkTestCaseAsync(id, testCaseId, userId);
+            return Ok();
+        }
+
+        [HttpDelete("{id:guid}/test-cases/{testCaseId:guid}")]
+        [HasPermission("PROJECTS_UPDATE")]
+        public async Task<IActionResult> UnlinkTestCase(Guid id, Guid testCaseId)
+        {
+            logger.LogInformation("DELETE /api/requirements/{Id}/test-cases/{TestCaseId}", id, testCaseId);
+            await requirementService.UnlinkTestCaseAsync(id, testCaseId);
+            return NoContent();
+        }
+
+        [HttpGet("{id:guid}/test-cases")]
+        [HasPermission("PROJECTS_VIEW")]
+        public async Task<IActionResult> GetLinkedTestCases(Guid id)
+        {
+            logger.LogInformation("GET /api/requirements/{Id}/test-cases", id);
+            var ids = await requirementService.GetLinkedTestCaseIdsAsync(id);
+            return Ok(ids);
         }
     }
 }

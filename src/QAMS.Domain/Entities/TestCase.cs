@@ -43,5 +43,11 @@ namespace QAMS.Domain.Entities
         public ICollection<TestStep> TestSteps { get; set; } = [];
         public ICollection<TestExecution> TestExecutions { get; set; } = [];
         public ICollection<TestCaseCertifier> Certifiers { get; set; } = [];
+
+        /// <summary>Requisitos cubiertos por este caso de prueba (M:N) — trazabilidad ISTQB</summary>
+        public ICollection<RequirementTestCase> RequirementTestCases { get; set; } = [];
+
+        /// <summary>Defectos detectados al ejecutar este caso de prueba</summary>
+        public ICollection<Defect> Defects { get; set; } = [];
     }
 }

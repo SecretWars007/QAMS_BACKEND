@@ -13,5 +13,17 @@ namespace QAMS.Application.DTOs.Dashboard
         public double PassRate { get; set; }
         public List<TaskProgressDto> TaskProgress { get; set; } = [];
         public List<ExecutionsByStatusDto> ExecutionsByStatus { get; set; } = [];
+
+        // ── ISTQB Compliance: Métricas de Cobertura de Requisitos ──
+        /// <summary>Total de requisitos en los proyectos del usuario</summary>
+        public int TotalRequirements { get; set; }
+        /// <summary>Requisitos con al menos 1 caso de prueba vinculado</summary>
+        public int CoveredRequirements { get; set; }
+        /// <summary>Porcentaje de cobertura de requisitos (0-100)</summary>
+        public double RequirementCoverageRate { get; set; }
+
+        // ── ISTQB Compliance: Defectos ──
+        /// <summary>Total de defectos activos (no cerrados) en los proyectos del usuario</summary>
+        public int OpenDefects { get; set; }
     }
 }
