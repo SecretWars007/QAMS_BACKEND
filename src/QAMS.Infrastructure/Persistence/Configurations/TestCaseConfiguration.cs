@@ -22,6 +22,8 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(tc => tc.ExpectedResult).HasColumnName("expected_result").HasMaxLength(1000).IsRequired();
             builder.Property(tc => tc.PriorityId).HasColumnName("priority_id").IsRequired();
             builder.Property(tc => tc.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            builder.Property(tc => tc.VersionNumber).HasColumnName("version_number").HasDefaultValue(1);
+            builder.Property(tc => tc.IsLatestVersion).HasColumnName("is_latest_version").HasDefaultValue(true);
 
             builder.Property(tc => tc.EstimatedTimeHours).HasColumnName("estimated_time_hours").HasColumnType("decimal(6,2)").HasDefaultValue(0);
             builder.Property(tc => tc.StartDate).HasColumnName("start_date");

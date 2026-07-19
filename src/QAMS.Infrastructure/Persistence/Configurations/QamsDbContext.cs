@@ -232,6 +232,10 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         /// <summary>Catálogo de estados de defecto (OPEN/IN_PROGRESS/RESOLVED/CLOSED/REJECTED)</summary>
         public DbSet<DefectStatus> DefectStatuses => Set<DefectStatus>();
 
+        public DbSet<TestPlan> TestPlans => Set<TestPlan>();
+        public DbSet<TestPlanSuite> TestPlanSuites => Set<TestPlanSuite>();
+        public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+
         // =======================================================================
         // CONFIGURACIÓN DEL MODELO (Fluent API)
         // =======================================================================

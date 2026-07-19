@@ -2,13 +2,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using QAMS.Application.Interfaces;
 using QAMS.Domain.Ports.Repositories;
 using QAMS.Domain.Ports.Services;
 using QAMS.Infrastructure.FileStorage;
 using QAMS.Infrastructure.Persistence.Configurations;
 using QAMS.Infrastructure.Repositories;
 using QAMS.Infrastructure.Security;
-using QAMS.Application.Interfaces;
 
 namespace QAMS.Infrastructure
 {
@@ -43,6 +43,7 @@ namespace QAMS.Infrastructure
             services.AddScoped<IObservationRepository, ObservationRepository>();
             services.AddScoped<IKanbanBoardRepository, KanbanBoardRepository>();
             services.AddScoped<IDefectRepository, DefectRepository>();
+            services.AddScoped<QAMS.Application.Interfaces.Repositories.ITestPlanRepository, TestPlanRepository>();
 
             // Unit of Work
             services.AddScoped<IUnitOfWork, UnitOfWork>();

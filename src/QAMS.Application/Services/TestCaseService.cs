@@ -171,7 +171,7 @@ namespace QAMS.Application.Services
         {
             logger.LogInformation("Actualizando caso {Id}.", id);
 
-            var testCase =
+            var oldTestCase =
                 await testCaseRepo.GetWithStepsAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestCase), id);
 
@@ -179,78 +179,81 @@ namespace QAMS.Application.Services
             _ = await priorityRepo.GetByIdAsync(dto.PriorityId)
                 ?? throw new EntityNotFoundException(nameof(TestCasePriority), dto.PriorityId);
 
-            testCase.Title = dto.Title;
-            testCase.Description = dto.Description;
-            testCase.Preconditions = dto.Preconditions ?? string.Empty;
-            testCase.ExpectedResult = dto.ExpectedResult;
-            testCase.PriorityId = dto.PriorityId;
-            testCase.EstimatedTimeHours = dto.EstimatedTimeHours;
-            testCase.StartDate = dto.StartDate;
-            testCase.EndDate = dto.EndDate;
-            testCase.TestTypeId = dto.TestTypeId > 0 ? dto.TestTypeId : testCase.TestTypeId;
-            testCase.UpdatedAt = DateTime.UtcNow;
+            // Marcar versión antigua como obsoleta
+            oldTestCase.IsLatestVersion = false;
+            oldTestCase.UpdatedAt = DateTime.UtcNow;
+            oldTestCase.UpdatedByUserId = currentUserService.UserId;
+            testCaseRepo.Update(oldTestCase);
 
-            // Reemplazar pasos: mezclar para evitar violaciones de clave única en TestSteps
-            var existingSteps = testCase.TestSteps.OrderBy(s => s.StepOrder).ToList();
+            // Crear nueva versión clonando datos
+            var newTestCase = new TestCase
+            {
+                Id = Guid.NewGuid(),
+                ProjectId = oldTestCase.ProjectId,
+                TestSuiteId = oldTestCase.TestSuiteId,
+                Title = dto.Title,
+                Description = dto.Description,
+                Preconditions = dto.Preconditions ?? string.Empty,
+                ExpectedResult = dto.ExpectedResult,
+                PriorityId = dto.PriorityId,
+                EstimatedTimeHours = dto.EstimatedTimeHours,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                TestTypeId = dto.TestTypeId > 0 ? dto.TestTypeId : oldTestCase.TestTypeId,
+                IsActive = oldTestCase.IsActive,
+                VersionNumber = oldTestCase.VersionNumber + 1,
+                IsLatestVersion = true,
+                CreatedByUserId = currentUserService.UserId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // Copiar Requirements si están cargados o si hay relación
+            if (oldTestCase.RequirementTestCases != null)
+            {
+                foreach (var req in oldTestCase.RequirementTestCases)
+                {
+                    newTestCase.RequirementTestCases.Add(new RequirementTestCase
+                    {
+                        RequirementId = req.RequirementId,
+                        TestCaseId = newTestCase.Id
+                    });
+                }
+            }
+
+            // Copiar pasos
             var incomingSteps = dto.Steps.OrderBy(s => s.StepOrder).ToList();
-
-            for (int i = 0; i < incomingSteps.Count; i++)
+            foreach (var incoming in incomingSteps)
             {
-                var incoming = incomingSteps[i];
-                if (i < existingSteps.Count)
-                {
-                    var existing = existingSteps[i];
-                    existing.Action = incoming.Action;
-                    existing.ExpectedResult = incoming.ExpectedResult;
-                    existing.StepOrder = incoming.StepOrder;
-                }
-                else
-                {
-                    testCase.TestSteps.Add(
-                        new TestStep
-                        {
-                            TestCaseId = testCase.Id,
-                            StepOrder = incoming.StepOrder,
-                            Action = incoming.Action,
-                            ExpectedResult = incoming.ExpectedResult,
-                            CreatedByUserId = currentUserService.UserId
-                        }
-                    );
-                }
+                newTestCase.TestSteps.Add(
+                    new TestStep
+                    {
+                        TestCaseId = newTestCase.Id,
+                        StepOrder = incoming.StepOrder,
+                        Action = incoming.Action,
+                        ExpectedResult = incoming.ExpectedResult,
+                        CreatedByUserId = currentUserService.UserId
+                    }
+                );
             }
 
-            // Eliminar los pasos sobrantes
-            for (int i = incomingSteps.Count; i < existingSteps.Count; i++)
+            // Copiar certificadores
+            foreach (var userId in dto.CertifierUserIds)
             {
-                testCase.TestSteps.Remove(existingSteps[i]);
-            }
-
-            // Reemplazar certificadores de forma segura
-            var existingCertifiersIds = testCase.Certifiers.Select(c => c.UserId).ToList();
-            var incomingCertifiersIds = dto.CertifierUserIds;
-
-            var toRemove = testCase.Certifiers.Where(c => !incomingCertifiersIds.Contains(c.UserId)).ToList();
-            foreach (var c in toRemove)
-            {
-                testCase.Certifiers.Remove(c);
-            }
-
-            foreach (var userId in incomingCertifiersIds.Where(uId => !existingCertifiersIds.Contains(uId)))
-            {
-                testCase.Certifiers.Add(
+                newTestCase.Certifiers.Add(
                     new TestCaseCertifier
                     {
-                        TestCaseId = testCase.Id,
+                        TestCaseId = newTestCase.Id,
                         UserId = userId,
                         AssignedAt = DateTime.UtcNow
                     }
                 );
             }
 
+            await testCaseRepo.AddAsync(newTestCase);
             await uow.SaveChangesAsync();
 
-            var updated = await testCaseRepo.GetWithStepsAsync(id);
-            return mapper.Map<TestCaseDto>(updated);
+            var created = await testCaseRepo.GetWithStepsAsync(newTestCase.Id);
+            return mapper.Map<TestCaseDto>(created);
         }
 
         public async Task<List<TestStepDto>> GetStepsAsync(Guid id)

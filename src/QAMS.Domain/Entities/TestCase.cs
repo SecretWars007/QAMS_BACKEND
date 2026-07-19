@@ -19,6 +19,8 @@ namespace QAMS.Domain.Entities
         public int PriorityId { get; set; }
         public TestCasePriority? Priority { get; set; }
         public bool IsActive { get; set; } = true;
+        public int VersionNumber { get; set; } = 1;
+        public bool IsLatestVersion { get; set; } = true;
 
         public decimal EstimatedTimeHours { get; set; } = 0;
         public DateTime? StartDate { get; set; }

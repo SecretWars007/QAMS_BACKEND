@@ -1,4 +1,5 @@
 // src/QAMS.Application/Mappings/MappingProfile.cs
+using System.Linq;
 using AutoMapper;
 using QAMS.Application.DTOs.Auth;
 using QAMS.Application.DTOs.Catalogs;
@@ -8,11 +9,11 @@ using QAMS.Application.DTOs.Projects;
 using QAMS.Application.DTOs.Roles;
 using QAMS.Application.DTOs.TestCases;
 using QAMS.Application.DTOs.TestExecutions;
+using QAMS.Application.DTOs.TestPlans;
+using QAMS.Application.DTOs.TestSuites;
 using QAMS.Application.DTOs.Users;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Entities.Catalogs;
-using QAMS.Application.DTOs.TestSuites;
-using System.Linq;
 
 namespace QAMS.Application.Mappings
 {
@@ -50,6 +51,14 @@ namespace QAMS.Application.Mappings
 
         private void ConfigureProjectMappings()
         {
+            CreateMap<TestPlan, TestPlanDto>()
+                .ForMember(d => d.ProjectName, o => o.MapFrom(s => s.Project != null ? s.Project.Name : string.Empty))
+                .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty))
+                .ForMember(d => d.StatusName, o => o.MapFrom(s => s.StatusId == 1 ? "Borrador" : (s.StatusId == 2 ? "Aprobado" : "Cerrado")))
+                .ForMember(d => d.Suites, o => o.MapFrom(s => s.TestPlanSuites.Select(tps => tps.TestSuite)));
+
+            CreateMap<CreateTestPlanDto, TestPlan>();
+
             CreateMap<Project, ProjectDto>()
                 .ForMember(d => d.TestSuiteCount, o => o.MapFrom(s => s.TestSuites.Count))
                 .ForMember(d => d.KanbanBoardCount, o => o.MapFrom(s => s.KanbanBoards.Count))

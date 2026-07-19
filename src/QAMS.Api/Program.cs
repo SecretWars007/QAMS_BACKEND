@@ -3,28 +3,29 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.RateLimiting;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.HttpOverrides;
 using QAMS.Api.Middleware;
 using QAMS.Application;
-using QAMS.Application.Interfaces;
-using QAMS.Application.Services;
-using QAMS.Infrastructure;
-using QAMS.Infrastructure.Security;
-using QAMS.Infrastructure.Persistence.Configurations;
-using QAMS.Application.DTOs.Users;
 using QAMS.Application.DTOs.Roles;
-using QAMS.Domain.Entities;
+using QAMS.Application.DTOs.Users;
+using QAMS.Application.Interfaces;
 using QAMS.Application.Mappings;
-using Microsoft.AspNetCore.RateLimiting;
-using System.Threading.RateLimiting;
+using QAMS.Application.Services;
+using QAMS.Application.Interfaces.Services;
+using QAMS.Domain.Entities;
+using QAMS.Infrastructure;
+using QAMS.Infrastructure.Persistence.Configurations;
+using QAMS.Infrastructure.Security;
 // Cargar variables de entorno desde .env si existe (Desarrollo Local)
 var dotEnv = Path.Combine(Directory.GetCurrentDirectory(), ".env");
 if (File.Exists(dotEnv))
@@ -129,6 +130,11 @@ builder.Services.AddScoped<IKanbanService, KanbanService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IDefectService, DefectService>();
 builder.Services.AddScoped<ISystemUnderTestService, SystemUnderTestService>();
+builder.Services.AddScoped<ITestPlanService, TestPlanService>();
+builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+
+// Filtros de autorización personalizados
+builder.Services.AddScoped<QAMS.Api.Filters.ApiKeyAuthorizationFilter>();
 
 // AutoMapper - Escaneo explícito de la capa de Application
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
@@ -398,4 +404,4 @@ app.MapHealthChecks("/health"); // ✅ Endpoint de Health Check para Docker/Kube
 app.Logger.LogInformation("QAMS API iniciada en {Env}.", app.Environment.EnvironmentName);
 app.Run();
 
-public partial class Program { }
+public partial class Program;

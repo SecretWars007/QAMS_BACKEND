@@ -59,6 +59,8 @@ namespace QAMS.Domain.Entities
         public virtual ICollection<ProjectObservation> Observations { get; set; } = [];
         public virtual ICollection<Requirement> Requirements { get; set; } = [];
         public virtual ICollection<SystemUnderTest> SystemsUnderTest { get; set; } = [];
+        public virtual ICollection<TestPlan> TestPlans { get; set; } = [];
+        public virtual ICollection<ApiKey> ApiKeys { get; set; } = [];
 
         /// <summary>Calcula las horas totales estimadas basadas en días hábiles (L-V) y WorkHoursPerDay.</summary>
         public decimal GetCalculatedTotalHours()

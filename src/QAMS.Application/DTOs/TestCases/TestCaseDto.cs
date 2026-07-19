@@ -16,6 +16,8 @@ namespace QAMS.Application.DTOs.TestCases
         public string PriorityName { get; set; } = string.Empty;
         public string PriorityCode { get; set; } = string.Empty;
         public bool IsActive { get; set; }
+        public int VersionNumber { get; set; }
+        public bool IsLatestVersion { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? CreatedByUserName { get; set; }
         public decimal EstimatedTimeHours { get; set; }
