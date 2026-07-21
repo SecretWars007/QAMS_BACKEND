@@ -1,22 +1,22 @@
 #nullable enable
+using System;
+using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.Auth;
 using QAMS.Application.Interfaces;
 using QAMS.Domain.Exceptions;
-using QAMS.Tests.IntegrationTests.Infrastructure;
-using System;
-using System.Threading.Tasks;
-using Xunit;
-using Microsoft.EntityFrameworkCore;
 using QAMS.Infrastructure.Persistence.Configurations;
+using QAMS.Tests.IntegrationTests.Infrastructure;
+using Xunit;
 
 namespace QAMS.Tests.Services;
 
 [Collection("Integration tests")]
 public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
-    private IAuthService GetAuthService(IServiceScope scope)
+    private static IAuthService GetAuthService(IServiceScope scope)
     {
         return scope.ServiceProvider.GetRequiredService<IAuthService>();
     }
@@ -231,12 +231,10 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
 
         // Assert
         // Comprobar que el login con nueva contraseña funciona
-        using (var loginScope = Factory.Services.CreateScope())
-        {
-            var loginService = GetAuthService(loginScope);
-            var result = await loginService.LoginAsync(new LoginRequestDto { Username = user.Username, Password = "AdminNewPass123!" });
-            result.AccessToken.Should().NotBeNullOrEmpty();
-        }
+        using var loginScope = Factory.Services.CreateScope();
+        var loginService = GetAuthService(loginScope);
+        var result = await loginService.LoginAsync(new LoginRequestDto { Username = user.Username, Password = "AdminNewPass123!" });
+        result.AccessToken.Should().NotBeNullOrEmpty();
     }
 
     [Fact(DisplayName = "AdminResetPasswordAsync_WhenUserNotFound_ShouldThrowEntityNotFoundException")]

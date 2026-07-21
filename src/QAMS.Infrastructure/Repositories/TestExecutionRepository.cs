@@ -18,9 +18,9 @@ namespace QAMS.Infrastructure.Repositories
         /// Obtiene una ejecución completa con resultados de pasos,
         /// evidencias, tester, caso de prueba y estado del catálogo.
         /// </summary>
-        public async Task<TestExecution?> GetFullExecutionAsync(Guid executionId)
+        public Task<TestExecution?> GetFullExecutionAsync(Guid executionId)
         {
-            return await _dbSet
+            return _dbSet
                 .Include(te => te.TestCase)
                 .Include(te => te.Tester)
                 .Include(te => te.Status)
@@ -53,9 +53,9 @@ namespace QAMS.Infrastructure.Repositories
         /// Obtiene todas las ejecuciones de un caso de prueba SIN AsNoTracking,
         /// permitiendo que EF Core rastree y persista cambios (usado para sincronización Kanban).
         /// </summary>
-        public async Task<List<TestExecution>> GetByTestCaseTrackedAsync(Guid testCaseId)
+        public Task<List<TestExecution>> GetByTestCaseTrackedAsync(Guid testCaseId)
         {
-            return await _dbSet
+            return _dbSet
                 .Where(te => te.TestCaseId == testCaseId)
                 .Include(te => te.Status)
                 .OrderByDescending(te => te.ExecutionDate)
@@ -95,10 +95,10 @@ namespace QAMS.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<Dictionary<int, int>> GetStatusCountsByProjectAsync(Guid projectId)
+        public Task<Dictionary<int, int>> GetStatusCountsByProjectAsync(Guid projectId)
         {
             // Navegar: TestExecution -> TestCase -> TestSuite -> Project
-            return await _dbSet
+            return _dbSet
                 .Where(te => te.TestCase!.TestSuite!.ProjectId == projectId)
                 .GroupBy(te => te.StatusId)
                 .Select(g => new { StatusId = g.Key, Count = g.Count() })
@@ -109,9 +109,9 @@ namespace QAMS.Infrastructure.Repositories
         /// <summary>
         /// Cuenta ejecuciones agrupadas por StatusId para un tester.
         /// </summary>
-        public async Task<Dictionary<int, int>> GetStatusCountsByUserAsync(Guid userId)
+        public Task<Dictionary<int, int>> GetStatusCountsByUserAsync(Guid userId)
         {
-            return await _dbSet
+            return _dbSet
                 .Where(te => te.TesterId == userId)
                 .GroupBy(te => te.StatusId)
                 .Select(g => new { StatusId = g.Key, Count = g.Count() })

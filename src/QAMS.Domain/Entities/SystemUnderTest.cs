@@ -1,6 +1,7 @@
 // src/QAMS.Domain/Entities/SystemUnderTest.cs
 using System;
 using QAMS.Domain.Common;
+using QAMS.Domain.Entities.Catalogs;
 
 namespace QAMS.Domain.Entities
 {
@@ -16,7 +17,13 @@ namespace QAMS.Domain.Entities
         public string? Description { get; set; }
         public string? Version { get; set; }
         public string? Environment { get; set; }
+
+        public int PlatformTypeId { get; set; } = 1;
+        public virtual PlatformType PlatformType { get; set; } = null!;
+
         public string? BaseUrl { get; set; }
+        public string? ExecutablePath { get; set; }
+        public string? ProcessName { get; set; }
         public bool IsActive { get; set; } = true;
 
         // ISoftDelete implementation

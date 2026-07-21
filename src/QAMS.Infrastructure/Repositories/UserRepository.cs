@@ -38,13 +38,9 @@ namespace QAMS.Infrastructure.Repositories
         // CONSTRUCTOR: Inyecta el contexto de EF Core
         // ================================================================
 
-        /// <summary>
-        /// Inicializa una instancia de UserRepository.
-        /// </summary>
-
         // Sobrescritura de métodos del repositorio genérico para aplicar el filtro de borrado lógico manualmente
-        public override async Task<User?> GetByIdAsync(Guid id) =>
-            await _dbSet.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+        public override Task<User?> GetByIdAsync(Guid id) =>
+            _dbSet.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
 
         public override async Task<IReadOnlyList<User>> GetAllAsync() =>
             await _dbSet.Where(u => !u.IsDeleted).AsNoTracking().ToListAsync();
@@ -52,21 +48,19 @@ namespace QAMS.Infrastructure.Repositories
         public override async Task<IReadOnlyList<User>> FindAsync(Expression<Func<User, bool>> predicate) =>
             await _dbSet.Where(u => !u.IsDeleted).Where(predicate).AsNoTracking().ToListAsync();
 
-        public override async Task<bool> AnyAsync(Expression<Func<User, bool>> predicate) =>
-            await _dbSet.Where(u => !u.IsDeleted).AnyAsync(predicate);
+        public override Task<bool> AnyAsync(Expression<Func<User, bool>> predicate) =>
+            _dbSet.Where(u => !u.IsDeleted).AnyAsync(predicate);
 
-        public override async Task<int> CountAsync(Expression<Func<User, bool>> predicate) =>
-            await _dbSet.Where(u => !u.IsDeleted).CountAsync(predicate);
+        public override Task<int> CountAsync(Expression<Func<User, bool>> predicate) =>
+            _dbSet.Where(u => !u.IsDeleted).CountAsync(predicate);
 
-        /// 
-        /// PARÁMETRO:
-        /// - context: DbContext que representa la BD
-        ///   Se pasa a la clase base para operaciones CRUD básicas
-        /// 
-        /// NOTA:
-        /// - El contexto es inyectado por el contenedor DI
-        /// - Se reutiliza en toda la aplicación (Unit of Work pattern)
-        /// </summary>
+        // PARÁMETROS:
+        // - context: DbContext que representa la BD
+        //   Se pasa a la clase base para operaciones CRUD básicas
+        // 
+        // NOTAS CONSTRUCTOR:
+        // - El contexto es inyectado por el contenedor DI
+        // - Se reutiliza en toda la aplicación (Unit of Work pattern)
 
         // ================================================================
         // CONSULTAS POR CRITERIOS ESPECÍFICOS (BÚSQUEDA)
@@ -92,28 +86,25 @@ namespace QAMS.Infrastructure.Repositories
         /// - No carga roles (lazy loading)
         /// - Usa comparación exact
         /// </summary>
-        public async Task<User?> GetByUsernameAsync(string username) =>
-            await _dbSet.FirstOrDefaultAsync(u => u.Username != null && u.Username.Equals(username, StringComparison.OrdinalIgnoreCase) && !u.IsDeleted);
+        public Task<User?> GetByUsernameAsync(string username) =>
+            _dbSet.FirstOrDefaultAsync(u => u.Username != null && u.Username.ToLower() == username.ToLower() && !u.IsDeleted);
 
-        public async Task<User?> GetByEmailAsync(string email) =>
-            await _dbSet.FirstOrDefaultAsync(u => u.Email != null && u.Email.Equals(email, StringComparison.OrdinalIgnoreCase) && !u.IsDeleted);
+        public Task<User?> GetByEmailAsync(string email) =>
+            _dbSet.FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == email.ToLower() && !u.IsDeleted);
 
-        public async Task<User?> GetByUsernamePhysicalAsync(string username) =>
-            await _dbSet.IgnoreQueryFilters()
-                .FirstOrDefaultAsync(u => u.Username != null && u.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+        public Task<User?> GetByUsernamePhysicalAsync(string username) =>
+            _dbSet.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Username != null && u.Username.ToLower() == username.ToLower());
 
-        public async Task<User?> GetByEmailPhysicalAsync(string email) =>
-            await _dbSet.IgnoreQueryFilters()
-                .FirstOrDefaultAsync(u => u.Email != null && u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+        public Task<User?> GetByEmailPhysicalAsync(string email) =>
+            _dbSet.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == email.ToLower());
 
-        public async Task<List<User>> GetPhysicalConflictsAsync(string email, string username, string documento)
+        public Task<List<User>> GetPhysicalConflictsAsync(string email, string username, string documento)
         {
-            var lowerEmail = email.ToLower();
-            var lowerUsername = username.ToLower();
-
-            return await _dbSet.IgnoreQueryFilters()
-                .Where(u => (u.Email != null && u.Email.Equals(email, StringComparison.OrdinalIgnoreCase))
-                         || (u.Username != null && u.Username.Equals(username, StringComparison.OrdinalIgnoreCase))
+            return _dbSet.IgnoreQueryFilters()
+                .Where(u => (u.Email != null && u.Email.ToLower() == email.ToLower())
+                         || (u.Username != null && u.Username.ToLower() == username.ToLower())
                          || u.DocumentoIdentidad == documento)
                 .ToListAsync();
         }
@@ -230,9 +221,9 @@ namespace QAMS.Infrastructure.Repositories
         /// - Para casos simples, usar GetWithRolesAsync
         /// - La consulta es más grande pero evita roundtrips
         /// </summary>
-        public async Task<User?> GetWithRolesAndPermissionsAsync(string username)
+        public Task<User?> GetWithRolesAndPermissionsAsync(string username)
         {
-            return await _dbSet
+            return _dbSet
                 .Where(u => !u.IsDeleted)
                 // Step 1: Incluir colección de UserRoles FILTRADOS por borrado lógico
                 .Include(u => u.UserRoles.Where(ur => !ur.IsDeleted))
@@ -245,7 +236,7 @@ namespace QAMS.Infrastructure.Repositories
                 // Usar SplitQuery para evitar cartesian product y errores de múltiples colecciones
                 .AsSplitQuery()
                 // Filtrar por username y retornar el primero o null
-                .FirstOrDefaultAsync(u => u.Username != null && u.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefaultAsync(u => u.Username != null && u.Username.ToLower() == username.ToLower());
         }
 
         // ================================================================
@@ -385,9 +376,11 @@ namespace QAMS.Infrastructure.Repositories
             // Solo remover si se encontró la asignación
             // Si no existe, this condition es false y no se hace nada
             if (assignment != null)
+            {
                 // Remove marca la entidad en estado "Deleted"
                 // EF Core ejecutará DELETE SQL al llamar SaveChangesAsync
                 _context.UserRoles.Remove(assignment);
+            }
 
             // NOTA: El cambio se persiste EXTERNAMENTE (en UserService.RemoveRoleAsync)
         }

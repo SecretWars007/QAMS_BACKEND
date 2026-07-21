@@ -27,6 +27,11 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(tp => tp.StatusId)
                 .IsRequired();
 
+            builder.HasOne(tp => tp.Status)
+                .WithMany()
+                .HasForeignKey(tp => tp.StatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasOne(tp => tp.Project)
                 .WithMany(p => p.TestPlans)
                 .HasForeignKey(tp => tp.ProjectId)

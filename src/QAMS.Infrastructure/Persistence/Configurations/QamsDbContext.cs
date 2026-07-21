@@ -53,6 +53,9 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         /// <summary>Catálogo de estados de TestSuite.</summary>
         public DbSet<TestSuiteStatus> TestSuiteStatuses => Set<TestSuiteStatus>();
 
+        /// <summary>Catálogo de tipos de plataforma para Sistemas Bajo Prueba.</summary>
+        public DbSet<PlatformType> PlatformTypes => Set<PlatformType>();
+
         // =======================================================================
         // TABLAS DE SEGURIDAD (Sistema RBAC Dinámico)
         // Permite administrar usuarios, roles y permisos desde la UI.
@@ -233,6 +236,8 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         public DbSet<DefectStatus> DefectStatuses => Set<DefectStatus>();
 
         public DbSet<TestPlan> TestPlans => Set<TestPlan>();
+        public DbSet<TestPlanStatus> TestPlanStatuses => Set<TestPlanStatus>();
+        public DbSet<TestPlanCriteria> TestPlanCriteria => Set<TestPlanCriteria>();
         public DbSet<TestPlanSuite> TestPlanSuites => Set<TestPlanSuite>();
         public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
 

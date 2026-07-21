@@ -2,9 +2,9 @@
 using AutoMapper;
 using Microsoft.Extensions.Logging;
 using QAMS.Application.DTOs.ApiKeys;
+using QAMS.Application.Interfaces;
 using QAMS.Application.Interfaces.Repositories;
 using QAMS.Application.Interfaces.Services;
-using QAMS.Application.Interfaces;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Exceptions;
 using QAMS.Domain.Ports.Repositories;
@@ -93,7 +93,7 @@ namespace QAMS.Application.Services
             if (apiKey == null) return null;
 
             // Verificar expiración
-            if (apiKey.ExpiresAt.HasValue && apiKey.ExpiresAt.Value < DateTime.UtcNow)
+            if (apiKey.ExpiresAt < DateTime.UtcNow)
             {
                 logger.LogWarning("Intento de uso de API Key expirada {Id}.", apiKey.Id);
                 return null;

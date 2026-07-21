@@ -17,7 +17,10 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(sut => sut.Description).HasColumnName("description").HasMaxLength(1000);
             builder.Property(sut => sut.Version).HasColumnName("version").HasMaxLength(50);
             builder.Property(sut => sut.Environment).HasColumnName("environment").HasMaxLength(50);
+            builder.Property(sut => sut.PlatformTypeId).HasColumnName("platform_type_id").HasDefaultValue(1);
             builder.Property(sut => sut.BaseUrl).HasColumnName("base_url").HasMaxLength(255);
+            builder.Property(sut => sut.ExecutablePath).HasColumnName("executable_path").HasMaxLength(500);
+            builder.Property(sut => sut.ProcessName).HasColumnName("process_name").HasMaxLength(255);
             builder.Property(sut => sut.IsActive).HasColumnName("is_active").HasDefaultValue(true);
 
             // Auditoría y Borrado Lógico
@@ -34,6 +37,11 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 .WithMany(p => p.SystemsUnderTest)
                 .HasForeignKey(sut => sut.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(sut => sut.PlatformType)
+                .WithMany(pt => pt.SystemsUnderTest)
+                .HasForeignKey(sut => sut.PlatformTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(sut => sut.CreatedBy)
                 .WithMany()

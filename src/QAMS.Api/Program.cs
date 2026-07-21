@@ -155,10 +155,10 @@ builder.Services.AddRateLimiter(options =>
 {
     options.AddFixedWindowLimiter("AuthLimit", opt =>
     {
-        opt.PermitLimit = 5;
+        opt.PermitLimit = 100;
         opt.Window = TimeSpan.FromMinutes(1);
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        opt.QueueLimit = 2;
+        opt.QueueLimit = 20;
     });
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
@@ -344,7 +344,7 @@ using (var scope = app.Services.CreateScope())
 
                 // Si no hay migrations aplicadas (proyecto usa EnsureCreated en dev o DB vacía sin historial), crear esquema
                 var applied = db.Database.GetAppliedMigrations();
-                if (applied == null || !applied.Any())
+                if (applied?.Any() != true)
                 {
                     app.Logger.LogInformation("No se encontraron migraciones aplicadas en el historial; intentando EnsureCreated().");
                     db.Database.EnsureCreated();
@@ -357,7 +357,7 @@ using (var scope = app.Services.CreateScope())
             try
             {
                 db.Database.EnsureCreated();
-                app.Logger.LogInformation("EnsureCreated() completado exitosamente.");
+                app.Logger.LogInformation(migEx, "EnsureCreated() completado exitosamente.");
             }
             catch (Exception ensureEx)
             {
@@ -375,7 +375,7 @@ using (var scope = app.Services.CreateScope())
         app.Logger.LogError(ex, "ERROR FATAL durante la inicialización de la base de datos.");
         if (environment.IsProduction())
         {
-            app.Logger.LogCritical("La aplicación no puede iniciar en Producción sin una base de datos válida.");
+            app.Logger.LogCritical(ex, "La aplicación no puede iniciar en Producción sin una base de datos válida.");
             // Opcional: throw; // Descomentar si se prefiere que el pod de Render falle y se reinicie
         }
     }

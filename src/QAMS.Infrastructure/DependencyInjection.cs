@@ -44,6 +44,7 @@ namespace QAMS.Infrastructure
             services.AddScoped<IKanbanBoardRepository, KanbanBoardRepository>();
             services.AddScoped<IDefectRepository, DefectRepository>();
             services.AddScoped<QAMS.Application.Interfaces.Repositories.ITestPlanRepository, TestPlanRepository>();
+            services.AddScoped<QAMS.Application.Interfaces.Repositories.IApiKeyRepository, ApiKeyRepository>();
 
             // Unit of Work
             services.AddScoped<IUnitOfWork, UnitOfWork>();

@@ -51,11 +51,14 @@ namespace QAMS.Application.Mappings
 
         private void ConfigureProjectMappings()
         {
+            CreateMap<TestPlanCriteria, TestPlanCriteriaDto>();
+            CreateMap<TestPlanCriteriaDto, TestPlanCriteria>();
+
             CreateMap<TestPlan, TestPlanDto>()
                 .ForMember(d => d.ProjectName, o => o.MapFrom(s => s.Project != null ? s.Project.Name : string.Empty))
                 .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty))
-                .ForMember(d => d.StatusName, o => o.MapFrom(s => s.StatusId == 1 ? "Borrador" : (s.StatusId == 2 ? "Aprobado" : "Cerrado")))
-                .ForMember(d => d.Suites, o => o.MapFrom(s => s.TestPlanSuites.Select(tps => tps.TestSuite)));
+                .ForMember(d => d.Status, o => o.MapFrom(s => s.Status != null ? new CatalogItemDto { Id = s.Status.Id, Name = s.Status.Name } : null))
+                .ForMember(d => d.TestSuites, o => o.MapFrom(s => s.TestPlanSuites.Select(tps => tps.TestSuite)));
 
             CreateMap<CreateTestPlanDto, TestPlan>();
 

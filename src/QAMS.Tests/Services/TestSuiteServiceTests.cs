@@ -17,8 +17,10 @@ namespace QAMS.Tests.Services;
 [Collection("Integration tests")]
 public class TestSuiteServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
-    private ITestSuiteService GetService(IServiceScope scope)
-        => scope.ServiceProvider.GetRequiredService<ITestSuiteService>();
+    private static ITestSuiteService GetService(IServiceScope scope)
+    {
+        return scope.ServiceProvider.GetRequiredService<ITestSuiteService>();
+    }
 
     [Fact(DisplayName = "GetByIdAsync_CuandoExiste_DebeRetornarDto")]
     public async Task GetByIdAsync_WhenExists_ReturnsDto()

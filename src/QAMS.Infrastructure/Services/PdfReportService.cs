@@ -19,12 +19,14 @@ namespace QAMS.Infrastructure.Services
         ITestExecutionRepository execRepo,
         IObservationRepository observationRepo,
         IEvidenceRepository evidenceRepo,
+        QAMS.Application.Interfaces.Repositories.ITestPlanRepository testPlanRepo,
         ILogger<PdfReportService> logger) : IReportService
     {
         private readonly IProjectRepository _projectRepo = projectRepo;
         private readonly ITestExecutionRepository _execRepo = execRepo;
         private readonly IObservationRepository _observationRepo = observationRepo;
         private readonly IEvidenceRepository _evidenceRepo = evidenceRepo;
+        private readonly QAMS.Application.Interfaces.Repositories.ITestPlanRepository _testPlanRepo = testPlanRepo;
         private readonly ILogger<PdfReportService> _logger = logger;
         private readonly string _uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
         private const string ColorPrimary = "#1A237E";
@@ -1130,6 +1132,90 @@ namespace QAMS.Infrastructure.Services
             var list = executions.ToList();
             var passedCount = list.Count(e => e.Status?.Code == StatusPassed || e.StatusId == 3 || (e.StatusId == 2 && e.StepResults != null && e.StepResults.Count > 0 && e.StepResults.All(sr => !string.IsNullOrEmpty(sr.ActualResult))));
             return Math.Round((double)passedCount / list.Count * 100, 2);
+        }
+        public async Task<byte[]> GenerateTestSummaryReportAsync(Guid testPlanId)
+        {
+            var plan = await _testPlanRepo.GetByIdWithDetailsAsync(testPlanId);
+            if (plan == null) return [];
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(1, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(10));
+
+                    page.Header().Element(c =>
+                        c.BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(5)
+                        .Row(row =>
+                        {
+                            row.RelativeItem().Column(col =>
+                            {
+                                col.Item().Text($"Test Summary Report - {plan.Name}").FontSize(18).FontColor(ColorPrimary).Bold();
+                                col.Item().Text($"Proyecto: {plan.Project?.Name}").FontSize(10).FontColor(Colors.Grey.Medium);
+                            });
+                        }));
+
+                    page.Content().PaddingVertical(10).Column(column =>
+                    {
+                        column.Spacing(20);
+
+                        column.Item().Text("1. Resumen Ejecutivo (Executive Summary)").FontSize(14).FontColor(ColorPrimary).Bold();
+                        column.Item().Text(plan.Objectives ?? "Sin objetivos definidos.");
+
+                        column.Item().Text("2. Criterios de Entrada y Salida (Entry / Exit Criteria)").FontSize(14).FontColor(ColorPrimary).Bold();
+                        if (plan.Criteria != null && plan.Criteria.Any())
+                        {
+                            column.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(80);
+                                    columns.RelativeColumn();
+                                    columns.ConstantColumn(80);
+                                });
+
+                                table.Header(header =>
+                                {
+                                    header.Cell().Background(ColorLightPrimary).Padding(2).Text("Tipo").Bold();
+                                    header.Cell().Background(ColorLightPrimary).Padding(2).Text("Descripción").Bold();
+                                    header.Cell().Background(ColorLightPrimary).Padding(2).Text("Estado").Bold();
+                                });
+
+                                foreach (var crit in plan.Criteria)
+                                {
+                                    table.Cell().BorderBottom(1).BorderColor(ColorBorder).Padding(2).Text(crit.CriteriaType);
+                                    table.Cell().BorderBottom(1).BorderColor(ColorBorder).Padding(2).Text(crit.Description);
+
+                                    string estado = crit.IsMet ? "CUMPLIDO" : "PENDIENTE";
+                                    string color = crit.IsMet ? ColorSuccess : ColorDanger;
+
+                                    table.Cell().BorderBottom(1).BorderColor(ColorBorder).Padding(2).Text(estado).FontColor(color).Bold();
+                                }
+                            });
+                        }
+                        else
+                        {
+                            column.Item().Text("No hay criterios definidos para este plan de pruebas.").Italic();
+                        }
+                    });
+
+                    page.Footer().Element(c =>
+                        c.AlignCenter().Text(t =>
+                        {
+                            t.Span("Página ");
+                            t.CurrentPageNumber();
+                            t.Span(" de ");
+                            t.TotalPages();
+                        }));
+                });
+            });
+
+            using var ms = new MemoryStream();
+            document.GeneratePdf(ms);
+            return ms.ToArray();
         }
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QAMS.Infrastructure.Persistence.Configurations;
@@ -11,9 +12,11 @@ using QAMS.Infrastructure.Persistence.Configurations;
 namespace QAMS.Infrastructure.Migrations
 {
     [DbContext(typeof(QamsDbContext))]
-    partial class QamsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260719205014_AddTestPlanIstqbFeatures")]
+    partial class AddTestPlanIstqbFeatures
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -189,7 +192,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "LOW",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 226, DateTimeKind.Utc).AddTicks(2315),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 557, DateTimeKind.Utc).AddTicks(2406),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Baja",
@@ -199,7 +202,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "MEDIUM",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 226, DateTimeKind.Utc).AddTicks(2322),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 557, DateTimeKind.Utc).AddTicks(2413),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Media",
@@ -209,7 +212,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "HIGH",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 226, DateTimeKind.Utc).AddTicks(2324),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 557, DateTimeKind.Utc).AddTicks(2414),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Alta",
@@ -219,7 +222,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "CRITICAL",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 226, DateTimeKind.Utc).AddTicks(2325),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 557, DateTimeKind.Utc).AddTicks(2415),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Crítica",
@@ -304,7 +307,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "OPEN",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 227, DateTimeKind.Utc).AddTicks(1843),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 560, DateTimeKind.Utc).AddTicks(7842),
                             Description = "Defecto recién reportado",
                             IsActive = true,
                             IsDeleted = false,
@@ -315,7 +318,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "IN_PROGRESS",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 227, DateTimeKind.Utc).AddTicks(1848),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 560, DateTimeKind.Utc).AddTicks(7854),
                             Description = "En corrección por el equipo",
                             IsActive = true,
                             IsDeleted = false,
@@ -326,7 +329,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "RESOLVED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 227, DateTimeKind.Utc).AddTicks(1856),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 560, DateTimeKind.Utc).AddTicks(7856),
                             Description = "Corregido, pendiente verificación",
                             IsActive = true,
                             IsDeleted = false,
@@ -337,7 +340,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "CLOSED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 227, DateTimeKind.Utc).AddTicks(1858),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 560, DateTimeKind.Utc).AddTicks(7857),
                             Description = "Verificado y cerrado",
                             IsActive = true,
                             IsDeleted = false,
@@ -348,7 +351,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 5,
                             Code = "REJECTED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 227, DateTimeKind.Utc).AddTicks(1859),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 560, DateTimeKind.Utc).AddTicks(7858),
                             Description = "No es un defecto válido",
                             IsActive = true,
                             IsDeleted = false,
@@ -431,7 +434,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "IMAGE",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 233, DateTimeKind.Utc).AddTicks(6612),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 573, DateTimeKind.Utc).AddTicks(4025),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Imagen",
@@ -441,7 +444,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "VIDEO",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 233, DateTimeKind.Utc).AddTicks(6619),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 573, DateTimeKind.Utc).AddTicks(4043),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Video",
@@ -451,7 +454,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "DOCUMENT",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 233, DateTimeKind.Utc).AddTicks(6620),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 573, DateTimeKind.Utc).AddTicks(4046),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Documento",
@@ -461,7 +464,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "LOG_FILE",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 233, DateTimeKind.Utc).AddTicks(6622),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 573, DateTimeKind.Utc).AddTicks(4047),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Archivo de Log",
@@ -543,7 +546,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "PENDING",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 235, DateTimeKind.Utc).AddTicks(795),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 574, DateTimeKind.Utc).AddTicks(7289),
                             Description = "Ejecución creada pero no iniciada.",
                             IsActive = true,
                             IsDeleted = false,
@@ -554,7 +557,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "IN_PROGRESS",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 235, DateTimeKind.Utc).AddTicks(799),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 574, DateTimeKind.Utc).AddTicks(7296),
                             Description = "Ejecución en curso.",
                             IsActive = true,
                             IsDeleted = false,
@@ -565,7 +568,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "PASSED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 235, DateTimeKind.Utc).AddTicks(801),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 574, DateTimeKind.Utc).AddTicks(7298),
                             Description = "Todos los pasos exitosos.",
                             IsActive = true,
                             IsDeleted = false,
@@ -576,7 +579,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "FAILED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 235, DateTimeKind.Utc).AddTicks(802),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 574, DateTimeKind.Utc).AddTicks(7299),
                             Description = "Al menos un paso falló.",
                             IsActive = true,
                             IsDeleted = false,
@@ -587,7 +590,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 5,
                             Code = "BLOCKED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 235, DateTimeKind.Utc).AddTicks(803),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 574, DateTimeKind.Utc).AddTicks(7300),
                             Description = "Impedimento externo.",
                             IsActive = true,
                             IsDeleted = false,
@@ -598,100 +601,12 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 6,
                             Code = "SKIPPED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 235, DateTimeKind.Utc).AddTicks(804),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 574, DateTimeKind.Utc).AddTicks(7305),
                             Description = "Omitido intencionalmente.",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Omitido",
                             SortOrder = 6
-                        });
-                });
-
-            modelBuilder.Entity("QAMS.Domain.Entities.Catalogs.PlatformType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreatedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("DeletedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("UpdatedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.ToTable("platform_types", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Code = "WEB",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 282, DateTimeKind.Utc).AddTicks(367),
-                            IsActive = true,
-                            IsDeleted = false,
-                            Name = "Aplicación Web",
-                            SortOrder = 1
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Code = "DESKTOP",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 282, DateTimeKind.Utc).AddTicks(371),
-                            IsActive = true,
-                            IsDeleted = false,
-                            Name = "Aplicación de Escritorio",
-                            SortOrder = 2
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Code = "DATA_PROCESSING",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 282, DateTimeKind.Utc).AddTicks(373),
-                            IsActive = true,
-                            IsDeleted = false,
-                            Name = "Procesamiento de Información",
-                            SortOrder = 3
                         });
                 });
 
@@ -755,7 +670,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "LOW",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 348, DateTimeKind.Utc).AddTicks(2989),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 728, DateTimeKind.Utc).AddTicks(3420),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Baja",
@@ -765,7 +680,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "MEDIUM",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 348, DateTimeKind.Utc).AddTicks(2996),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 728, DateTimeKind.Utc).AddTicks(3430),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Media",
@@ -775,7 +690,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "HIGH",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 348, DateTimeKind.Utc).AddTicks(2998),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 728, DateTimeKind.Utc).AddTicks(3431),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Alta",
@@ -785,7 +700,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "CRITICAL",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 348, DateTimeKind.Utc).AddTicks(2999),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 728, DateTimeKind.Utc).AddTicks(3433),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Crítica",
@@ -848,7 +763,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "PENDIENTE",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 214, DateTimeKind.Utc).AddTicks(5825),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 542, DateTimeKind.Utc).AddTicks(7149),
                             Description = "Proyecto registrado pero no iniciado",
                             IsActive = true,
                             IsDeleted = false,
@@ -859,7 +774,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "EN_PROCESO",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 214, DateTimeKind.Utc).AddTicks(5827),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 542, DateTimeKind.Utc).AddTicks(7153),
                             Description = "Proyecto en ejecución activa",
                             IsActive = true,
                             IsDeleted = false,
@@ -870,7 +785,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "DETENIDO",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 214, DateTimeKind.Utc).AddTicks(5829),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 542, DateTimeKind.Utc).AddTicks(7155),
                             Description = "Proyecto pausado o cancelado temporalmente",
                             IsActive = true,
                             IsDeleted = false,
@@ -881,7 +796,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "CERTIFICADO",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 214, DateTimeKind.Utc).AddTicks(5831),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 542, DateTimeKind.Utc).AddTicks(7157),
                             Description = "Proyecto completado y validado",
                             IsActive = true,
                             IsDeleted = false,
@@ -892,7 +807,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 5,
                             Code = "DEVOLUCION",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 214, DateTimeKind.Utc).AddTicks(5833),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 542, DateTimeKind.Utc).AddTicks(7159),
                             Description = "Proyecto devuelto por falta de aprobación o errores graves",
                             IsActive = true,
                             IsDeleted = false,
@@ -961,7 +876,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "SIMPLE",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 371, DateTimeKind.Utc).AddTicks(6808),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 747, DateTimeKind.Utc).AddTicks(4831),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Simple",
@@ -971,7 +886,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "MODERATE",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 371, DateTimeKind.Utc).AddTicks(6814),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 747, DateTimeKind.Utc).AddTicks(4861),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Moderada",
@@ -981,7 +896,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "COMPLEX",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 371, DateTimeKind.Utc).AddTicks(6816),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 747, DateTimeKind.Utc).AddTicks(4862),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Compleja",
@@ -991,7 +906,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "VERY_COMPLEX",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 371, DateTimeKind.Utc).AddTicks(6817),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 747, DateTimeKind.Utc).AddTicks(4863),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Muy Compleja",
@@ -1059,7 +974,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "LOW",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 403, DateTimeKind.Utc).AddTicks(4944),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 770, DateTimeKind.Utc).AddTicks(9272),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Baja",
@@ -1069,7 +984,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "MEDIUM",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 403, DateTimeKind.Utc).AddTicks(4953),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 770, DateTimeKind.Utc).AddTicks(9280),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Media",
@@ -1079,7 +994,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "HIGH",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 403, DateTimeKind.Utc).AddTicks(4954),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 770, DateTimeKind.Utc).AddTicks(9282),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Alta",
@@ -1089,7 +1004,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "CRITICAL",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 403, DateTimeKind.Utc).AddTicks(4956),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 770, DateTimeKind.Utc).AddTicks(9283),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Crítica",
@@ -1157,7 +1072,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "DRAFT",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 405, DateTimeKind.Utc).AddTicks(6153),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 774, DateTimeKind.Utc).AddTicks(2579),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Borrador",
@@ -1167,7 +1082,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "IN_REVIEW",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 405, DateTimeKind.Utc).AddTicks(6159),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 774, DateTimeKind.Utc).AddTicks(2592),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "En Revisión",
@@ -1177,7 +1092,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "APPROVED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 405, DateTimeKind.Utc).AddTicks(6160),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 774, DateTimeKind.Utc).AddTicks(2593),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Aprobado",
@@ -1187,7 +1102,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "REJECTED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 405, DateTimeKind.Utc).AddTicks(6161),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 774, DateTimeKind.Utc).AddTicks(2595),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Rechazado",
@@ -1197,7 +1112,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 5,
                             Code = "IMPLEMENTED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 405, DateTimeKind.Utc).AddTicks(6162),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 774, DateTimeKind.Utc).AddTicks(2646),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Implementado",
@@ -1207,7 +1122,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 6,
                             Code = "VERIFIED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 405, DateTimeKind.Utc).AddTicks(6164),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 774, DateTimeKind.Utc).AddTicks(2647),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Verificado",
@@ -1275,7 +1190,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "FUNCTIONAL",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 416, DateTimeKind.Utc).AddTicks(3531),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 781, DateTimeKind.Utc).AddTicks(7940),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Funcional",
@@ -1285,7 +1200,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "NON_FUNCTIONAL",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 416, DateTimeKind.Utc).AddTicks(3541),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 781, DateTimeKind.Utc).AddTicks(7949),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "No Funcional",
@@ -1295,7 +1210,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "TECHNICAL",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 416, DateTimeKind.Utc).AddTicks(3543),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 781, DateTimeKind.Utc).AddTicks(7951),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Técnico",
@@ -1305,7 +1220,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "USER_STORY",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 416, DateTimeKind.Utc).AddTicks(3544),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 781, DateTimeKind.Utc).AddTicks(7952),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Historia de Usuario",
@@ -1387,7 +1302,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "NOT_EXECUTED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 429, DateTimeKind.Utc).AddTicks(8240),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 800, DateTimeKind.Utc).AddTicks(5667),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "No Ejecutado",
@@ -1397,7 +1312,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "PASSED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 429, DateTimeKind.Utc).AddTicks(8258),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 800, DateTimeKind.Utc).AddTicks(5685),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Aprobado",
@@ -1407,7 +1322,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "FAILED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 429, DateTimeKind.Utc).AddTicks(8260),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 800, DateTimeKind.Utc).AddTicks(5686),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Fallido",
@@ -1417,7 +1332,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "BLOCKED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 429, DateTimeKind.Utc).AddTicks(8261),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 800, DateTimeKind.Utc).AddTicks(5687),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Bloqueado",
@@ -1499,7 +1414,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "LOW",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 446, DateTimeKind.Utc).AddTicks(9855),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 817, DateTimeKind.Utc).AddTicks(9347),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Baja",
@@ -1509,7 +1424,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "MEDIUM",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 446, DateTimeKind.Utc).AddTicks(9861),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 817, DateTimeKind.Utc).AddTicks(9361),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Media",
@@ -1519,7 +1434,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "HIGH",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 446, DateTimeKind.Utc).AddTicks(9862),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 817, DateTimeKind.Utc).AddTicks(9363),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Alta",
@@ -1529,7 +1444,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "CRITICAL",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 446, DateTimeKind.Utc).AddTicks(9863),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 817, DateTimeKind.Utc).AddTicks(9364),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Crítica",
@@ -1611,7 +1526,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "LOW",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 518, DateTimeKind.Utc).AddTicks(6981),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 863, DateTimeKind.Utc).AddTicks(9564),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Baja",
@@ -1621,7 +1536,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "MEDIUM",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 518, DateTimeKind.Utc).AddTicks(6988),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 863, DateTimeKind.Utc).AddTicks(9581),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Media",
@@ -1631,7 +1546,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "HIGH",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 518, DateTimeKind.Utc).AddTicks(6990),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 863, DateTimeKind.Utc).AddTicks(9582),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Alta",
@@ -1641,7 +1556,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "CRITICAL",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 518, DateTimeKind.Utc).AddTicks(6991),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 863, DateTimeKind.Utc).AddTicks(9584),
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Crítica",
@@ -1704,7 +1619,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "DRAFT",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 215, DateTimeKind.Utc).AddTicks(9701),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 543, DateTimeKind.Utc).AddTicks(9310),
                             Description = "Plan de pruebas en elaboración",
                             IsActive = true,
                             IsDeleted = false,
@@ -1715,7 +1630,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "APPROVED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 215, DateTimeKind.Utc).AddTicks(9716),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 543, DateTimeKind.Utc).AddTicks(9317),
                             Description = "Plan de pruebas aprobado y listo",
                             IsActive = true,
                             IsDeleted = false,
@@ -1726,7 +1641,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "IN_EXECUTION",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 215, DateTimeKind.Utc).AddTicks(9718),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 543, DateTimeKind.Utc).AddTicks(9318),
                             Description = "Pruebas en proceso de ejecución",
                             IsActive = true,
                             IsDeleted = false,
@@ -1737,7 +1652,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "CLOSED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 215, DateTimeKind.Utc).AddTicks(9719),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 543, DateTimeKind.Utc).AddTicks(9320),
                             Description = "Plan de pruebas completado (criterios de salida cumplidos)",
                             IsActive = true,
                             IsDeleted = false,
@@ -1806,7 +1721,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "PENDIENTE",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 217, DateTimeKind.Utc).AddTicks(5505),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 544, DateTimeKind.Utc).AddTicks(9875),
                             Description = "Suite pendiente de ejecución",
                             IsActive = true,
                             IsDeleted = false,
@@ -1817,7 +1732,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "EN_PROCESO",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 217, DateTimeKind.Utc).AddTicks(5521),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 544, DateTimeKind.Utc).AddTicks(9879),
                             Description = "Suite en ejecución activa",
                             IsActive = true,
                             IsDeleted = false,
@@ -1828,7 +1743,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "COMPLETADO",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 217, DateTimeKind.Utc).AddTicks(5523),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 544, DateTimeKind.Utc).AddTicks(9880),
                             Description = "Todos los casos de la suite ejecutados",
                             IsActive = true,
                             IsDeleted = false,
@@ -1839,7 +1754,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "DETENIDO",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 217, DateTimeKind.Utc).AddTicks(5524),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 544, DateTimeKind.Utc).AddTicks(9882),
                             Description = "Ejecución de la suite pausada",
                             IsActive = true,
                             IsDeleted = false,
@@ -1903,7 +1818,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "FUNCTIONAL_MANUAL",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 218, DateTimeKind.Utc).AddTicks(6780),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 545, DateTimeKind.Utc).AddTicks(7697),
                             Description = "Prueba funcional ejecutada manualmente",
                             IsActive = true,
                             IsDeleted = false,
@@ -1914,7 +1829,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 2,
                             Code = "FUNCTIONAL_AUTOMATED",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 218, DateTimeKind.Utc).AddTicks(6784),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 545, DateTimeKind.Utc).AddTicks(7700),
                             Description = "Prueba funcional automatizada",
                             IsActive = true,
                             IsDeleted = false,
@@ -1925,7 +1840,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 3,
                             Code = "NON_FUNCTIONAL",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 218, DateTimeKind.Utc).AddTicks(6786),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 545, DateTimeKind.Utc).AddTicks(7703),
                             Description = "Prueba de rendimiento, seguridad, usabilidad, etc.",
                             IsActive = true,
                             IsDeleted = false,
@@ -1936,7 +1851,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 4,
                             Code = "REGRESSION",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 218, DateTimeKind.Utc).AddTicks(6824),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 545, DateTimeKind.Utc).AddTicks(7705),
                             Description = "Prueba para verificar que cambios no rompieron funcionalidad existente",
                             IsActive = true,
                             IsDeleted = false,
@@ -1947,7 +1862,7 @@ namespace QAMS.Infrastructure.Migrations
                         {
                             Id = 5,
                             Code = "SMOKE",
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 218, DateTimeKind.Utc).AddTicks(6827),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 545, DateTimeKind.Utc).AddTicks(7707),
                             Description = "Prueba rápida de funcionalidad crítica",
                             IsActive = true,
                             IsDeleted = false,
@@ -3549,7 +3464,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("52455355-5f53-4956-4557-000000000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8435),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(5558),
                             IsDeleted = false
                         },
                         new
@@ -3557,7 +3472,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("52455355-5f53-5243-4541-544500000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8595),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(5738),
                             IsDeleted = false
                         },
                         new
@@ -3565,7 +3480,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("52455355-5f53-5055-4441-544500000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8600),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(5744),
                             IsDeleted = false
                         },
                         new
@@ -3573,7 +3488,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("52455355-5f53-4544-4c45-544500000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8603),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(5747),
                             IsDeleted = false
                         },
                         new
@@ -3581,7 +3496,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("52455355-5f53-5341-5349-474e5f524f4c"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8605),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(5751),
                             IsDeleted = false
                         },
                         new
@@ -3589,7 +3504,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("454c4f52-5f53-4956-4557-000000000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8607),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(5754),
                             IsDeleted = false
                         },
                         new
@@ -3597,7 +3512,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("454c4f52-5f53-5243-4541-544500000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8610),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(5759),
                             IsDeleted = false
                         },
                         new
@@ -3605,7 +3520,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("454c4f52-5f53-5055-4441-544500000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8612),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(5763),
                             IsDeleted = false
                         },
                         new
@@ -3613,7 +3528,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("454c4f52-5f53-4544-4c45-544500000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8618),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(5766),
                             IsDeleted = false
                         },
                         new
@@ -3621,7 +3536,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("454c4f52-5f53-5341-5349-474e5f504552"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8620),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(5770),
                             IsDeleted = false
                         },
                         new
@@ -3629,7 +3544,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("41544143-4f4c-5347-5f56-494557000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8622),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(5773),
                             IsDeleted = false
                         },
                         new
@@ -3637,7 +3552,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("41544143-4f4c-5347-5f4d-414e41474500"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8624),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(5776),
                             IsDeleted = false
                         },
                         new
@@ -3645,7 +3560,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("4a4f5250-4345-5354-5f56-494557000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8626),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6120),
                             IsDeleted = false
                         },
                         new
@@ -3653,7 +3568,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("4a4f5250-4345-5354-5f43-524541544500"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8628),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6151),
                             IsDeleted = false
                         },
                         new
@@ -3661,7 +3576,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("4a4f5250-4345-5354-5f55-504441544500"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8681),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6158),
                             IsDeleted = false
                         },
                         new
@@ -3669,7 +3584,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("4a4f5250-4345-5354-5f44-454c45544500"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8684),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6161),
                             IsDeleted = false
                         },
                         new
@@ -3677,7 +3592,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("54534554-435f-5341-4553-5f5649455700"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8686),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6165),
                             IsDeleted = false
                         },
                         new
@@ -3685,7 +3600,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("54534554-435f-5341-4553-5f4352454154"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8688),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6168),
                             IsDeleted = false
                         },
                         new
@@ -3693,7 +3608,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("54534554-435f-5341-4553-5f5550444154"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8690),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6172),
                             IsDeleted = false
                         },
                         new
@@ -3701,7 +3616,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("54534554-435f-5341-4553-5f44454c4554"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8692),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6175),
                             IsDeleted = false
                         },
                         new
@@ -3709,7 +3624,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f5649455700"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8694),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6178),
                             IsDeleted = false
                         },
                         new
@@ -3717,7 +3632,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f4352454154"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8696),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6181),
                             IsDeleted = false
                         },
                         new
@@ -3725,7 +3640,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f5550444154"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8700),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6184),
                             IsDeleted = false
                         },
                         new
@@ -3733,7 +3648,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f55504c4f41"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8701),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6188),
                             IsDeleted = false
                         },
                         new
@@ -3741,7 +3656,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("424e414b-4e41-565f-4945-570000000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8703),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6191),
                             IsDeleted = false
                         },
                         new
@@ -3749,7 +3664,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("424e414b-4e41-435f-5245-415445000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8705),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6194),
                             IsDeleted = false
                         },
                         new
@@ -3757,7 +3672,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("424e414b-4e41-555f-5044-415445000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8707),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6226),
                             IsDeleted = false
                         },
                         new
@@ -3765,7 +3680,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("424e414b-4e41-445f-454c-455445000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8709),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6229),
                             IsDeleted = false
                         },
                         new
@@ -3773,7 +3688,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             PermissionId = new Guid("48534144-4f42-5241-445f-564945570000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8757),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6233),
                             IsDeleted = false
                         },
                         new
@@ -3781,7 +3696,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222"),
                             PermissionId = new Guid("4a4f5250-4345-5354-5f56-494557000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8803),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6292),
                             IsDeleted = false
                         },
                         new
@@ -3789,7 +3704,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222"),
                             PermissionId = new Guid("54534554-435f-5341-4553-5f5649455700"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8863),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6310),
                             IsDeleted = false
                         },
                         new
@@ -3797,7 +3712,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f5649455700"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8866),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6314),
                             IsDeleted = false
                         },
                         new
@@ -3805,7 +3720,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f4352454154"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8868),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6318),
                             IsDeleted = false
                         },
                         new
@@ -3813,7 +3728,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f5550444154"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8870),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6321),
                             IsDeleted = false
                         },
                         new
@@ -3821,7 +3736,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f55504c4f41"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8872),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6494),
                             IsDeleted = false
                         },
                         new
@@ -3829,7 +3744,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222"),
                             PermissionId = new Guid("424e414b-4e41-565f-4945-570000000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8874),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6501),
                             IsDeleted = false
                         },
                         new
@@ -3837,7 +3752,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222"),
                             PermissionId = new Guid("424e414b-4e41-555f-5044-415445000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8876),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6507),
                             IsDeleted = false
                         },
                         new
@@ -3845,7 +3760,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222"),
                             PermissionId = new Guid("48534144-4f42-5241-445f-564945570000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8879),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6511),
                             IsDeleted = false
                         },
                         new
@@ -3853,7 +3768,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222"),
                             PermissionId = new Guid("41544143-4f4c-5347-5f56-494557000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8881),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6515),
                             IsDeleted = false
                         },
                         new
@@ -3861,7 +3776,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("4a4f5250-4345-5354-5f56-494557000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8897),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6555),
                             IsDeleted = false
                         },
                         new
@@ -3869,7 +3784,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("4a4f5250-4345-5354-5f43-524541544500"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(8900),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6562),
                             IsDeleted = false
                         },
                         new
@@ -3877,7 +3792,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("4a4f5250-4345-5354-5f55-504441544500"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9012),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6566),
                             IsDeleted = false
                         },
                         new
@@ -3885,7 +3800,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("52455355-5f53-4956-4557-000000000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9018),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6569),
                             IsDeleted = false
                         },
                         new
@@ -3893,7 +3808,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("54534554-435f-5341-4553-5f5649455700"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9020),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6573),
                             IsDeleted = false
                         },
                         new
@@ -3901,7 +3816,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("54534554-435f-5341-4553-5f4352454154"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9022),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6576),
                             IsDeleted = false
                         },
                         new
@@ -3909,7 +3824,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("54534554-435f-5341-4553-5f5550444154"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9024),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6579),
                             IsDeleted = false
                         },
                         new
@@ -3917,7 +3832,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f5649455700"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9026),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6583),
                             IsDeleted = false
                         },
                         new
@@ -3925,7 +3840,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f4352454154"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9028),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6586),
                             IsDeleted = false
                         },
                         new
@@ -3933,7 +3848,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f5550444154"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9030),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6589),
                             IsDeleted = false
                         },
                         new
@@ -3941,7 +3856,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f55504c4f41"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9032),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6592),
                             IsDeleted = false
                         },
                         new
@@ -3949,7 +3864,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("424e414b-4e41-565f-4945-570000000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9034),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6596),
                             IsDeleted = false
                         },
                         new
@@ -3957,7 +3872,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("424e414b-4e41-555f-5044-415445000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9037),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6600),
                             IsDeleted = false
                         },
                         new
@@ -3965,7 +3880,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("48534144-4f42-5241-445f-564945570000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9039),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6603),
                             IsDeleted = false
                         },
                         new
@@ -3973,7 +3888,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
                             PermissionId = new Guid("41544143-4f4c-5347-5f56-494557000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9041),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6622),
                             IsDeleted = false
                         },
                         new
@@ -3981,7 +3896,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("44444444-4444-4444-4444-444444444444"),
                             PermissionId = new Guid("4a4f5250-4345-5354-5f56-494557000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9046),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6628),
                             IsDeleted = false
                         },
                         new
@@ -3989,7 +3904,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("44444444-4444-4444-4444-444444444444"),
                             PermissionId = new Guid("54534554-435f-5341-4553-5f5649455700"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9097),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6632),
                             IsDeleted = false
                         },
                         new
@@ -3997,7 +3912,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("44444444-4444-4444-4444-444444444444"),
                             PermissionId = new Guid("43455845-5455-4f49-4e53-5f5649455700"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9099),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6636),
                             IsDeleted = false
                         },
                         new
@@ -4005,7 +3920,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("44444444-4444-4444-4444-444444444444"),
                             PermissionId = new Guid("424e414b-4e41-565f-4945-570000000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9102),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6639),
                             IsDeleted = false
                         },
                         new
@@ -4013,7 +3928,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("44444444-4444-4444-4444-444444444444"),
                             PermissionId = new Guid("424e414b-4e41-555f-5044-415445000000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9104),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6643),
                             IsDeleted = false
                         },
                         new
@@ -4021,7 +3936,7 @@ namespace QAMS.Infrastructure.Migrations
                             RoleId = new Guid("44444444-4444-4444-4444-444444444444"),
                             PermissionId = new Guid("48534144-4f42-5241-445f-564945570000"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 427, DateTimeKind.Utc).AddTicks(9107),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 796, DateTimeKind.Utc).AddTicks(6649),
                             IsDeleted = false
                         });
                 });
@@ -4064,11 +3979,6 @@ namespace QAMS.Infrastructure.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("environment");
 
-                    b.Property<string>("ExecutablePath")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("executable_path");
-
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -4086,17 +3996,6 @@ namespace QAMS.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)")
                         .HasColumnName("name");
-
-                    b.Property<int>("PlatformTypeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(1)
-                        .HasColumnName("platform_type_id");
-
-                    b.Property<string>("ProcessName")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("process_name");
 
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("uuid")
@@ -4120,8 +4019,6 @@ namespace QAMS.Infrastructure.Migrations
                     b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("DeletedByUserId");
-
-                    b.HasIndex("PlatformTypeId");
 
                     b.HasIndex("ProjectId");
 
@@ -4867,7 +4764,7 @@ namespace QAMS.Infrastructure.Migrations
                             UserId = new Guid("99999999-9999-9999-9999-999999999999"),
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
                             AssignedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2026, 7, 21, 22, 33, 58, 693, DateTimeKind.Utc).AddTicks(6469),
+                            CreatedAt = new DateTime(2026, 7, 19, 20, 50, 11, 940, DateTimeKind.Utc).AddTicks(6816),
                             IsDeleted = false
                         });
                 });
@@ -5563,12 +5460,6 @@ namespace QAMS.Infrastructure.Migrations
                         .HasForeignKey("DeletedByUserId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("QAMS.Domain.Entities.Catalogs.PlatformType", "PlatformType")
-                        .WithMany("SystemsUnderTest")
-                        .HasForeignKey("PlatformTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("QAMS.Domain.Entities.Project", "Project")
                         .WithMany("SystemsUnderTest")
                         .HasForeignKey("ProjectId")
@@ -5583,8 +5474,6 @@ namespace QAMS.Infrastructure.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("DeletedBy");
-
-                    b.Navigation("PlatformType");
 
                     b.Navigation("Project");
 
@@ -5946,11 +5835,6 @@ namespace QAMS.Infrastructure.Migrations
             modelBuilder.Entity("QAMS.Domain.Entities.Catalogs.ExecutionStatus", b =>
                 {
                     b.Navigation("TestExecutions");
-                });
-
-            modelBuilder.Entity("QAMS.Domain.Entities.Catalogs.PlatformType", b =>
-                {
-                    b.Navigation("SystemsUnderTest");
                 });
 
             modelBuilder.Entity("QAMS.Domain.Entities.Catalogs.ProjectPriority", b =>

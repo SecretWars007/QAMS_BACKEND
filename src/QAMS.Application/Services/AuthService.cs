@@ -37,7 +37,7 @@ namespace QAMS.Application.Services
             var user = await _userRepo.GetWithRolesAndPermissionsAsync(request.Username);
 
             // 1. Verificar si el usuario existe y si está bloqueado
-            if (user != null && user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow)
+            if (user?.LockoutEnd > DateTime.UtcNow)
             {
                 var remaining = user.LockoutEnd.Value - DateTime.UtcNow;
                 _logger.LogWarning("Intento de login en cuenta bloqueada: '{Username}'. Faltan {Minutes} min.",
@@ -45,7 +45,7 @@ namespace QAMS.Application.Services
                 throw new UnauthorizedException($"La cuenta está bloqueada temporalmente. Intente de nuevo en {(int)Math.Ceiling(remaining.TotalMinutes)} minutos.");
             }
 
-            if (user is null || !user.IsActive)
+            if (user?.IsActive != true)
             {
                 _logger.LogWarning("Login fallido para '{Username}' (Inexistante o inactivo).", request.Username);
                 throw new UnauthorizedException("Credenciales inválidas.");
@@ -119,7 +119,7 @@ namespace QAMS.Application.Services
             // 2. Buscar TODOS los conflictos físicos (incluyendo borrados) para limpieza total
             var physicalConflicts = await _userRepo.GetPhysicalConflictsAsync(request.Email, request.Username, request.DocumentoIdentidad);
 
-            if (physicalConflicts.Any())
+            if (physicalConflicts.Count > 0)
             {
                 _logger.LogInformation("Se encontraron {Count} conflictos en el historial. Iniciando anonimización masiva...", physicalConflicts.Count);
 
@@ -256,7 +256,7 @@ namespace QAMS.Application.Services
             var user = await _userRepo.GetByEmailAsync(request.Email);
 
             // Por seguridad no se revela si el email existe o no
-            if (user is null || !user.IsActive)
+            if (user?.IsActive != true)
             {
                 _logger.LogWarning("Email '{Email}' no encontrado en forgot-password.", request.Email);
                 return string.Empty;

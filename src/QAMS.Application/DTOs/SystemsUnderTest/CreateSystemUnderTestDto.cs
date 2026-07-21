@@ -22,8 +22,15 @@ namespace QAMS.Application.DTOs.SystemsUnderTest
         [StringLength(50)]
         public string? Environment { get; set; }
 
-        [Url]
+        public int PlatformTypeId { get; set; } = 1;
+
         [StringLength(255)]
         public string? BaseUrl { get; set; }
+
+        [StringLength(500)]
+        public string? ExecutablePath { get; set; }
+
+        [StringLength(255)]
+        public string? ProcessName { get; set; }
     }
 }

@@ -1,5 +1,8 @@
 #nullable enable
+using System;
+using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.Projects;
 using QAMS.Application.Interfaces;
@@ -7,22 +10,21 @@ using QAMS.Domain.Entities;
 using QAMS.Domain.Exceptions;
 using QAMS.Infrastructure.Persistence.Configurations;
 using QAMS.Tests.IntegrationTests.Infrastructure;
-using System;
-using System.Threading.Tasks;
 using Xunit;
-using Microsoft.EntityFrameworkCore;
 
 namespace QAMS.Tests.Services;
 
 [Collection("Integration tests")]
 public class ProjectServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
-    private IProjectService GetService(IServiceScope scope)
-        => scope.ServiceProvider.GetRequiredService<IProjectService>();
+    private static IProjectService GetService(IServiceScope scope)
+    {
+        return scope.ServiceProvider.GetRequiredService<IProjectService>();
+    }
 
     private async Task<(Guid projectId, User owner)> CreateTestProjectAsync(string name)
     {
-        var user = await CreateTestUserAsync($"proj_owner");
+        var user = await CreateTestUserAsync("proj_owner");
         var projectId = Guid.NewGuid();
 
         await ExecuteInScopeAsync(async db =>

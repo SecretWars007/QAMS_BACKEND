@@ -90,6 +90,7 @@ namespace QAMS.Application.Services
                 "testtype" => typeof(TestType),
                 "testsuitestatus" => typeof(TestSuiteStatus),
                 "projectstatus" => typeof(ProjectStatus),
+                "platformtype" => typeof(PlatformType),
                 _ => throw new DomainException($"Catálogo '{catalogName}' no reconocido.")
             };
 
@@ -110,6 +111,7 @@ namespace QAMS.Application.Services
                 "testtype" => new TestType(),
                 "testsuitestatus" => new TestSuiteStatus(),
                 "projectstatus" => new ProjectStatus(),
+                "platformtype" => new PlatformType(),
                 _ => throw new DomainException($"Entidad para catálogo '{catalogName}' no reconocida.")
             };
         }

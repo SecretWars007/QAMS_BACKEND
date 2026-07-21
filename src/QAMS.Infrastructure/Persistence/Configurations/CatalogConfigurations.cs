@@ -112,4 +112,24 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             );
         }
     }
+
+    public class PlatformTypeConfiguration : IEntityTypeConfiguration<PlatformType>
+    {
+        public void Configure(EntityTypeBuilder<PlatformType> builder)
+        {
+            builder.ToTable("platform_types");
+            builder.HasKey(c => c.Id);
+            builder.Property(c => c.Id).ValueGeneratedOnAdd();
+            builder.Property(c => c.Code).HasMaxLength(50).IsRequired();
+            builder.Property(c => c.Name).HasMaxLength(100).IsRequired();
+            builder.HasIndex(c => c.Code).IsUnique();
+
+            // Seed
+            builder.HasData(
+                new PlatformType { Id = 1, Code = CatalogConstants.PlatformType.Web, Name = "Aplicación Web", SortOrder = 1 },
+                new PlatformType { Id = 2, Code = CatalogConstants.PlatformType.Desktop, Name = "Aplicación de Escritorio", SortOrder = 2 },
+                new PlatformType { Id = 3, Code = CatalogConstants.PlatformType.DataProcessing, Name = "Procesamiento de Información", SortOrder = 3 }
+            );
+        }
+    }
 }

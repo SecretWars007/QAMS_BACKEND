@@ -16,6 +16,8 @@ namespace QAMS.Infrastructure.Repositories
             return await _dbSet
                 .Where(tp => tp.ProjectId == projectId)
                 .Include(tp => tp.Project)
+                .Include(tp => tp.Status)
+                .Include(tp => tp.Criteria)
                 .Include(tp => tp.TestPlanSuites)
                     .ThenInclude(tps => tps.TestSuite)
                 .Include(tp => tp.CreatedBy)
@@ -28,6 +30,8 @@ namespace QAMS.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(tp => tp.Project)
+                .Include(tp => tp.Status)
+                .Include(tp => tp.Criteria)
                 .Include(tp => tp.TestPlanSuites)
                     .ThenInclude(tps => tps.TestSuite)
                 .Include(tp => tp.CreatedBy)

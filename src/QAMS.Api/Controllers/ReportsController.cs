@@ -105,5 +105,27 @@ namespace QAMS.Api.Controllers
             string fileName = $"Certificado_Cumplimiento_{DateTime.Now:yyyyMMddHHmm}.pdf";
             return File(pdfData, "application/pdf", fileName);
         }
+
+        /// <summary>
+        /// Genera el Test Summary Report (ISTQB) en PDF para un plan de pruebas. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <param name="planId">ID del plan de pruebas.</param>
+        /// <returns>Archivo PDF binario.</returns>
+        [HttpGet("test-plan/{planId}/summary")]
+        [HasPermission("DASHBOARD_VIEW")]
+        public async Task<IActionResult> GetTestSummaryReport(Guid planId)
+        {
+            _logger.LogInformation("Solicitando reporte PDF de Test Summary Report para el plan: {PlanId}", planId);
+
+            var pdfData = await _reportService.GenerateTestSummaryReportAsync(planId);
+
+            if (pdfData == null || pdfData.Length == 0)
+            {
+                return NotFound("No se encontró información para generar el reporte de Test Summary.");
+            }
+
+            string fileName = $"Test_Summary_Report_{DateTime.Now:yyyyMMddHHmm}.pdf";
+            return File(pdfData, "application/pdf", fileName);
+        }
     }
 }

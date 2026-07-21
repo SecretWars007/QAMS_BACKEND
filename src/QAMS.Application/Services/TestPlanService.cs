@@ -75,6 +75,19 @@ namespace QAMS.Application.Services
                 }
             }
 
+            if (dto.Criteria != null && dto.Criteria.Any())
+            {
+                foreach (var criteriaDto in dto.Criteria)
+                {
+                    plan.Criteria.Add(new TestPlanCriteria
+                    {
+                        CriteriaType = criteriaDto.CriteriaType,
+                        Description = criteriaDto.Description,
+                        IsMet = false // Siempre inicia sin cumplir
+                    });
+                }
+            }
+
             await _testPlanRepository.AddAsync(plan);
             await _unitOfWork.SaveChangesAsync();
 
@@ -88,14 +101,32 @@ namespace QAMS.Application.Services
             if (plan == null)
                 throw new EntityNotFoundException(nameof(TestPlan), id);
 
+            // Validación ISTQB: Para pasar a CLOSED, todos los EXIT criteria deben cumplirse
+            if (dto.StatusId == 4 && plan.StatusId != 4) // 4 = Closed
+            {
+                var exitCriteria = plan.Criteria.Where(c => c.CriteriaType == "EXIT");
+                if (exitCriteria.Any(c => !c.IsMet))
+                {
+                    throw new InvalidOperationException("No se puede cerrar el plan de pruebas porque no se han cumplido todos los Criterios de Salida (Exit Criteria).");
+                }
+            }
+
             plan.Name = dto.Name;
             plan.Objectives = dto.Objectives;
+            plan.Scope = dto.Scope;
+            plan.OutOfScope = dto.OutOfScope;
+            plan.TestStrategy = dto.TestStrategy;
+            plan.RiskAnalysis = dto.RiskAnalysis;
+            plan.EnvironmentRequirements = dto.EnvironmentRequirements;
+            plan.TestSchedule = dto.TestSchedule;
+            plan.EstimatedEffortHours = dto.EstimatedEffortHours;
+
             plan.StartDate = dto.StartDate;
             plan.EndDate = dto.EndDate;
             plan.StatusId = dto.StatusId;
 
             plan.TestPlanSuites.Clear();
-            
+
             if (dto.TestSuiteIds != null && dto.TestSuiteIds.Any())
             {
                 foreach (var suiteId in dto.TestSuiteIds)
@@ -109,6 +140,22 @@ namespace QAMS.Application.Services
                             TestSuiteId = suiteId
                         });
                     }
+                }
+            }
+
+            // Reemplazar criterios de forma sencilla para esta iteración
+            if (dto.Criteria != null)
+            {
+                plan.Criteria.Clear();
+                foreach (var criteriaDto in dto.Criteria)
+                {
+                    plan.Criteria.Add(new TestPlanCriteria
+                    {
+                        TestPlanId = id,
+                        CriteriaType = criteriaDto.CriteriaType,
+                        Description = criteriaDto.Description,
+                        IsMet = criteriaDto.IsMet
+                    });
                 }
             }
 
