@@ -86,11 +86,7 @@ When working as the AI agent (Antigravity), you must follow this workflow:
 7.  **Sync**: Proactively use `git add`, `git commit`, and `git push` to keep the remote repository updated with the changes made in each task. Always use descriptive commit messages (prefix with `feat:`, `fix:`, `chore:`, etc.).
 8.  **Auto-Publish (MANDATORY)**: Always run the `/publish-docker` workflow immediately after any code modification or when a user request is completed. This is not optional; any change to the backend must be live in the Docker environment.
 
-## 5. Git Workflow & Repository Management
-The agent is authorized to manage the lifecycle of the backend code including version control:
-- **Commits**: Group logical changes into atomic commits.
-- **Push**: Push to the origin branch (e.g., `main` or `master`) once a significant chunk of work is verified.
-- **Scope**: Stay strictly within the Backend repository (`QAMS`).
+
 
 ## 6. Architecture Vision
 The backend is the core of the system:

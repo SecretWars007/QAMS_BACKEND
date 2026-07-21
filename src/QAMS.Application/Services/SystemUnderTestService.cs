@@ -28,7 +28,10 @@ namespace QAMS.Application.Services
             {
                 if (sut.PlatformType == null && sut.PlatformTypeId > 0)
                 {
-                    sut.PlatformType = await platformTypeRepo.GetByIdAsync(sut.PlatformTypeId);
+                    if (await platformTypeRepo.GetByIdAsync(sut.PlatformTypeId) is { } pt)
+                    {
+                        sut.PlatformType = pt;
+                    }
                 }
             }
             return suts.Select(MapToDto).ToList();
@@ -47,7 +50,10 @@ namespace QAMS.Application.Services
 
             if (sut.PlatformType == null && sut.PlatformTypeId > 0)
             {
-                sut.PlatformType = await platformTypeRepo.GetByIdAsync(sut.PlatformTypeId);
+                if (await platformTypeRepo.GetByIdAsync(sut.PlatformTypeId) is { } pt)
+                {
+                    sut.PlatformType = pt;
+                }
             }
 
             return MapToDto(sut);
