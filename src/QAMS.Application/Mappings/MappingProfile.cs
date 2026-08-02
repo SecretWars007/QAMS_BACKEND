@@ -71,6 +71,8 @@ namespace QAMS.Application.Mappings
                 .ForMember(d => d.ProjectStatusName, o => o.MapFrom(s => s.ProjectStatus != null ? s.ProjectStatus.Name : string.Empty))
                 .ForMember(d => d.ProjectPriorityName, o => o.MapFrom(s => s.ProjectPriority != null ? s.ProjectPriority.Name : string.Empty))
                 .ForMember(d => d.ProjectPriorityId, o => o.MapFrom(s => s.ProjectPriorityId))
+                .ForMember(d => d.SystemUnderTestId, o => o.MapFrom(s => s.SystemUnderTestId))
+                .ForMember(d => d.SystemUnderTestName, o => o.MapFrom(s => s.SystemUnderTest != null ? s.SystemUnderTest.Name : string.Empty))
                 .ForMember(d => d.TesterNames, o => o.MapFrom(s => s.ProjectTesters.Where(pt => pt.User != null).Select(pt => pt.User!.FullName)))
                 .ForMember(d => d.DevolucionesCounter, o => o.MapFrom(s => s.DevolucionesCounter))
                 .ForMember(d => d.HistoricDevolutions, o => o.MapFrom(s => s.HistoricDevolutions))

@@ -32,12 +32,12 @@ namespace QAMS.Application.Services
             return mapper.Map<ProjectDto>(project);
         }
 
-        public async Task<List<ProjectDto>> GetAllAsync()
+        public async Task<List<ProjectDto>> GetAllAsync(Guid? sutId = null)
         {
-            logger.LogInformation("Obteniendo todos los proyectos activos con detalles.");
+            logger.LogInformation("Obteniendo todos los proyectos activos con detalles. SutId: {SutId}", sutId);
             try
             {
-                var projects = await projectRepo.FindWithDetailsAsync(p => p.IsActive);
+                var projects = await projectRepo.FindWithDetailsAsync(p => p.IsActive && (!sutId.HasValue || p.SystemUnderTestId == sutId.Value));
                 return mapper.Map<List<ProjectDto>>(projects);
             }
             catch (Exception ex)

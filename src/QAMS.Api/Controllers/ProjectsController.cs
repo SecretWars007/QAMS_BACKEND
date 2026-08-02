@@ -25,19 +25,24 @@ namespace QAMS.Api.Controllers
         /// <returns>Lista de todos los proyectos.</returns>
         [HttpGet]
         [HasPermission("PROJECTS_VIEW")]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] Guid? sutId = null)
         {
-            _logger.LogInformation("GET /api/projects - Obteniendo todos los proyectos.");
+            _logger.LogInformation("GET /api/projects - Obteniendo todos los proyectos. SutId: {SutId}", sutId);
 
             // Si es un Tester pero NO es Administrador ni QA Lead, filtramos los proyectos
             if (User.IsInRole("Tester") && !User.IsInRole("Administrator") && !User.IsInRole("QA Lead") && !User.IsInRole("Líder de Pruebas (Lead)"))
             {
                 var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 var userId = userIdStr != null ? Guid.Parse(userIdStr) : Guid.Empty;
-                return Ok(await _projectService.GetMyProjectsAsync(userId));
+                var myProjects = await _projectService.GetMyProjectsAsync(userId);
+                if (sutId.HasValue)
+                {
+                    myProjects = myProjects.Where(p => p.SystemUnderTestId == sutId.Value).ToList();
+                }
+                return Ok(myProjects);
             }
 
-            return Ok(await _projectService.GetAllAsync());
+            return Ok(await _projectService.GetAllAsync(sutId));
         }
 
         /// <summary>
