@@ -73,7 +73,6 @@ namespace QAMS.Api.Controllers
         /// <param name="dto">Datos básicos del proyecto.</param>
         /// <returns>El proyecto recién creado.</returns>
         [HttpPost]
-        [Authorize(Roles = "QA Lead,Administrator")]
         [HasPermission("PROJECTS_CREATE")]
         public async Task<IActionResult> Create([FromBody] CreateProjectDto dto)
         {
@@ -89,7 +88,6 @@ namespace QAMS.Api.Controllers
         /// <param name="dto">Nuevos datos del proyecto.</param>
         /// <returns>El proyecto actualizado.</returns>
         [HttpPut("{id:guid}")]
-        [Authorize(Roles = "QA Lead,Administrator")]
         [HasPermission("PROJECTS_UPDATE")]
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateProjectDto dto)
         {
@@ -103,7 +101,6 @@ namespace QAMS.Api.Controllers
         /// <param name="id">ID del proyecto a eliminar.</param>
         /// <returns>Sin contenido (NoContent).</returns>
         [HttpDelete("{id:guid}")]
-        [Authorize(Roles = "QA Lead,Administrator")]
         [HasPermission("PROJECTS_DELETE")]
         public async Task<IActionResult> Delete(Guid id)
         {
@@ -133,7 +130,6 @@ namespace QAMS.Api.Controllers
         /// <param name="dto">Detalles de la devolución.</param>
         /// <returns>El registro de devolución creado.</returns>
         [HttpPost("{id:guid}/devolution")]
-        [Authorize(Roles = "QA Lead,Administrator")]
         [HasPermission("PROJECTS_UPDATE")]
         public async Task<IActionResult> RegisterDevolution(Guid id, [FromBody] RegisterDevolutionDto dto)
         {
@@ -150,7 +146,6 @@ namespace QAMS.Api.Controllers
         /// <param name="dto">Detalles de la respuesta.</param>
         /// <returns>La devolución actualizada con la respuesta.</returns>
         [HttpPost("devolution/{devolutionId:guid}/response")]
-        [Authorize(Roles = "QA Lead,Administrator")]
         [HasPermission("PROJECTS_UPDATE")]
         public async Task<IActionResult> RespondDevolution(Guid devolutionId, [FromBody] RespondDevolutionDto dto)
         {

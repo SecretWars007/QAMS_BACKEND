@@ -1,6 +1,7 @@
 // src/QAMS.Api/Controllers/ApiKeysController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using QAMS.Api.Filters;
 using QAMS.Application.DTOs.ApiKeys;
 using QAMS.Application.Interfaces.Services;
 
@@ -29,7 +30,7 @@ namespace QAMS.Api.Controllers
         /// El valor plano solo se devuelve en esta respuesta — no se puede recuperar después.
         /// </summary>
         [HttpPost]
-        [Authorize(Roles = "Admin,QALead")]
+        [HasPermission("CATALOGS_MANAGE")]
         public async Task<ActionResult<ApiKeyCreatedDto>> Create([FromBody] CreateApiKeyDto dto)
         {
             var result = await apiKeyService.CreateAsync(dto);
@@ -38,7 +39,7 @@ namespace QAMS.Api.Controllers
 
         /// <summary>Revoca (desactiva) una API Key.</summary>
         [HttpDelete("{id:guid}/revoke")]
-        [Authorize(Roles = "Admin,QALead")]
+        [HasPermission("CATALOGS_MANAGE")]
         public async Task<ActionResult> Revoke(Guid id)
         {
             await apiKeyService.RevokeAsync(id);

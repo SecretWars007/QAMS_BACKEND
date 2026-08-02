@@ -31,7 +31,6 @@ public class SystemsUnderTestController(ISystemUnderTestService sutService) : Co
     }
 
     [HttpPost]
-    [Authorize(Roles = "QA Lead,Administrator")]
     [HasPermission("SUT_CREATE")]
     public async Task<IActionResult> Create([FromBody] CreateSystemUnderTestDto request)
     {
@@ -40,7 +39,6 @@ public class SystemsUnderTestController(ISystemUnderTestService sutService) : Co
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "QA Lead,Administrator")]
     [HasPermission("SUT_UPDATE")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateSystemUnderTestDto request)
     {
@@ -53,7 +51,6 @@ public class SystemsUnderTestController(ISystemUnderTestService sutService) : Co
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "QA Lead,Administrator")]
     [HasPermission("SUT_DELETE")]
     public async Task<IActionResult> Delete(Guid id)
     {

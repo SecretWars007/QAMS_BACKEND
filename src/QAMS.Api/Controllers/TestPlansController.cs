@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using QAMS.Api.Filters;
 using QAMS.Application.DTOs.TestPlans;
 using QAMS.Application.Interfaces;
 
@@ -60,7 +61,7 @@ namespace QAMS.Api.Controllers
         }
 
         [HttpPost("{id}/approve")]
-        [Authorize(Roles = "QA Lead,Administrator")]
+        [HasPermission("TEST_CASES_UPDATE")]
         public async Task<IActionResult> Approve(Guid id, [FromBody] ApproveTestPlanDto dto)
         {
             await _testPlanService.ApproveAsync(id, dto);
