@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.TestCases;
@@ -18,7 +18,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace QAMS.Tests.Services;
 
-[Collection("Integration tests")]
+[Collection(SharedTestCollection.Name)]
 public class TestCaseServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
     private ITestCaseService GetService(IServiceScope scope)
@@ -118,7 +118,7 @@ public class TestCaseServiceTests(QamsIntegrationTestFactory factory) : Integrat
 
         var (_, testCaseId, _) = await CreateTestCaseAsync("update");
 
-        // Autenticar con el usuario Admin para que CurrentUserService devuelva un UserId válido
+        // Autenticar con el usuario Admin para que CurrentUserService devuelva un UserId vÃ¡lido
         Authenticate(user.Id);
 
         var dto = new CreateTestCaseDto
@@ -142,14 +142,20 @@ public class TestCaseServiceTests(QamsIntegrationTestFactory factory) : Integrat
             $"El endpoint debe retornar 200 OK. Respuesta: {await response.Content.ReadAsStringAsync()}");
 
         // Assert DB State
+        // TestCaseService implementa versionado: al actualizar, marca la versiÃ³n anterior como obsoleta
+        // y crea una nueva versiÃ³n con un nuevo ID. Por lo tanto buscamos la versiÃ³n mÃ¡s reciente.
         await ExecuteInScopeAsync(async db =>
         {
-            var tc = await db.TestCases
-                .Include(t => t.TestSteps)
-                .FirstOrDefaultAsync(t => t.Id == testCaseId);
+            var oldTc = await db.TestCases.FirstOrDefaultAsync(t => t.Id == testCaseId);
+            oldTc!.IsLatestVersion.Should().BeFalse("la versiÃ³n anterior debe quedar marcada como obsoleta");
 
-            tc!.Title.Should().Be("Updated Test Case Title");
-            tc.TestSteps.Should().HaveCount(2);
+            var latestTc = await db.TestCases
+                .Include(t => t.TestSteps)
+                .FirstOrDefaultAsync(t => t.ProjectId == oldTc.ProjectId && t.IsLatestVersion && t.Title == "Updated Test Case Title");
+
+            latestTc.Should().NotBeNull("debe existir la nueva versiÃ³n con el tÃ­tulo actualizado");
+            latestTc!.Title.Should().Be("Updated Test Case Title");
+            latestTc.TestSteps.Should().HaveCount(2);
         });
     }
 
@@ -190,3 +196,5 @@ public class TestCaseServiceTests(QamsIntegrationTestFactory factory) : Integrat
         result.Should().Contain(tc => tc.Id == testCaseId);
     }
 }
+
+

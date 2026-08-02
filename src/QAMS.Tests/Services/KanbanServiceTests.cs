@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.Kanban;
@@ -15,7 +15,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace QAMS.Tests.Services;
 
-[Collection("Integration tests")]
+[Collection(SharedTestCollection.Name)]
 public class KanbanServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
     private IKanbanService GetService(IServiceScope scope)
@@ -222,3 +222,5 @@ public class KanbanServiceTests(QamsIntegrationTestFactory factory) : Integratio
         });
     }
 }
+
+

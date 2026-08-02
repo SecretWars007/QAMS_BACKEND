@@ -15,8 +15,14 @@ using Xunit;
 
 namespace QAMS.Tests.IntegrationTests.Infrastructure;
 
-public abstract class IntegrationTestBase : IClassFixture<QamsIntegrationTestFactory>
+/// <summary>
+/// Clase base para todos los tests de integración.
+/// La instancia de QamsIntegrationTestFactory es inyectada por el CollectionFixture
+/// definido en SharedTestCollection — NO usar IClassFixture directamente en las clases derivadas.
+/// </summary>
+public abstract class IntegrationTestBase
 {
+
     protected readonly QamsIntegrationTestFactory Factory;
     protected readonly HttpClient Client;
 

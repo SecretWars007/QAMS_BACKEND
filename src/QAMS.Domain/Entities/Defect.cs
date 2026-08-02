@@ -25,6 +25,10 @@ namespace QAMS.Domain.Entities
         public Guid? TestExecutionId { get; set; }
         public TestExecution? TestExecution { get; set; }
 
+        /// <summary>Paso de ejecución específico donde se falló (opcional)</summary>
+        public Guid? TestExecutionStepResultId { get; set; }
+        public ExecutionStepResult? TestExecutionStepResult { get; set; }
+
         // Información del defecto
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }

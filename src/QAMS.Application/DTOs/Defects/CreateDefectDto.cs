@@ -14,6 +14,9 @@ namespace QAMS.Application.DTOs.Defects
         /// <summary>Ejecución específica donde se detectó (opcional)</summary>
         public Guid? TestExecutionId { get; set; }
 
+        /// <summary>Paso de ejecución específico donde se falló (opcional)</summary>
+        public Guid? TestExecutionStepResultId { get; set; }
+
         [Required(ErrorMessage = "El título del defecto es obligatorio.")]
         [StringLength(300, ErrorMessage = "El título no puede exceder los 300 caracteres.")]
         public string Title { get; set; } = string.Empty;

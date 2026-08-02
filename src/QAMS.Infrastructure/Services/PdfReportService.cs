@@ -5,7 +5,9 @@ using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using QAMS.Application.DTOs.Reports;
+using QAMS.Application.DTOs.Dashboard;
 using QAMS.Application.Interfaces;
+
 using QAMS.Domain.Entities;
 using QAMS.Domain.Ports.Repositories;
 using QuestPDF.Fluent;
@@ -20,6 +22,7 @@ namespace QAMS.Infrastructure.Services
         IObservationRepository observationRepo,
         IEvidenceRepository evidenceRepo,
         QAMS.Application.Interfaces.Repositories.ITestPlanRepository testPlanRepo,
+        IDashboardService dashboardService,
         ILogger<PdfReportService> logger) : IReportService
     {
         private readonly IProjectRepository _projectRepo = projectRepo;
@@ -27,6 +30,7 @@ namespace QAMS.Infrastructure.Services
         private readonly IObservationRepository _observationRepo = observationRepo;
         private readonly IEvidenceRepository _evidenceRepo = evidenceRepo;
         private readonly QAMS.Application.Interfaces.Repositories.ITestPlanRepository _testPlanRepo = testPlanRepo;
+        private readonly IDashboardService _dashboardService = dashboardService;
         private readonly ILogger<PdfReportService> _logger = logger;
         private readonly string _uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
         private const string ColorPrimary = "#1A237E";
@@ -1210,6 +1214,684 @@ namespace QAMS.Infrastructure.Services
                             t.Span(" de ");
                             t.TotalPages();
                         }));
+                });
+            });
+
+            using var ms = new MemoryStream();
+            document.GeneratePdf(ms);
+            return ms.ToArray();
+        }
+
+        public async Task<byte[]> GenerateFullCertificationReportAsync(Guid projectId)
+        {
+            _logger.LogInformation("Generando reporte completo de certificación ISTQB para el proyecto {ProjectId}.", projectId);
+
+            var project = await _projectRepo.GetFullProjectForComplianceReportAsync(projectId);
+            if (project == null) return [];
+
+            var executions = await _execRepo.GetByProjectAsync(projectId);
+            var executionList = executions.ToList();
+            var executionIds = executionList.Select(e => e.Id).ToList();
+            var allObservations = await _observationRepo.GetByProjectAsync(executionIds);
+
+            // ── ISTQB KPIs ─────────────────────────────────────────────────────
+            IstqbMetricsDto? istqbMetrics = null;
+            try { istqbMetrics = await _dashboardService.GetIstqbMetricsAsync(projectId); }
+            catch (Exception ex) { _logger.LogWarning(ex, "No se pudo obtener las métricas ISTQB para el proyecto {ProjectId}.", projectId); }
+
+            // ── Test Plan activo y sus criterios ────────────────────────────────
+            var testPlans = await _testPlanRepo.GetByProjectAsync(projectId);
+            var activePlan = testPlans.FirstOrDefault(tp => tp.Status?.Name == "ACTIVE" || tp.Status?.Name == "IN_PROGRESS")
+                          ?? testPlans.OrderByDescending(tp => tp.UpdatedAt).FirstOrDefault();
+
+            var totalCases = project.TestCases.Count;
+            var passedCases = project.TestCases.Count(tc => tc.TestExecutions.Any(e => e is TestExecution te && te.IsSuccessful()));
+            var failedCases = project.TestCases.Count(tc => tc.TestExecutions.Any(e => e is TestExecution te && te.IsFailed()));
+            var otherCases = totalCases - passedCases - failedCases;
+            decimal compliance = totalCases > 0 ? (decimal)passedCases / totalCases * 100 : 0;
+
+            // Dictamen combinado: Quality Gate ISTQB + Pass Rate
+            bool qualityGatePassed = istqbMetrics?.QualityGatePassed ?? (compliance >= 85 && failedCases == 0);
+            string dictamen = qualityGatePassed ? "CERTIFICADO ISTQB — GO FOR RELEASE" : "NO CERTIFIABLE — QUALITY GATE FAILED";
+            string dictamenColor = qualityGatePassed ? ColorSuccess : ColorDanger;
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(1.2f, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial"));
+
+                    // HEADER
+                    page.Header().BorderBottom(2).BorderColor(ColorPrimary).PaddingBottom(5).Row(row =>
+                    {
+                        row.RelativeItem().Column(col =>
+                        {
+                            col.Item().Text("REPORTE INTEGRAL DE CERTIFICACIÓN QA").FontSize(18).ExtraBold().FontColor(ColorPrimary);
+                            col.Item().Text($"Proyecto: {project.Name}").FontSize(11).Bold();
+                            col.Item().Text($"Líder: {project.Leader?.FullName ?? project.CreatedBy?.FullName ?? "N/A"} | Emitido: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(8).Italic().FontColor(ColorGrey);
+                        });
+                        row.AutoItem().Height(40).AlignCenter().Text("QAMS").FontSize(22).ExtraBold().FontColor(ColorPrimary);
+                    });
+
+                    // CONTENT
+                    page.Content().PaddingVertical(15).Column(col =>
+                    {
+                        // 1. INFORMACIÓN DEL PROYECTO
+                        col.Item().BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2).Text("1. INFORMACIÓN GENERAL DEL PROYECTO").FontSize(11).Bold().FontColor(ColorPrimary);
+                        col.Item().PaddingTop(5).Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.ConstantColumn(120);
+                                columns.RelativeColumn();
+                                columns.ConstantColumn(100);
+                                columns.RelativeColumn();
+                            });
+
+                            table.Cell().Text("Descripción:").Bold();
+                            table.Cell().ColumnSpan(3).Text(project.Description ?? "Sin descripción.");
+
+                            table.Cell().PaddingTop(4).Text("Fecha Inicio:").Bold();
+                            table.Cell().PaddingTop(4).Text(project.StartDate?.ToString(DateFormat) ?? "N/A");
+                            table.Cell().PaddingTop(4).Text("Fecha Fin:").Bold();
+                            table.Cell().PaddingTop(4).Text(project.EndDate?.ToString(DateFormat) ?? "N/A");
+
+                            table.Cell().PaddingTop(4).Text("Estado del Proyecto:").Bold();
+                            table.Cell().PaddingTop(4).Text(project.ProjectStatus?.Name ?? "N/A");
+                            table.Cell().PaddingTop(4).Text("Prioridad:").Bold();
+                            table.Cell().PaddingTop(4).Text(project.ProjectPriority?.Name ?? "N/A");
+                        });
+
+                        // 2. ISTQB QUALITY GATE & KPIs
+                        col.Item().PaddingTop(15).BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2)
+                            .Text("2. QUALITY GATE ISTQB — KPIs (ISO 29119 / CTFL)").FontSize(11).Bold().FontColor(ColorPrimary);
+
+                        if (istqbMetrics != null)
+                        {
+                            var m = istqbMetrics; // local non-nullable reference for lambdas
+                            // Quality Gate result banner
+                            col.Item().PaddingTop(8).Background(dictamenColor).Padding(10).Row(qgRow =>
+                            {
+                                qgRow.RelativeItem().AlignCenter().Text(dictamen).FontSize(14).Bold().FontColor(Colors.White);
+                            });
+
+                            if (m.QualityGateFailures.Count > 0)
+                            {
+                                col.Item().PaddingTop(5).Column(failCol =>
+                                {
+                                    failCol.Item().Text("Razones de falla del Quality Gate:").Bold().FontSize(9).FontColor(ColorDanger);
+                                    foreach (var failure in m.QualityGateFailures)
+                                        failCol.Item().PaddingLeft(10).Text($"• {failure}").FontSize(8).FontColor(ColorDanger);
+                                });
+                            }
+
+                            // KPI Cards grid
+                            col.Item().PaddingTop(10).Row(row =>
+                            {
+                                // Pass Rate
+                                row.RelativeItem().Border(1).BorderColor(ColorBorder).Padding(8).Column(c =>
+                                {
+                                    c.Item().AlignCenter().Text("PASS RATE").FontSize(7).Bold().FontColor(ColorGrey);
+                                    c.Item().AlignCenter().Text($"{m.PassRate:N1}%").FontSize(18).ExtraBold()
+                                        .FontColor(m.PassRate >= m.MinPassRate ? ColorSuccess : ColorDanger);
+                                    c.Item().AlignCenter().Text($"Umbral: {m.MinPassRate}%").FontSize(7).FontColor(ColorGrey);
+                                });
+
+                                // DDP
+                                row.RelativeItem().PaddingLeft(4).Border(1).BorderColor(ColorBorder).Padding(8).Column(c =>
+                                {
+                                    c.Item().AlignCenter().Text("DDP").FontSize(7).Bold().FontColor(ColorGrey);
+                                    c.Item().AlignCenter().Text($"{m.Ddp:N1}%").FontSize(18).ExtraBold().FontColor(ColorPrimary);
+                                    c.Item().AlignCenter().Text("Defect Detection %").FontSize(7).FontColor(ColorGrey);
+                                });
+
+                                // DRE
+                                row.RelativeItem().PaddingLeft(4).Border(1).BorderColor(ColorBorder).Padding(8).Column(c =>
+                                {
+                                    c.Item().AlignCenter().Text("DRE").FontSize(7).Bold().FontColor(ColorGrey);
+                                    c.Item().AlignCenter().Text($"{m.Dre:N1}%").FontSize(18).ExtraBold().FontColor(ColorPrimary);
+                                    c.Item().AlignCenter().Text("Defect Removal Eff.").FontSize(7).FontColor(ColorGrey);
+                                });
+
+                                // MTTR
+                                row.RelativeItem().PaddingLeft(4).Border(1).BorderColor(ColorBorder).Padding(8).Column(c =>
+                                {
+                                    c.Item().AlignCenter().Text("MTTR").FontSize(7).Bold().FontColor(ColorGrey);
+                                    c.Item().AlignCenter().Text($"{m.MttrHours:N1}h").FontSize(18).ExtraBold().FontColor(ColorPrimary);
+                                    c.Item().AlignCenter().Text("Mean Time To Repair").FontSize(7).FontColor(ColorGrey);
+                                });
+
+                                // Req Coverage
+                                row.RelativeItem().PaddingLeft(4).Border(1).BorderColor(ColorBorder).Padding(8).Column(c =>
+                                {
+                                    c.Item().AlignCenter().Text("REQ COVERAGE").FontSize(7).Bold().FontColor(ColorGrey);
+                                    c.Item().AlignCenter().Text($"{m.RequirementCoverageRate:N1}%").FontSize(18).ExtraBold()
+                                        .FontColor(m.RequirementCoverageRate >= m.MinRequirementCoverage ? ColorSuccess : ColorDanger);
+                                    c.Item().AlignCenter().Text($"Umbral: {m.MinRequirementCoverage}%").FontSize(7).FontColor(ColorGrey);
+                                });
+                            });
+
+                            // Defect summary
+                            col.Item().PaddingTop(5).Row(row =>
+                            {
+                                row.RelativeItem().Padding(4).Text($"Defectos Totales: {m.TotalDefects}  |  Abiertos: {m.OpenDefects}  |  Cerrados: {m.ClosedDefects}  |  Límite permitido: {m.MaxOpenDefects} abiertos")
+                                    .FontSize(8).FontColor(ColorGrey);
+                            });
+                        }
+                        else
+                        {
+                            col.Item().PaddingTop(8).Background(dictamenColor).Padding(10).AlignCenter()
+                                .Text(dictamen).FontSize(14).Bold().FontColor(Colors.White);
+                            col.Item().PaddingTop(5).Text("Las métricas ISTQB detalladas no están disponibles para este proyecto.").Italic().FontColor(ColorGrey);
+                        }
+
+                        // 3. PLAN DE PRUEBAS Y CRITERIOS ENTRY/EXIT (ISO 29119-3)
+                        col.Item().PaddingTop(15).BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2)
+                            .Text("3. PLAN DE PRUEBAS — CRITERIOS DE ENTRADA/SALIDA (ISO 29119-3)").FontSize(11).Bold().FontColor(ColorPrimary);
+
+                        if (activePlan != null)
+                        {
+                            col.Item().PaddingTop(5).Table(planInfo =>
+                            {
+                                planInfo.ColumnsDefinition(c => { c.ConstantColumn(100); c.RelativeColumn(); c.ConstantColumn(80); c.RelativeColumn(); });
+                                planInfo.Cell().Text("Plan:").Bold().FontSize(8);
+                                planInfo.Cell().Text(activePlan.Name ?? "N/A").FontSize(8);
+                                planInfo.Cell().Text("Estado:").Bold().FontSize(8);
+                                planInfo.Cell().Text(activePlan.Status?.Name ?? "N/A").FontSize(8);
+                                if (!string.IsNullOrEmpty(activePlan.TestStrategy))
+                                {
+                                    planInfo.Cell().PaddingTop(4).Text("Estrategia:").Bold().FontSize(8);
+                                    planInfo.Cell().PaddingTop(4).Text(activePlan.TestStrategy).FontSize(8);
+                                    planInfo.Cell();
+                                    planInfo.Cell();
+                                }
+                            });
+
+                            var entryCriteria = activePlan.Criteria.Where(c => c.CriteriaType == "ENTRY").ToList();
+                            var exitCriteria = activePlan.Criteria.Where(c => c.CriteriaType == "EXIT").ToList();
+
+                            if (entryCriteria.Count > 0 || exitCriteria.Count > 0)
+                            {
+                                col.Item().PaddingTop(8).Row(criteriaRow =>
+                                {
+                                    // Entry Criteria
+                                    criteriaRow.RelativeItem().Column(ec =>
+                                    {
+                                        ec.Item().Background(ColorLightPrimary).Padding(4).Text("Criterios de ENTRADA").Bold().FontSize(9).FontColor(ColorPrimary);
+                                        int metCount = entryCriteria.Count(c => c.IsMet);
+                                        ec.Item().PaddingLeft(4).Text($"{metCount}/{entryCriteria.Count} cumplidos").FontSize(8)
+                                            .FontColor(metCount == entryCriteria.Count ? ColorSuccess : ColorDanger);
+                                        foreach (var criterion in entryCriteria)
+                                        {
+                                            ec.Item().PaddingLeft(4).PaddingTop(3).Row(r =>
+                                            {
+                                                r.AutoItem().Width(10).Text(criterion.IsMet ? "✓" : "✗").FontSize(9)
+                                                    .FontColor(criterion.IsMet ? ColorSuccess : ColorDanger);
+                                                r.RelativeItem().Text(criterion.Description ?? string.Empty).FontSize(8);
+                                            });
+                                        }
+                                    });
+
+                                    criteriaRow.ConstantItem(10); // spacer
+
+                                    // Exit Criteria
+                                    criteriaRow.RelativeItem().Column(xc =>
+                                    {
+                                        xc.Item().Background(ColorLightPrimary).Padding(4).Text("Criterios de SALIDA").Bold().FontSize(9).FontColor(ColorPrimary);
+                                        int metCount = exitCriteria.Count(c => c.IsMet);
+                                        xc.Item().PaddingLeft(4).Text($"{metCount}/{exitCriteria.Count} cumplidos").FontSize(8)
+                                            .FontColor(metCount == exitCriteria.Count ? ColorSuccess : ColorDanger);
+                                        foreach (var criterion in exitCriteria)
+                                        {
+                                            xc.Item().PaddingLeft(4).PaddingTop(3).Row(r =>
+                                            {
+                                                r.AutoItem().Width(10).Text(criterion.IsMet ? "✓" : "✗").FontSize(9)
+                                                    .FontColor(criterion.IsMet ? ColorSuccess : ColorDanger);
+                                                r.RelativeItem().Text(criterion.Description ?? string.Empty).FontSize(8);
+                                            });
+                                        }
+                                    });
+                                });
+                            }
+                            else
+                            {
+                                col.Item().PaddingTop(5).Text("No se definieron criterios de entrada/salida para el plan de pruebas activo.").Italic().FontColor(ColorGrey);
+                            }
+                        }
+                        else
+                        {
+                            col.Item().PaddingTop(5).Text("No existe un plan de pruebas asociado a este proyecto.").Italic().FontColor(ColorGrey);
+                        }
+
+                        col.Item().PageBreak();
+
+                        // 4. SISTEMAS BAJO PRUEBA (SUT)
+                        col.Item().PaddingTop(15).BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2).Text("4. ENTORNOS Y SISTEMAS BAJO PRUEBA (SUT)").FontSize(11).Bold().FontColor(ColorPrimary);
+                        if (project.SystemUnderTest == null)
+                        {
+                            col.Item().PaddingTop(5).Text("No se registraron Sistemas Bajo Prueba (SUT) para este proyecto.").Italic().FontColor(ColorGrey);
+                        }
+                        else
+                        {
+                            col.Item().PaddingTop(5).Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(2); // Nombre
+                                    columns.RelativeColumn(2); // Plataforma
+                                    columns.ConstantColumn(50);  // Versión
+                                    columns.ConstantColumn(60);  // Entorno
+                                    columns.RelativeColumn(3); // Detalles de acceso
+                                });
+
+                                table.Header(h =>
+                                {
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Nombre").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Plataforma").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Versión").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Entorno").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Detalles de Acceso / Ruta").Bold().FontSize(8);
+                                });
+
+                                var sut = project.SystemUnderTest;
+                                
+                                table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(sut.Name).FontSize(8);
+                                table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(sut.PlatformType?.Name ?? "Web").FontSize(8);
+                                table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(sut.Version ?? "1.0.0").FontSize(8);
+                                table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(sut.Environment ?? "QA").FontSize(8);
+
+                                string details = "-";
+                                if (sut.PlatformType?.Code == "DESKTOP")
+                                {
+                                    details = $"Ejecutable: {sut.ExecutablePath ?? "N/A"}\nProceso: {sut.ProcessName ?? "N/A"}";
+                                    if (!string.IsNullOrEmpty(sut.BaseUrl)) details += $"\nServidor: {sut.BaseUrl}";
+                                }
+                                else if (!string.IsNullOrEmpty(sut.BaseUrl))
+                                {
+                                    details = sut.BaseUrl;
+                                }
+
+                                table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(details).FontSize(8);
+                                
+                            });
+                        }
+
+                        // 5. MATRIZ DE REQUERIMIENTOS Y COBERTURA
+                        col.Item().PaddingTop(15).BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2).Text("5. MATRIZ DE TRAZABILIDAD DE REQUERIMIENTOS").FontSize(11).Bold().FontColor(ColorPrimary);
+                        if (project.Requirements == null || project.Requirements.Count == 0)
+                        {
+                            col.Item().PaddingTop(5).Text("No se registraron requerimientos asociados al proyecto.").Italic().FontColor(ColorGrey);
+                        }
+                        else
+                        {
+                            col.Item().PaddingTop(5).Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(60);  // Código
+                                    columns.RelativeColumn(3); // Requerimiento
+                                    columns.ConstantColumn(80);  // Tipo
+                                    columns.ConstantColumn(70);  // Estado
+                                    columns.RelativeColumn(3); // Casos de Prueba
+                                });
+
+                                table.Header(h =>
+                                {
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Código").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Título del Requerimiento").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Tipo").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Estado").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Casos de Prueba Vinculados").Bold().FontSize(8);
+                                });
+
+                                foreach (var req in project.Requirements.OrderBy(r => r.Code))
+                                {
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(req.Code).FontSize(8).Bold();
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(req.Title).FontSize(8);
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(req.RequirementType?.Name ?? "Funcional").FontSize(8);
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(req.RequirementStatus?.Name ?? "Borrador").FontSize(8);
+
+                                    var testCaseTitles = req.RequirementTestCases
+                                        .Select(rtc => rtc.TestCase?.Title)
+                                        .Where(t => t != null)
+                                        .ToList();
+
+                                    string linkedTests = testCaseTitles.Count > 0 
+                                        ? string.Join(", ", testCaseTitles)
+                                        : "Sin casos asociados";
+
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(linkedTests).FontSize(8).Italic();
+                                }
+                            });
+                        }
+
+                        col.Item().PageBreak(); // Siguiente sección en nueva página
+
+                        // 6. RESUMEN DE EJECUCIONES
+                        col.Item().BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2).Text("6. RESUMEN DE EJECUCIONES DE PRUEBA").FontSize(11).Bold().FontColor(ColorPrimary);
+                        col.Item().PaddingTop(10).Row(row =>
+                        {
+                            row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(stat =>
+                            {
+                                stat.Item().AlignCenter().Text("CASOS DE PRUEBA").FontSize(8).FontColor(ColorGrey);
+                                stat.Item().AlignCenter().Text(totalCases.ToString()).FontSize(16).Bold();
+                            });
+                            row.RelativeItem().PaddingLeft(5).Border(1).BorderColor("#C8E6C9").Background("#F1F8E9").Padding(8).Column(stat =>
+                            {
+                                stat.Item().AlignCenter().Text("EXITOSOS").FontSize(8).FontColor(ColorSuccess);
+                                stat.Item().AlignCenter().Text(passedCases.ToString()).FontSize(16).Bold().FontColor(ColorSuccess);
+                            });
+                            row.RelativeItem().PaddingLeft(5).Border(1).BorderColor("#FFCDD2").Background("#FFEBEE").Padding(8).Column(stat =>
+                            {
+                                stat.Item().AlignCenter().Text("FALLIDOS").FontSize(8).FontColor(ColorDanger);
+                                stat.Item().AlignCenter().Text(failedCases.ToString()).FontSize(16).Bold().FontColor(ColorDanger);
+                            });
+                            row.RelativeItem().PaddingLeft(5).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(stat =>
+                            {
+                                stat.Item().AlignCenter().Text("PEND./OTROS").FontSize(8).FontColor(ColorGrey);
+                                stat.Item().AlignCenter().Text(otherCases.ToString()).FontSize(16).Bold();
+                            });
+                            row.RelativeItem().PaddingLeft(5).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(stat =>
+                            {
+                                stat.Item().AlignCenter().Text("ÉXITO (PASS RATE)").FontSize(8).FontColor(ColorGrey);
+                                stat.Item().AlignCenter().Text($"{compliance:N1}%").FontSize(16).Bold().FontColor(compliance >= 90 ? ColorSuccess : ColorDanger);
+                            });
+                        });
+
+                        // 7. HISTORIAL DE DEVOLUCIONES
+                        if (project.HistoricDevolutions != null && project.HistoricDevolutions.Count > 0)
+                        {
+                            col.Item().PaddingTop(20).BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(2).Text("7. HISTORIAL DE DEVOLUCIONES").FontSize(11).Bold().FontColor(ColorPrimary);
+                            col.Item().PaddingTop(5).Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(2); // Fecha
+                                    columns.RelativeColumn(4); // Notas / Motivo
+                                    columns.RelativeColumn(2); // Resp. Fecha
+                                    columns.RelativeColumn(4); // Respuesta
+                                });
+
+                                table.Header(h =>
+                                {
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("F. Devolución").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Notas / Motivo").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("F. Respuesta").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Respuesta de Ingeniería").Bold().FontSize(8);
+                                });
+
+                                foreach (var dev in project.HistoricDevolutions.OrderByDescending(d => d.DevolutionDate))
+                                {
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(dev.DevolutionDate.ToString(DateFormat)).FontSize(8);
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(dev.Notes).FontSize(8);
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(dev.ResponseDate?.ToString(DateFormat) ?? "-").FontSize(8);
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(dev.ResponseNotes ?? "Pendiente").FontSize(8);
+                                }
+                            });
+                        }
+
+                        // 8. FIRMAS DE ACEPTACIÓN (ISO 29119-3 §10)
+                        var qaLeaderName = project.Leader?.FullName ?? project.CreatedBy?.FullName ?? "QA Manager";
+                        var generatedAt = DateTime.Now;
+
+                        col.Item().PaddingTop(20).Background("#F0F4FF").Border(0.5f).BorderColor(ColorPrimary).Padding(10).Column(stamp =>
+                        {
+                            stamp.Item().Row(r =>
+                            {
+                                r.RelativeItem().Text($"Documento generado el: {generatedAt:dd/MM/yyyy} a las {generatedAt:HH:mm} UTC-4").FontSize(8).FontColor(ColorGrey);
+                                r.AutoItem().Text("ISO/IEC/IEEE 29119-3 COMPLIANT").FontSize(8).Bold().FontColor(ColorPrimary);
+                            });
+                            stamp.Item().PaddingTop(4).Text("Este documento constituye el Informe Oficial de Certificación de Calidad de Software conforme al estándar ISO/IEC/IEEE 29119-3. Su contenido ha sido generado automáticamente por el sistema QAMS y refleja el estado verificado del ciclo de pruebas del proyecto.").FontSize(7).Italic().FontColor(ColorGrey);
+                        });
+
+                        col.Item().PaddingTop(30).Row(row =>
+                        {
+                            row.RelativeItem().Column(sig =>
+                            {
+                                sig.Item().AlignCenter().Text("_________________________________").FontSize(9);
+                                sig.Item().AlignCenter().Text(qaLeaderName).FontSize(9).Bold().FontColor(ColorPrimary);
+                                sig.Item().AlignCenter().Text("Responsable de Calidad (QA)").FontSize(8).FontColor(ColorGrey);
+                                sig.Item().AlignCenter().Text($"Fecha: {generatedAt:dd/MM/yyyy}").FontSize(7).FontColor(ColorGrey).Italic();
+                            });
+                            row.RelativeItem().Column(sig =>
+                            {
+                                sig.Item().AlignCenter().Text("_________________________________").FontSize(9);
+                                sig.Item().AlignCenter().Text("Líder de Ingeniería / Dev Lead").FontSize(9).Bold();
+                                sig.Item().AlignCenter().Text("Equipo de Desarrollo").FontSize(8).FontColor(ColorGrey);
+                                sig.Item().AlignCenter().Text("Fecha: ___/___/______").FontSize(7).FontColor(ColorGrey).Italic();
+                            });
+                            row.RelativeItem().Column(sig =>
+                            {
+                                sig.Item().AlignCenter().Text("_________________________________").FontSize(9);
+                                sig.Item().AlignCenter().Text("Product Owner / Cliente").FontSize(9).Bold();
+                                sig.Item().AlignCenter().Text("Aceptación Final del Producto").FontSize(8).FontColor(ColorGrey);
+                                sig.Item().AlignCenter().Text("Fecha: ___/___/______").FontSize(7).FontColor(ColorGrey).Italic();
+                            });
+                        });
+
+                    });
+
+                    page.Footer().AlignCenter().Text(x =>
+                    {
+                        x.Span("Documento oficial de Certificación de Calidad. Página ");
+                        x.CurrentPageNumber();
+                    });
+                });
+            });
+
+            using var ms = new MemoryStream();
+            document.GeneratePdf(ms);
+            return ms.ToArray();
+        }
+
+        public async Task<byte[]> GenerateExecutiveSummaryReportAsync(Guid projectId)
+        {
+            _logger.LogInformation("Generando resumen ejecutivo para el proyecto {ProjectId}.", projectId);
+
+            var project = await _projectRepo.GetFullProjectForComplianceReportAsync(projectId);
+            if (project == null) return [];
+
+            var executions = await _execRepo.GetByProjectAsync(projectId);
+            var executionList = executions.ToList();
+            var executionIds = executionList.Select(e => e.Id).ToList();
+            var allObservations = await _observationRepo.GetByProjectAsync(executionIds);
+
+            var totalCases = project.TestCases.Count;
+            var passedCases = project.TestCases.Count(tc => tc.TestExecutions.Any(e => e is TestExecution te && te.IsSuccessful()));
+            var failedCases = project.TestCases.Count(tc => tc.TestExecutions.Any(e => e is TestExecution te && te.IsFailed()));
+            decimal compliance = totalCases > 0 ? (decimal)passedCases / totalCases * 100 : 0;
+
+            // Cobertura de Requerimientos
+            int totalReqs = project.Requirements.Count;
+            int coveredReqs = project.Requirements.Count(r => r.RequirementTestCases.Count > 0);
+            decimal reqCoverage = totalReqs > 0 ? (decimal)coveredReqs / totalReqs * 100 : 0;
+
+            // Determinar dictamen de liberación
+            string verdict = "EN EVALUACIÓN";
+            string verdictDesc = "El proyecto se encuentra en fases de ejecución de pruebas y estabilización.";
+            string verdictColor = "#FF9800"; // Orange
+            string verdictBg = "#FFF3E0";
+
+            if (totalCases > 0)
+            {
+                if (compliance >= 95 && failedCases == 0 && project.DevolucionesCounter <= 2)
+                {
+                    verdict = "APROBADO PARA PRODUCCIÓN";
+                    verdictDesc = "El sistema cumple satisfactoriamente con los criterios de aceptación y calidad definidos. Se autoriza el despliegue.";
+                    verdictColor = ColorSuccess;
+                    verdictBg = "#E8F5E9";
+                }
+                else if (failedCases > 0 || project.DevolucionesCounter > 3)
+                {
+                    verdict = "RECHAZADO / CON OBSERVACIONES CRÍTICAS";
+                    verdictDesc = "El sistema presenta fallos pendientes o ha superado el límite de devoluciones. Se requiere remediación inmediata.";
+                    verdictColor = ColorDanger;
+                    verdictBg = "#FFEBEE";
+                }
+                else
+                {
+                    verdict = "APROBADO CONDICIONADO";
+                    verdictDesc = "Cumple parcialmente con observaciones menores no críticas. Despliegue bajo supervisión y plan de acción.";
+                    verdictColor = "#FF9800";
+                    verdictBg = "#FFF3E0";
+                }
+            }
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(1.5f, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
+
+                    // HEADER
+                    page.Header().BorderBottom(1).BorderColor(ColorBorder).PaddingBottom(5).Row(row =>
+                    {
+                        row.RelativeItem().Column(col =>
+                        {
+                            col.Item().Text("RESUMEN EJECUTIVO DE CERTIFICACIÓN QA").FontSize(16).ExtraBold().FontColor(ColorPrimary);
+                            col.Item().Text($"Proyecto: {project.Name}").FontSize(11).Bold();
+                            col.Item().Text($"Versión: {project.Version} | Fecha Emisión: {DateTime.Now:dd/MM/yyyy}").FontSize(8).Italic().FontColor(ColorGrey);
+                        });
+                        row.AutoItem().Height(40).AlignCenter().Text("QAMS").FontSize(22).ExtraBold().FontColor(ColorPrimary);
+                    });
+
+                    // CONTENT
+                    page.Content().PaddingVertical(20).Column(col =>
+                    {
+                        // 1. BANNER DE DICTAMEN DE CALIDAD
+                        col.Item().Border(1).BorderColor(verdictColor).Background(verdictBg).Padding(12).Column(vBox =>
+                        {
+                            vBox.Item().AlignCenter().Text("DICTAMEN DE LIBERACIÓN").FontSize(9).Bold().FontColor(verdictColor);
+                            vBox.Item().AlignCenter().Text(verdict).FontSize(16).ExtraBold().FontColor(verdictColor);
+                            vBox.Item().PaddingTop(5).AlignCenter().Text(verdictDesc).FontSize(9).Italic().FontColor(Colors.Black);
+                        });
+
+                        // 2. INDICADORES CLAVE (KPIs)
+                        col.Item().PaddingTop(25).Text("INDICADORES CLAVE DE CALIDAD (KPIs)").FontSize(12).Bold().FontColor(ColorPrimary);
+                        col.Item().PaddingTop(8).Row(row =>
+                        {
+                            row.RelativeItem().Border(0.5f).BorderColor(ColorBorder).Background("#FAFAFA").Padding(10).Column(kpi =>
+                            {
+                                kpi.Item().AlignCenter().Text("ÉXITO DE PRUEBAS").FontSize(8).FontColor(ColorGrey);
+                                kpi.Item().AlignCenter().Text($"{compliance:N1}%").FontSize(18).Bold().FontColor(compliance >= 90 ? ColorSuccess : ColorDanger);
+                                kpi.Item().AlignCenter().Text($"{passedCases} de {totalCases} aprobados").FontSize(7).Italic();
+                            });
+                            row.ConstantItem(10);
+                            row.RelativeItem().Border(0.5f).BorderColor(ColorBorder).Background("#FAFAFA").Padding(10).Column(kpi =>
+                            {
+                                kpi.Item().AlignCenter().Text("COBERTURA REQS").FontSize(8).FontColor(ColorGrey);
+                                kpi.Item().AlignCenter().Text($"{reqCoverage:N1}%").FontSize(18).Bold().FontColor(reqCoverage >= 80 ? ColorSuccess : "#FF9800");
+                                kpi.Item().AlignCenter().Text($"{coveredReqs} de {totalReqs} cubiertos").FontSize(7).Italic();
+                            });
+                            row.ConstantItem(10);
+                            row.RelativeItem().Border(0.5f).BorderColor(ColorBorder).Background("#FAFAFA").Padding(10).Column(kpi =>
+                            {
+                                kpi.Item().AlignCenter().Text("HALLAZGOS REGISTRADOS").FontSize(8).FontColor(ColorGrey);
+                                int totalObs = allObservations.Count;
+                                int openObs = allObservations.Count(o => string.IsNullOrEmpty(o.Response));
+                                kpi.Item().AlignCenter().Text(totalObs.ToString()).FontSize(18).Bold().FontColor(openObs > 0 ? ColorDanger : ColorSuccess);
+                                kpi.Item().AlignCenter().Text($"{openObs} pendientes").FontSize(7).Italic();
+                            });
+                            row.ConstantItem(10);
+                            row.RelativeItem().Border(0.5f).BorderColor(ColorBorder).Background("#FAFAFA").Padding(10).Column(kpi =>
+                            {
+                                kpi.Item().AlignCenter().Text("DEVOLUCIONES").FontSize(8).FontColor(ColorGrey);
+                                kpi.Item().AlignCenter().Text(project.DevolucionesCounter.ToString()).FontSize(18).Bold().FontColor(project.DevolucionesCounter > 2 ? ColorDanger : ColorSuccess);
+                                kpi.Item().AlignCenter().Text("Ciclos de corrección").FontSize(7).Italic();
+                            });
+                        });
+
+                        // 3. RESUMEN DEL SISTEMA EVALUADO
+                        col.Item().PaddingTop(25).Text("RESUMEN DE PLATAFORMAS EVALUADAS").FontSize(12).Bold().FontColor(ColorPrimary);
+                        if (project.SystemUnderTest == null)
+                        {
+                            col.Item().PaddingTop(5).Text("No hay información de plataformas o sistemas bajo prueba configurados.").Italic().FontSize(9).FontColor(ColorGrey);
+                        }
+                        else
+                        {
+                            col.Item().PaddingTop(5).Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(3); // Nombre
+                                    columns.RelativeColumn(2); // Tipo
+                                    columns.ConstantColumn(80);  // Entorno
+                                    columns.RelativeColumn(4); // Dirección / URL / Executable
+                                });
+
+                                table.Header(h =>
+                                {
+                                    h.Cell().Background("#F5F5F5").Padding(5).Text("Sistema / Módulo").Bold().FontSize(8);
+                                    h.Cell().Background("#F5F5F5").Padding(5).Text("Tipo").Bold().FontSize(8);
+                                    h.Cell().Background("#F5F5F5").Padding(5).Text("Entorno").Bold().FontSize(8);
+                                    h.Cell().Background("#F5F5F5").Padding(5).Text("Dirección / URL / Executable").Bold().FontSize(8);
+                                });
+
+                                var sut = project.SystemUnderTest;
+                                
+                                table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(5).Text(sut.Name).FontSize(8);
+                                table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(5).Text(sut.PlatformType?.Name ?? "Web").FontSize(8);
+                                table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(5).Text(sut.Environment ?? "QA").FontSize(8);
+
+                                string details = "-";
+                                if (sut.PlatformType?.Code == "DESKTOP")
+                                {
+                                    details = $"Proceso: {sut.ProcessName ?? "N/A"}";
+                                }
+                                else if (!string.IsNullOrEmpty(sut.BaseUrl))
+                                {
+                                    details = sut.BaseUrl;
+                                }
+
+                                table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(5).Text(details).FontSize(8);
+                                
+                            });
+                        }
+
+                        // 4. CONCLUSIÓN DE ASEGURAMIENTO
+                        col.Item().PaddingTop(25).Text("CONCLUSIÓN Y RECOMENDACIÓN DE LIBERACIÓN").FontSize(12).Bold().FontColor(ColorPrimary);
+                        string conclusion = $"El proceso de certificación de calidad del proyecto {project.Name} (Versión {project.Version}) concluyó con una tasa de aprobación de casos de prueba del {compliance:N1}% y una cobertura de requerimientos funcionales del {reqCoverage:N1}%. ";
+                        if (verdict == "APROBADO PARA PRODUCCIÓN")
+                        {
+                            conclusion += "El nivel de estabilidad de la aplicación cumple rigurosamente con los estándares y políticas de calidad institucionales. Se aconseja proceder con la puesta en producción.";
+                        }
+                        else if (verdict == "APROBADO CONDICIONADO")
+                        {
+                            conclusion += "Aunque el sistema es funcional, se recomienda su puesta en producción sujeta al seguimiento y corrección prioritaria del plan de acción para las observaciones menores reportadas.";
+                        }
+                        else
+                        {
+                            conclusion += "Debido al impacto de los fallos encontrados o la inestabilidad demostrada en los ciclos de prueba, no se recomienda la liberación hasta solventar los hallazgos críticos documentados.";
+                        }
+                        col.Item().PaddingTop(5).Text(conclusion).FontSize(9).Italic();
+
+                        // 5. FIRMAS DE CONFORMIDAD
+                        col.Item().PaddingTop(35).Row(row =>
+                        {
+                            row.RelativeItem().Column(sig =>
+                            {
+                                sig.Item().AlignCenter().Text("_________________________________").FontSize(9);
+                                sig.Item().AlignCenter().Text("Representante QA / Calidad").FontSize(9).Bold();
+                            });
+                            row.RelativeItem().Column(sig =>
+                            {
+                                sig.Item().AlignCenter().Text("_________________________________").FontSize(9);
+                                sig.Item().AlignCenter().Text("Product Owner / Cliente Final").FontSize(9).Bold();
+                            });
+                        });
+                    });
+
+                    page.Footer().AlignCenter().Text(t =>
+                    {
+                        t.Span("Certificado Resumen Ejecutivo QA. Página ");
+                        t.CurrentPageNumber();
+                    });
                 });
             });
 

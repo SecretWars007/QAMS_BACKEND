@@ -5,6 +5,8 @@ using QAMS.Domain.Ports.Repositories;
 using QAMS.Application.Interfaces;
 using QAMS.Application.Interfaces.Repositories;
 using QAMS.Domain.Entities;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace QAMS.Application.Services
 {
@@ -15,19 +17,22 @@ namespace QAMS.Application.Services
         private readonly ITestSuiteRepository _testSuiteRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ICurrentUserService _currentUserService;
 
         public TestPlanService(
             ITestPlanRepository testPlanRepository,
             IProjectRepository projectRepository,
             ITestSuiteRepository testSuiteRepository,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            ICurrentUserService currentUserService)
         {
             _testPlanRepository = testPlanRepository;
             _projectRepository = projectRepository;
             _testSuiteRepository = testSuiteRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _currentUserService = currentUserService;
         }
 
         public async Task<IEnumerable<TestPlanDto>> GetAllAsync()
@@ -173,6 +178,43 @@ namespace QAMS.Application.Services
                 throw new EntityNotFoundException(nameof(TestPlan), id);
 
             _testPlanRepository.Delete(plan);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task ApproveAsync(Guid id, ApproveTestPlanDto dto)
+        {
+            var plan = await _testPlanRepository.GetByIdWithDetailsAsync(id);
+            if (plan == null)
+                throw new EntityNotFoundException(nameof(TestPlan), id);
+
+            if (plan.IsClosed)
+                throw new InvalidOperationException("Test plan is already closed and approved.");
+
+            var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException("User is not authenticated.");
+
+            // Simple hash calculation for signature
+            string rawData = $"{plan.Id}-{userId}-{DateTime.UtcNow:O}-{dto.Verdict}";
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(rawData));
+            string hashString = Convert.ToBase64String(hashBytes);
+
+            var log = new TestPlanApprovalLog
+            {
+                Id = Guid.NewGuid(),
+                TestPlanId = id,
+                UserId = userId,
+                Verdict = dto.Verdict,
+                Comments = dto.Comments,
+                SignatureHash = hashString,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            plan.IsClosed = true;
+            plan.StatusId = 4; // Cerrado
+            plan.ApprovalLog = log;
+
+            _testPlanRepository.Update(plan);
+            
             await _unitOfWork.SaveChangesAsync();
         }
     }

@@ -25,6 +25,11 @@ namespace QAMS.Application.DTOs.TestCases
         public DateTime? EndDate { get; set; }
         public int TestTypeId { get; set; }
         public string TestTypeName { get; set; } = string.Empty;
+        public int? DesignTechniqueId { get; set; }
+        public string? DesignTechniqueName { get; set; }
+        public int ImpactLevel { get; set; } = 3;
+        public int LikelihoodLevel { get; set; } = 3;
+        public int RiskScore { get; set; } = 9;
         public List<string> CertifierNames { get; set; } = [];
         public List<Guid> CertifierUserIds { get; set; } = [];
         public List<TestStepDto> Steps { get; set; } = [];

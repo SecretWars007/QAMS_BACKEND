@@ -9,25 +9,43 @@ namespace QAMS.Infrastructure.Persistence.Configurations
 {
     public class RolePermissionConfiguration : IEntityTypeConfiguration<RolePermission>
     {
+        // Tester Permissions
         private static readonly string[] sourceArray =
             [
-                "PROJECTS_VIEW", "TEST_CASES_VIEW",
+                "PROJECTS_VIEW", "REQUIREMENTS_VIEW", "TEST_CASES_VIEW",
                 "EXECUTIONS_VIEW", "EXECUTIONS_CREATE", "EXECUTIONS_UPDATE", "EXECUTIONS_UPLOAD_EVIDENCE",
-                "KANBAN_VIEW", "KANBAN_UPDATE",
-                "DASHBOARD_VIEW", "CATALOGS_VIEW"
+                "DEFECTS_VIEW", "DEFECTS_CREATE", "DEFECTS_UPDATE",
+                "REVIEWS_VIEW", "KANBAN_VIEW", "KANBAN_UPDATE",
+                "DASHBOARD_VIEW", "CATALOGS_VIEW",
+                "SUT_VIEW", "SUT_CREATE", "SUT_UPDATE",
+                "EXPLORATORY_VIEW", "EXPLORATORY_CREATE", "EXPLORATORY_UPDATE",
+                "ENVIRONMENTS_VIEW"
             ];
+
+        // Lead (Líder de Pruebas) Permissions
         private static readonly string[] sourceArray0 =
             [
                 "PROJECTS_VIEW", "PROJECTS_CREATE", "PROJECTS_UPDATE",
                 "USERS_VIEW",
-                "TEST_CASES_VIEW", "TEST_CASES_CREATE", "TEST_CASES_UPDATE",
+                "REQUIREMENTS_VIEW", "REQUIREMENTS_CREATE", "REQUIREMENTS_UPDATE", "REQUIREMENTS_DELETE",
+                "TEST_CASES_VIEW", "TEST_CASES_CREATE", "TEST_CASES_UPDATE", "TEST_CASES_DELETE",
                 "EXECUTIONS_VIEW", "EXECUTIONS_CREATE", "EXECUTIONS_UPDATE", "EXECUTIONS_UPLOAD_EVIDENCE",
-                "KANBAN_VIEW", "KANBAN_UPDATE", "DASHBOARD_VIEW", "CATALOGS_VIEW"
+                "DEFECTS_VIEW", "DEFECTS_CREATE", "DEFECTS_UPDATE", "DEFECTS_DELETE",
+                "REVIEWS_VIEW", "REVIEWS_CREATE", "REVIEWS_UPDATE", "REVIEWS_DELETE",
+                "KANBAN_VIEW", "KANBAN_CREATE", "KANBAN_UPDATE", "KANBAN_DELETE",
+                "DASHBOARD_VIEW", "CATALOGS_VIEW",
+                "SUT_VIEW", "SUT_CREATE", "SUT_UPDATE", "SUT_DELETE",
+                "EXPLORATORY_VIEW", "EXPLORATORY_CREATE", "EXPLORATORY_UPDATE", "EXPLORATORY_DELETE",
+                "ENVIRONMENTS_VIEW", "ENVIRONMENTS_CREATE", "ENVIRONMENTS_UPDATE", "ENVIRONMENTS_DELETE"
             ];
+
+        // Developer Permissions
         private static readonly string[] sourceArray1 =
             [
-                "PROJECTS_VIEW", "TEST_CASES_VIEW", "EXECUTIONS_VIEW",
-                "KANBAN_VIEW", "KANBAN_UPDATE", "DASHBOARD_VIEW"
+                "PROJECTS_VIEW", "REQUIREMENTS_VIEW", "TEST_CASES_VIEW", "EXECUTIONS_VIEW",
+                "DEFECTS_VIEW", "DEFECTS_CREATE", "DEFECTS_UPDATE",
+                "REVIEWS_VIEW", "KANBAN_VIEW", "KANBAN_UPDATE", "DASHBOARD_VIEW",
+                "SUT_VIEW", "ENVIRONMENTS_VIEW", "EXPLORATORY_VIEW"
             ];
 
         public void Configure(EntityTypeBuilder<RolePermission> builder)

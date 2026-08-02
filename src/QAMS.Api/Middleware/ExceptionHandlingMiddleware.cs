@@ -29,6 +29,11 @@ namespace QAMS.Api.Middleware
                 _logger.LogWarning(ex, "Entidad no encontrada: {Message}", ex.Message);
                 await WriteResponse(context, HttpStatusCode.NotFound, ex.Message);
             }
+            catch (DuplicateEntityException ex)
+            {
+                _logger.LogWarning(ex, "Duplicado detectado: {Message}", ex.Message);
+                await WriteResponse(context, HttpStatusCode.Conflict, ex.Message);
+            }
             catch (DomainException ex)
             {
                 _logger.LogWarning(ex, "Error de dominio: {Message}", ex.Message);

@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.TestSuites;
@@ -14,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace QAMS.Tests.Services;
 
-[Collection("Integration tests")]
+[Collection(SharedTestCollection.Name)]
 public class TestSuiteServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
     private static ITestSuiteService GetService(IServiceScope scope)
@@ -75,7 +75,7 @@ public class TestSuiteServiceTests(QamsIntegrationTestFactory factory) : Integra
         using var scope = Factory.Services.CreateScope();
         var service = GetService(scope);
 
-        // Act & Assert — el servicio lanza EntityNotFoundException cuando no existe
+        // Act & Assert â€” el servicio lanza EntityNotFoundException cuando no existe
         await Assert.ThrowsAsync<EntityNotFoundException>(() => service.GetByIdAsync(fakeId));
     }
 
@@ -126,3 +126,5 @@ public class TestSuiteServiceTests(QamsIntegrationTestFactory factory) : Integra
         });
     }
 }
+
+

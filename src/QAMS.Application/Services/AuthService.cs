@@ -98,12 +98,14 @@ namespace QAMS.Application.Services
 
         public async Task<LoginResponseDto> RegisterAsync(RegisterRequestDto request)
         {
-            _logger.LogInformation("Intento de registro: '{Username}' con email '{Email}'.", request.Username, request.Email);
+            // SEC-B02: Anonimizar PII (email) en logs — principio de minimización GDPR/LGPD
+            var maskedEmail = MaskEmail(request.Email);
+            _logger.LogInformation("Intento de registro: '{Username}' con email '{MaskedEmail}'.", request.Username, maskedEmail);
 
             // 1. Validar conflictos ACTIVOS primero (para arrojar 400 Bad Request)
             var activeConflicts = await _userRepo.FindAsync(u =>
-                string.Equals(u.Email, request.Email, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(u.Username, request.Username, StringComparison.OrdinalIgnoreCase) ||
+                (u.Email != null && u.Email.ToLower() == request.Email.ToLower()) ||
+                (u.Username != null && u.Username.ToLower() == request.Username.ToLower()) ||
                 (u.DocumentoIdentidad == request.DocumentoIdentidad && u.FechaNacimiento == request.FechaNacimiento));
 
             if (activeConflicts.Count > 0)
@@ -258,7 +260,8 @@ namespace QAMS.Application.Services
             // Por seguridad no se revela si el email existe o no
             if (user?.IsActive != true)
             {
-                _logger.LogWarning("Email '{Email}' no encontrado en forgot-password.", request.Email);
+                // SEC-B02: Enmascarar email en logs para cumplir GDPR/LGPD
+                _logger.LogWarning("Email '{MaskedEmail}' no encontrado en forgot-password.", MaskEmail(request.Email));
                 return string.Empty;
             }
 
@@ -386,6 +389,19 @@ namespace QAMS.Application.Services
             await _uow.SaveChangesAsync();
 
             _logger.LogInformation("Admin reset de contraseña completado para UserId '{UserId}'.", targetUserId);
+        }
+        /// <summary>
+        /// SEC-B02: Enmascara un email para su registro en logs de aplicación.
+        /// Cumple con el principio de minimización de datos (GDPR Art. 5 / LGPD Art. 6).
+        /// Ejemplo: "john.doe@example.com" → "jo***@example.com"
+        /// </summary>
+        private static string MaskEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email)) return "***";
+            var parts = email.Split('@');
+            if (parts.Length != 2) return "***@***";
+            var name = parts[0].Length > 2 ? parts[0][..2] + "***" : "***";
+            return $"{name}@{parts[1]}";
         }
     }
 }

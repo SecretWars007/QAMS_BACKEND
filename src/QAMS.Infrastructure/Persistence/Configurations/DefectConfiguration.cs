@@ -16,6 +16,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(d => d.ProjectId).HasColumnName("project_id").IsRequired();
             builder.Property(d => d.TestCaseId).HasColumnName("test_case_id");
             builder.Property(d => d.TestExecutionId).HasColumnName("test_execution_id");
+            builder.Property(d => d.TestExecutionStepResultId).HasColumnName("test_execution_step_result_id");
             builder.Property(d => d.Title).HasColumnName("title").HasMaxLength(300).IsRequired();
             builder.Property(d => d.Description).HasColumnName("description").HasMaxLength(3000);
             builder.Property(d => d.StepsToReproduce).HasColumnName("steps_to_reproduce").HasMaxLength(3000);

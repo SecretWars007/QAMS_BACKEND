@@ -33,6 +33,16 @@ namespace QAMS.Domain.Entities
         public decimal RemainingHours { get; set; } = 0;
         public int DevolucionesCounter { get; set; } = 0;
 
+        // Quality Gate thresholds (ISTQB Exit Criteria)
+        public double MinRequirementCoverage { get; set; } = 90.0;
+        public double MinPassRate { get; set; } = 85.0;
+        public int MaxOpenDefects { get; set; } = 0;
+        
+        // Shareable dashboard link token
+        public Guid? ShareToken { get; set; }
+
+        public bool RequireSutLinked { get; set; } = true;
+
         // Auditoría relationships
         public User? CreatedBy { get; set; }
         public User? UpdatedBy { get; set; }
@@ -58,7 +68,8 @@ namespace QAMS.Domain.Entities
         public virtual ICollection<ProjectDevolution> HistoricDevolutions { get; set; } = [];
         public virtual ICollection<ProjectObservation> Observations { get; set; } = [];
         public virtual ICollection<Requirement> Requirements { get; set; } = [];
-        public virtual ICollection<SystemUnderTest> SystemsUnderTest { get; set; } = [];
+        public Guid? SystemUnderTestId { get; set; }
+        public virtual SystemUnderTest? SystemUnderTest { get; set; }
         public virtual ICollection<TestPlan> TestPlans { get; set; } = [];
         public virtual ICollection<ApiKey> ApiKeys { get; set; } = [];
 

@@ -126,9 +126,9 @@ namespace QAMS.Infrastructure.Persistence.Configurations
 
             // Seed
             builder.HasData(
-                new PlatformType { Id = 1, Code = CatalogConstants.PlatformType.Web, Name = "Aplicación Web", SortOrder = 1 },
-                new PlatformType { Id = 2, Code = CatalogConstants.PlatformType.Desktop, Name = "Aplicación de Escritorio", SortOrder = 2 },
-                new PlatformType { Id = 3, Code = CatalogConstants.PlatformType.DataProcessing, Name = "Procesamiento de Información", SortOrder = 3 }
+                new PlatformType { Id = 1, Code = CatalogConstants.PlatformTypes.Web, Name = "Aplicación Web", SortOrder = 1 },
+                new PlatformType { Id = 2, Code = CatalogConstants.PlatformTypes.Desktop, Name = "Aplicación de Escritorio", SortOrder = 2 },
+                new PlatformType { Id = 3, Code = CatalogConstants.PlatformTypes.DataProcessing, Name = "Procesamiento de Información", SortOrder = 3 }
             );
         }
     }

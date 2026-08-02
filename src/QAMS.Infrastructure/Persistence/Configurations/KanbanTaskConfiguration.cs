@@ -22,6 +22,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(t => t.AssigneeId).HasColumnName("assignee_id");
             builder.HasIndex(t => t.AssigneeId).HasDatabaseName("ix_kanban_tasks_assignee_id");
             builder.Property(t => t.TestCaseId).HasColumnName("test_case_id");
+            builder.Property(t => t.TestExecutionId).HasColumnName("test_execution_id");
             builder.Property(t => t.PriorityId).HasColumnName("priority_id").IsRequired();
 
             // Auditoría y Borrado Lógico
@@ -49,6 +50,12 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.HasOne(t => t.TestCase)
                 .WithMany()
                 .HasForeignKey(t => t.TestCaseId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Relación con TestExecution (Opcional)
+            builder.HasOne(t => t.TestExecution)
+                .WithMany()
+                .HasForeignKey(t => t.TestExecutionId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             // Relación con Priority (Catálogo)

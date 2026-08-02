@@ -113,6 +113,32 @@ namespace QAMS.Api.Controllers
         }
 
         /// <summary>
+        /// Exporta los casos de prueba de un proyecto a formato CSV. Requiere permiso TEST_CASES_VIEW.
+        /// </summary>
+        [HttpGet("export/csv")]
+        [HasPermission("TEST_CASES_VIEW")]
+        public async Task<IActionResult> ExportCsv([FromQuery] Guid projectId)
+        {
+            _logger.LogInformation("GET /api/testcases/export/csv?projectId={ProjectId}", projectId);
+            var testCases = await _service.GetByProjectIdAsync(projectId);
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("ID,Título,Descripción,Precondiciones,Resultado Esperado,Prioridad,Impacto,Probabilidad,ScoreRiesgo,TiempoEstimadoHoras");
+
+            foreach (var tc in testCases)
+            {
+                var title = $"\"{tc.Title?.Replace("\"", "\"\"")}\"";
+                var desc = $"\"{tc.Description?.Replace("\"", "\"\"")}\"";
+                var pre = $"\"{tc.Preconditions?.Replace("\"", "\"\"")}\"";
+                var exp = $"\"{tc.ExpectedResult?.Replace("\"", "\"\"")}\"";
+                sb.AppendLine($"{tc.Id},{title},{desc},{pre},{exp},{tc.PriorityName},{tc.ImpactLevel},{tc.LikelihoodLevel},{tc.RiskScore},{tc.EstimatedTimeHours}");
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            return File(bytes, "text/csv", $"Casos_Prueba_{DateTime.UtcNow:yyyyMMdd}.csv");
+        }
+
+        /// <summary>
         /// Realiza una eliminación lógica del caso de prueba. Requiere permiso TEST_CASES_DELETE.
         /// </summary>
         /// <param name="id">ID del caso a eliminar.</param>

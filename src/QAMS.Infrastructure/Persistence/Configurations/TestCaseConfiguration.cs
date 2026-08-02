@@ -24,11 +24,17 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(tc => tc.IsActive).HasColumnName("is_active").HasDefaultValue(true);
             builder.Property(tc => tc.VersionNumber).HasColumnName("version_number").HasDefaultValue(1);
             builder.Property(tc => tc.IsLatestVersion).HasColumnName("is_latest_version").HasDefaultValue(true);
+            builder.Property(tc => tc.ParentTestCaseId).HasColumnName("parent_test_case_id");
+            
+            builder.Property(tc => tc.IsBdd).HasColumnName("is_bdd").HasDefaultValue(false);
+            builder.Property(tc => tc.BddScenario).HasColumnName("bdd_scenario");
 
             builder.Property(tc => tc.EstimatedTimeHours).HasColumnName("estimated_time_hours").HasColumnType("decimal(6,2)").HasDefaultValue(0);
             builder.Property(tc => tc.StartDate).HasColumnName("start_date");
             builder.Property(tc => tc.EndDate).HasColumnName("end_date");
             builder.Property(tc => tc.TestTypeId).HasColumnName("test_type_id").HasDefaultValue(1); // Default: Funcional Manual
+            builder.Property(tc => tc.ImpactLevel).HasColumnName("impact_level").HasDefaultValue(3);
+            builder.Property(tc => tc.LikelihoodLevel).HasColumnName("likelihood_level").HasDefaultValue(3);
 
             // Auditoría y Borrado Lógico
             builder.Property(tc => tc.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
@@ -80,6 +86,25 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 .WithMany(tt => tt.TestCases)
                 .HasForeignKey(tc => tc.TestTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Property(tc => tc.DesignTechniqueId).HasColumnName("design_technique_id");
+
+            // Relación con TestDesignTechnique
+            builder.HasOne(tc => tc.DesignTechnique)
+                .WithMany()
+                .HasForeignKey(tc => tc.DesignTechniqueId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Relación con el caso de prueba padre (versiones anteriores)
+            builder.HasOne(tc => tc.ParentTestCase)
+                .WithMany()
+                .HasForeignKey(tc => tc.ParentTestCaseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Índices para optimizar búsquedas por proyecto, suite y versiones
+            builder.HasIndex(tc => tc.ProjectId);
+            builder.HasIndex(tc => tc.TestSuiteId);
+            builder.HasIndex(tc => tc.ParentTestCaseId);
         }
     }
 }

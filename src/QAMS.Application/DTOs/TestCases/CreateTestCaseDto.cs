@@ -37,6 +37,14 @@ namespace QAMS.Application.DTOs.TestCases
         [Required(ErrorMessage = "El tipo de prueba es obligatorio.")]
         public int TestTypeId { get; set; }
 
+        public int? DesignTechniqueId { get; set; }
+
+        public int ImpactLevel { get; set; } = 3;
+        public int LikelihoodLevel { get; set; } = 3;
+        
+        public bool IsBdd { get; set; } = false;
+        public string? BddScenario { get; set; }
+
         public List<Guid> CertifierUserIds { get; set; } = [];
         public List<CreateTestStepDto> Steps { get; set; } = [];
     }

@@ -93,6 +93,58 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                     IsActive = true,
                     IsDeleted = false,
                     CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new
+                {
+                    Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                    Username = "tester1",
+                    Email = "tester1@qams.local",
+                    PasswordHash = "$2a$12$0jdJPZWmFkqBX5PmpGsjaeXoZqGvvD1fUOifS6Foj9guzZVPZzo.C",
+                    FullName = "Tester Uno",
+                    DocumentoIdentidad = "11111111",
+                    FechaNacimiento = new DateOnly(1995, 1, 1),
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new
+                {
+                    Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                    Username = "tester2",
+                    Email = "tester2@qams.local",
+                    PasswordHash = "$2a$12$0jdJPZWmFkqBX5PmpGsjaeXoZqGvvD1fUOifS6Foj9guzZVPZzo.C",
+                    FullName = "Tester Dos",
+                    DocumentoIdentidad = "22222222",
+                    FechaNacimiento = new DateOnly(1996, 2, 2),
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new
+                {
+                    Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                    Username = "developer1",
+                    Email = "developer1@qams.local",
+                    PasswordHash = "$2a$12$0jdJPZWmFkqBX5PmpGsjaeXoZqGvvD1fUOifS6Foj9guzZVPZzo.C",
+                    FullName = "Desarrollador Uno",
+                    DocumentoIdentidad = "33333333",
+                    FechaNacimiento = new DateOnly(1993, 3, 3),
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new
+                {
+                    Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
+                    Username = "developer2",
+                    Email = "developer2@qams.local",
+                    PasswordHash = "$2a$12$0jdJPZWmFkqBX5PmpGsjaeXoZqGvvD1fUOifS6Foj9guzZVPZzo.C",
+                    FullName = "Desarrollador Dos",
+                    DocumentoIdentidad = "44444444",
+                    FechaNacimiento = new DateOnly(1994, 4, 4),
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                 }
             );
         }

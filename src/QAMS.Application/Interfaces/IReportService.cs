@@ -12,5 +12,7 @@ namespace QAMS.Application.Interfaces
         Task<byte[]> GenerateProjectObservationsReportAsync(Guid projectId);
         Task<byte[]> GenerateFinalComplianceReportAsync(Guid projectId);
         Task<byte[]> GenerateTestSummaryReportAsync(Guid testPlanId);
+        Task<byte[]> GenerateFullCertificationReportAsync(Guid projectId);
+        Task<byte[]> GenerateExecutiveSummaryReportAsync(Guid projectId);
     }
 }

@@ -1,7 +1,7 @@
-#nullable enable
+﻿#nullable enable
 // PdfReportServiceTests - Tests sin Moq usando datos en memoria (domain objects reales)
-// PdfReportService es un servicio de generación de PDFs con lógica de presentación pura.
-// Se valida que el PDF generado no esté vacío con datos reales de dominio.
+// PdfReportService es un servicio de generaciÃ³n de PDFs con lÃ³gica de presentaciÃ³n pura.
+// Se valida que el PDF generado no estÃ© vacÃ­o con datos reales de dominio.
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.Reports;
@@ -16,7 +16,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace QAMS.Tests.Services;
 
-[Collection("Integration tests")]
+[Collection(SharedTestCollection.Name)]
 public class PdfReportServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
     private IReportService GetService(IServiceScope scope)
@@ -86,3 +86,5 @@ public class PdfReportServiceTests(QamsIntegrationTestFactory factory) : Integra
         result.Length.Should().BeGreaterThan(0);
     }
 }
+
+

@@ -20,6 +20,8 @@ namespace QAMS.Application.DTOs.Projects
         public string ProjectPriorityName { get; set; } = string.Empty;
         public int ProjectStatusId { get; set; }
         public string ProjectStatusName { get; set; } = string.Empty;
+        public Guid? SystemUnderTestId { get; set; }
+        public string? SystemUnderTestName { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? CreatedByUserName { get; set; }
         public int TestSuiteCount { get; set; }

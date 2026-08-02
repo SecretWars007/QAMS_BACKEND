@@ -57,6 +57,22 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         public DbSet<PlatformType> PlatformTypes => Set<PlatformType>();
 
         // =======================================================================
+        // MÓDULO ISTQB — PRUEBAS ESTÁTICAS Y TÉCNICAS DE DISEÑO
+        // =======================================================================
+        public DbSet<ReviewType> ReviewTypes => Set<ReviewType>();
+        public DbSet<ReviewStatus> ReviewStatuses => Set<ReviewStatus>();
+        public DbSet<FindingType> FindingTypes => Set<FindingType>();
+        public DbSet<FindingSeverity> FindingSeverities => Set<FindingSeverity>();
+        public DbSet<FindingStatus> FindingStatuses => Set<FindingStatus>();
+        public DbSet<TestDesignTechnique> TestDesignTechniques => Set<TestDesignTechnique>();
+        public DbSet<ReviewSession> ReviewSessions => Set<ReviewSession>();
+        public DbSet<ReviewFinding> ReviewFindings => Set<ReviewFinding>();
+        public DbSet<ReviewParticipant> ReviewParticipants => Set<ReviewParticipant>();
+        
+        public DbSet<ExploratorySession> ExploratorySessions => Set<ExploratorySession>();
+        public DbSet<ExploratoryFinding> ExploratoryFindings => Set<ExploratoryFinding>();
+
+        // =======================================================================
         // TABLAS DE SEGURIDAD (Sistema RBAC Dinámico)
         // Permite administrar usuarios, roles y permisos desde la UI.
         // =======================================================================
@@ -236,10 +252,22 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         public DbSet<DefectStatus> DefectStatuses => Set<DefectStatus>();
 
         public DbSet<TestPlan> TestPlans => Set<TestPlan>();
+        public DbSet<TestPlanApprovalLog> TestPlanApprovalLogs => Set<TestPlanApprovalLog>();
         public DbSet<TestPlanStatus> TestPlanStatuses => Set<TestPlanStatus>();
         public DbSet<TestPlanCriteria> TestPlanCriteria => Set<TestPlanCriteria>();
         public DbSet<TestPlanSuite> TestPlanSuites => Set<TestPlanSuite>();
         public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+
+        // =======================================================================
+        // MÓDULO ISTQB v1.0 — CIERRE DE VERSIÓN
+        // Cap. 5.4: Entornos de Prueba | Cap. 6: Integración de Herramientas
+        // =======================================================================
+
+        /// <summary>Entornos de prueba formales (ISTQB Cap. 5.4 — Gestión del entorno).</summary>
+        public DbSet<TestEnvironment> TestEnvironments => Set<TestEnvironment>();
+
+        /// <summary>Log de webhooks de automatización recibidos desde pipelines CI/CD (ISTQB Cap. 6).</summary>
+        public DbSet<AutomationWebhookLog> AutomationWebhookLogs => Set<AutomationWebhookLog>();
 
         // =======================================================================
         // CONFIGURACIÓN DEL MODELO (Fluent API)

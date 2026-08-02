@@ -13,5 +13,16 @@ namespace QAMS.Application.Interfaces
         Task<TimelineChartDto> GetTimelineChartDataAsync(Guid projectId);
         Task<List<DrawdownPointDto>> GetDrawdownDataAsync(Guid projectId);
         Task<List<BurndownPointDto>> GetBurndownDataAsync(Guid projectId);
+
+        /// <summary>
+        /// Fase 1 ISTQB: Calcula KPIs avanzados (DDP, DRE, MTTR) y evalúa el Quality Gate de un proyecto.
+        /// </summary>
+        Task<IstqbMetricsDto> GetIstqbMetricsAsync(Guid projectId);
+
+        /// <summary>
+        /// Fase 1 ISTQB: Actualiza los umbrales del Quality Gate de un proyecto.
+        /// </summary>
+        Task UpdateQualityGateAsync(Guid projectId, double minReqCoverage, double minPassRate, int maxOpenDefects, bool requireSut);
+
     }
 }

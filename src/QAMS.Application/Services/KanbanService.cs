@@ -7,6 +7,7 @@ using QAMS.Domain.Entities;
 using QAMS.Domain.Entities.Catalogs;
 using QAMS.Domain.Exceptions;
 using QAMS.Domain.Ports.Repositories;
+using QAMS.Domain.Ports.Services;
 
 namespace QAMS.Application.Services
 {
@@ -21,6 +22,8 @@ namespace QAMS.Application.Services
         ICatalogRepository<TaskPriority> priorityRepo,
         ITestExecutionRepository execRepo,
         ICatalogRepository<ExecutionStatus> execStatusRepo,
+        IUserRepository userRepo,
+        IEmailService emailService,
         IUnitOfWork uow,
         IMapper mapper,
         ILogger<KanbanService> logger
@@ -140,6 +143,32 @@ namespace QAMS.Application.Services
 
             logger.LogInformation("Tarea '{Title}' creada con ID {TaskId}.", task.Title, task.Id);
 
+            // Notificar al asignado si existe
+            if (task.AssigneeId.HasValue)
+            {
+                try
+                {
+                    var assignee = await userRepo.GetByIdAsync(task.AssigneeId.Value);
+                    if (assignee != null)
+                    {
+                        var subject = $"Nueva Tarea Kanban Asignada: {task.Title}";
+                        var body = $@"<h2>Nueva Tarea Asignada &mdash; QAMS</h2>
+                                     <p>Hola {assignee.FullName},</p>
+                                     <p>Se te ha asignado una nueva tarea en el tablero Kanban.</p>
+                                     <div style=""background:rgba(99,102,241,0.1);padding:15px;border-radius:8px;border-left:4px solid #6366f1;"">
+                                         <p><strong>Tarea:</strong> {task.Title}</p>
+                                         <p><strong>Descripci&oacute;n:</strong> {task.Description ?? "N/A"}</p>
+                                     </div>
+                                     <p><a href=""https://qams-web.onrender.com/kanban"">Ver en el Kanban</a></p>";
+                        await emailService.SendEmailAsync(assignee.Email, subject, body);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Error al enviar notificación de asignación de tarea.");
+                }
+            }
+
             return mapper.Map<KanbanTaskDto>(task);
         }
 
@@ -223,6 +252,29 @@ namespace QAMS.Application.Services
             await uow.SaveChangesAsync();
 
             logger.LogInformation("Tarea {TaskId} movida exitosamente.", taskId);
+
+            // Notificar al asignado del movimiento de columna
+            if (task.AssigneeId.HasValue)
+            {
+                try
+                {
+                    var assignee = await userRepo.GetByIdAsync(task.AssigneeId.Value);
+                    if (assignee != null)
+                    {
+                        var subject = $"Tarea Movida: {task.Title} → {targetColumn.Name}";
+                        var body = $@"<h2>Tarea Movida — Kanban QAMS</h2>
+                                     <p>Hola {assignee.FullName},</p>
+                                     <p>La tarea <strong>{task.Title}</strong> ha sido movida a la columna <strong>{targetColumn.Name}</strong>.</p>
+                                     <p><a href='https://qams-web.onrender.com/kanban'>Ver en el Kanban</a></p>";
+                        await emailService.SendEmailAsync(assignee.Email, subject, body);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Error al enviar notificación de movimiento de tarea.");
+                }
+            }
+
             return mapper.Map<KanbanTaskDto>(task);
         }
 

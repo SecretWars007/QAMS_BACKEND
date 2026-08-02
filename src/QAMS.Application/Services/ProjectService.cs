@@ -69,7 +69,8 @@ namespace QAMS.Application.Services
                 Version = dto.Version,
                 Budget = dto.Budget,
                 Risks = dto.Risks,
-                LeaderId = dto.LeaderId
+                LeaderId = dto.LeaderId,
+                SystemUnderTestId = dto.SystemUnderTestId
             };
 
             if (dto.TesterIds is { Count: > 0 })
@@ -111,6 +112,7 @@ namespace QAMS.Application.Services
             project.Budget = dto.Budget;
             project.Risks = dto.Risks;
             project.LeaderId = dto.LeaderId;
+            project.SystemUnderTestId = dto.SystemUnderTestId;
             project.UpdatedAt = DateTime.UtcNow;
 
             if (dto.TesterIds != null)

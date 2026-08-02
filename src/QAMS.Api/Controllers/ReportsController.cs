@@ -107,6 +107,50 @@ namespace QAMS.Api.Controllers
         }
 
         /// <summary>
+        /// Genera el reporte completo del proceso de certificación de QA. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <param name="projectId">ID del proyecto.</param>
+        /// <returns>Archivo PDF binario.</returns>
+        [HttpGet("project/{projectId}/full-certification")]
+        [HasPermission("DASHBOARD_VIEW")]
+        public async Task<IActionResult> GetFullCertificationReport(Guid projectId)
+        {
+            _logger.LogInformation("Solicitando reporte PDF de Certificación QA Completo para el proyecto: {ProjectId}", projectId);
+
+            var pdfData = await _reportService.GenerateFullCertificationReportAsync(projectId);
+
+            if (pdfData == null || pdfData.Length == 0)
+            {
+                return NotFound("No se encontró información para generar el reporte de certificación.");
+            }
+
+            string fileName = $"Reporte_Certificacion_QA_{DateTime.Now:yyyyMMddHHmm}.pdf";
+            return File(pdfData, "application/pdf", fileName);
+        }
+
+        /// <summary>
+        /// Genera el reporte resumen ejecutivo para el usuario final. Requiere permiso DASHBOARD_VIEW.
+        /// </summary>
+        /// <param name="projectId">ID del proyecto.</param>
+        /// <returns>Archivo PDF binario.</returns>
+        [HttpGet("project/{projectId}/executive-summary")]
+        [HasPermission("DASHBOARD_VIEW")]
+        public async Task<IActionResult> GetExecutiveSummaryReport(Guid projectId)
+        {
+            _logger.LogInformation("Solicitando reporte PDF del Resumen Ejecutivo de Aceptación para el proyecto: {ProjectId}", projectId);
+
+            var pdfData = await _reportService.GenerateExecutiveSummaryReportAsync(projectId);
+
+            if (pdfData == null || pdfData.Length == 0)
+            {
+                return NotFound("No se encontró información para generar el reporte de resumen ejecutivo.");
+            }
+
+            string fileName = $"Resumen_Ejecutivo_Liberacion_{DateTime.Now:yyyyMMddHHmm}.pdf";
+            return File(pdfData, "application/pdf", fileName);
+        }
+
+        /// <summary>
         /// Genera el Test Summary Report (ISTQB) en PDF para un plan de pruebas. Requiere permiso DASHBOARD_VIEW.
         /// </summary>
         /// <param name="planId">ID del plan de pruebas.</param>

@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -13,7 +13,7 @@ using Xunit;
 
 namespace QAMS.Tests.Services;
 
-[Collection("Integration tests")]
+[Collection(SharedTestCollection.Name)]
 public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
     private static IAuthService GetAuthService(IServiceScope scope)
@@ -180,7 +180,7 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
             dbUser!.PasswordResetToken.Should().BeNull(); // Token limpiado
         });
 
-        // Comprobar que el login con nueva contraseña funciona
+        // Comprobar que el login con nueva contraseÃ±a funciona
         using (var scope = Factory.Services.CreateScope())
         {
             var service = GetAuthService(scope);
@@ -230,7 +230,7 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         await service.AdminResetPasswordAsync(user.Id, "AdminNewPass123!");
 
         // Assert
-        // Comprobar que el login con nueva contraseña funciona
+        // Comprobar que el login con nueva contraseÃ±a funciona
         using var loginScope = Factory.Services.CreateScope();
         var loginService = GetAuthService(loginScope);
         var result = await loginService.LoginAsync(new LoginRequestDto { Username = user.Username, Password = "AdminNewPass123!" });
@@ -251,3 +251,5 @@ public class AuthServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
             service.AdminResetPasswordAsync(fakeId, "any-password"));
     }
 }
+
+

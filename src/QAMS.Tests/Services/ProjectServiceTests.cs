@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -14,7 +14,7 @@ using Xunit;
 
 namespace QAMS.Tests.Services;
 
-[Collection("Integration tests")]
+[Collection(SharedTestCollection.Name)]
 public class ProjectServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
     private static IProjectService GetService(IServiceScope scope)
@@ -95,7 +95,7 @@ public class ProjectServiceTests(QamsIntegrationTestFactory factory) : Integrati
     [Fact(DisplayName = "CreateAsync_CuandoProyectoNuevo_DebeCrearYRetornarDto")]
     public async Task CreateAsync_WhenProjectIsNew_ShouldCreateAndReturnProjectDto()
     {
-        // Arrange — necesitamos un usuario autenticado para CurrentUserService
+        // Arrange â€” necesitamos un usuario autenticado para CurrentUserService
         var testerUser = await CreateTestUserAsync("proj_tester_create", "Tester");
         var uniqueName = $"New Integration Project {Guid.NewGuid():N}";
 
@@ -108,10 +108,10 @@ public class ProjectServiceTests(QamsIntegrationTestFactory factory) : Integrati
             TesterIds = [testerUser.Id]
         };
 
-        // Autenticar como el tester (el CurrentUserService leerá el userId del HttpContext en el scope)
+        // Autenticar como el tester (el CurrentUserService leerÃ¡ el userId del HttpContext en el scope)
         Authenticate(testerUser.Id);
 
-        // Act — usamos el HttpClient que ya tiene auth configurada
+        // Act â€” usamos el HttpClient que ya tiene auth configurada
         using var scope = Factory.Services.CreateScope();
         var service = GetService(scope);
 
@@ -176,3 +176,5 @@ public class ProjectServiceTests(QamsIntegrationTestFactory factory) : Integrati
         });
     }
 }
+
+

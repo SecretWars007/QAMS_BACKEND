@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +16,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace QAMS.Tests.Services;
 
-[Collection("Integration tests")]
+[Collection(SharedTestCollection.Name)]
 public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
     private IUserService GetUserService(IServiceScope scope, Guid? currentUserId = null)
@@ -310,3 +310,5 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         });
     }
 }
+
+

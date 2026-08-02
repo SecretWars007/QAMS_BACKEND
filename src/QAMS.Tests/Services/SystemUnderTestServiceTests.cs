@@ -12,7 +12,7 @@ using Xunit;
 
 namespace QAMS.Tests.Services;
 
-[Collection("Integration tests")]
+[Collection(SharedTestCollection.Name)]
 public class SystemUnderTestServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
     private static ISystemUnderTestService GetService(IServiceScope scope)
@@ -52,7 +52,6 @@ public class SystemUnderTestServiceTests(QamsIntegrationTestFactory factory) : I
 
         var dto = new CreateSystemUnderTestDto
         {
-            ProjectId = projectId,
             Name = "Portal Web Clientes",
             PlatformTypeId = 1, // WEB
             BaseUrl = "https://clientes.ejemplo.com"
@@ -80,8 +79,7 @@ public class SystemUnderTestServiceTests(QamsIntegrationTestFactory factory) : I
 
         var dto = new CreateSystemUnderTestDto
         {
-            ProjectId = projectId,
-            Name = "Aplicación Desktop POS",
+            Name = "AplicaciÃ³n Desktop POS",
             PlatformTypeId = 2, // DESKTOP
             ExecutablePath = @"C:\Program Files\App\pos_client.exe"
         };
@@ -108,7 +106,6 @@ public class SystemUnderTestServiceTests(QamsIntegrationTestFactory factory) : I
 
         var dto = new CreateSystemUnderTestDto
         {
-            ProjectId = projectId,
             Name = "Batch Procesamiento Novedades",
             PlatformTypeId = 3, // DATA_PROCESSING
             ProcessName = "Process_Payroll_Batch_Worker"
@@ -136,7 +133,6 @@ public class SystemUnderTestServiceTests(QamsIntegrationTestFactory factory) : I
 
         var dto = new CreateSystemUnderTestDto
         {
-            ProjectId = projectId,
             Name = "Portal Web Sin URL",
             PlatformTypeId = 1, // WEB
             BaseUrl = null
@@ -156,7 +152,6 @@ public class SystemUnderTestServiceTests(QamsIntegrationTestFactory factory) : I
 
         var dto = new CreateSystemUnderTestDto
         {
-            ProjectId = projectId,
             Name = "Desktop App Sin Ruta",
             PlatformTypeId = 2, // DESKTOP
             ExecutablePath = " "
@@ -176,7 +171,6 @@ public class SystemUnderTestServiceTests(QamsIntegrationTestFactory factory) : I
 
         var dto = new CreateSystemUnderTestDto
         {
-            ProjectId = projectId,
             Name = "Proceso sin Nombre",
             PlatformTypeId = 3, // DATA_PROCESSING
             ProcessName = null
@@ -196,8 +190,7 @@ public class SystemUnderTestServiceTests(QamsIntegrationTestFactory factory) : I
 
         var created = await service.CreateAsync(new CreateSystemUnderTestDto
         {
-            ProjectId = projectId,
-            Name = "Sistema Híbrido",
+            Name = "Sistema HÃ­brido",
             PlatformTypeId = 1,
             BaseUrl = "https://original.com"
         });
@@ -219,3 +212,5 @@ public class SystemUnderTestServiceTests(QamsIntegrationTestFactory factory) : I
         updated.ProcessName.Should().BeNull();
     }
 }
+
+

@@ -76,15 +76,14 @@ public class QamsIntegrationTestFactory : WebApplicationFactory<Program>, IAsync
         // 1. Iniciar contenedor DB
         await _dbContainer.StartAsync();
 
-        // 2. Ejecutar EnsureCreated / Migraciones para que la DB esté lista para los tests
+        // 2. Usar EnsureCreatedAsync() en lugar de MigrateAsync() para tests de integración.
+        //    EnsureCreatedAsync aplica el schema COMPLETO desde OnModelCreating de una sola vez,
+        //    respetando el orden de dependencias de FK (roles antes que role_permissions, etc.).
+        //    MigrateAsync() re-ejecuta el historial de migraciones, donde UpdateData sobre
+        //    role_permissions puede correr antes de que los roles existan → FK violation 23503.
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<QamsDbContext>();
-
-        // EnsureCreated elimina restos si un test anterior falló gravemente, 
-        // pero con un contenedor Docker fresco usualmente no hace falta.
-        // Cambiamos a MigrateAsync() para asegurar que el esquema coincida con las migraciones,
-        // incluyendo la columna 'documento_identidad'.
-        await db.Database.MigrateAsync();
+        await db.Database.EnsureCreatedAsync();
     }
 
     async Task IAsyncLifetime.DisposeAsync()

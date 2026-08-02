@@ -21,6 +21,11 @@ namespace QAMS.Domain.Entities
         public Guid? TestCaseId { get; set; }
         public TestCase? TestCase { get; set; }
 
+        public Guid? TestExecutionId { get; set; }
+        public TestExecution? TestExecution { get; set; }
+
+        public DateTime ColumnEnteredAt { get; set; } = DateTime.UtcNow;
+
         public int PriorityId { get; set; }
         public TestCasePriority? Priority { get; set; }
 

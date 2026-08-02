@@ -10,7 +10,8 @@ namespace QAMS.Domain.Entities
         public Guid BoardId { get; set; }
         public KanbanBoard? Board { get; set; }
         public string Name { get; set; } = string.Empty;
-        public int OrderIndex { get; set; }
+        public int OrderIndex { get; set; } = 0;
+        public int WipLimit { get; set; } = 0; // 0 means no limit
 
         public ICollection<KanbanTask> Tasks { get; set; } = [];
 

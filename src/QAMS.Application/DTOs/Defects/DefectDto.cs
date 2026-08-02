@@ -11,6 +11,7 @@ namespace QAMS.Application.DTOs.Defects
         public Guid? TestCaseId { get; set; }
         public string? TestCaseTitle { get; set; }
         public Guid? TestExecutionId { get; set; }
+        public Guid? TestExecutionStepResultId { get; set; }
 
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }

@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.Dashboard;
@@ -15,7 +15,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace QAMS.Tests.Services;
 
-[Collection("Integration tests")]
+[Collection(SharedTestCollection.Name)]
 public class DashboardServiceTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
     private IDashboardService GetService(IServiceScope scope)
@@ -227,3 +227,5 @@ public class DashboardServiceTests(QamsIntegrationTestFactory factory) : Integra
         result.Should().NotBeEmpty();
     }
 }
+
+

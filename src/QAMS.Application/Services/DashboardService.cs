@@ -4,6 +4,7 @@ using QAMS.Application.DTOs.Dashboard;
 using QAMS.Application.Interfaces;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Entities.Catalogs;
+using QAMS.Domain.Exceptions;
 using QAMS.Domain.Ports.Repositories;
 
 namespace QAMS.Application.Services
@@ -17,6 +18,7 @@ namespace QAMS.Application.Services
         ICatalogRepository<ExecutionStatus> statusRepo,
         IGenericRepository<RequirementTestCase> reqTestCaseRepo,
         IDefectRepository defectRepo,
+        IUnitOfWork _uow,
         ILogger<DashboardService> logger
     ) : IDashboardService
     {
@@ -368,6 +370,122 @@ namespace QAMS.Application.Services
             }
 
             return drawdown;
+        }
+
+        /// <summary>
+        /// Fase 1 ISTQB — Calcula KPIs avanzados (DDP, DRE, MTTR) y evalúa Quality Gate del proyecto.
+        /// </summary>
+        public async Task<IstqbMetricsDto> GetIstqbMetricsAsync(Guid projectId)
+        {
+            logger.LogInformation("Calculando métricas ISTQB para proyecto {ProjectId}.", projectId);
+
+            var project = await projectRepo.GetByIdAsync(projectId)
+                ?? throw new EntityNotFoundException(nameof(Project), projectId);
+
+            var metrics = new IstqbMetricsDto
+            {
+                ProjectId = project.Id,
+                ProjectName = project.Name,
+                // Leer umbrales configurados en el proyecto
+                MinRequirementCoverage = project.MinRequirementCoverage,
+                MinPassRate = project.MinPassRate,
+                MaxOpenDefects = project.MaxOpenDefects,
+                RequireSutLinked = project.RequireSutLinked,
+            };
+
+            // ── 1. Pass Rate por proyecto ──
+            var testCases = await projectRepo.FindWithDetailsAsync(p => p.Id == projectId);
+            var projectDetails = testCases.FirstOrDefault();
+            var allTestCaseIds = projectDetails?.TestCases?.Select(tc => tc.Id).ToList() ?? [];
+            var allExecutions = allTestCaseIds.Count > 0
+                ? await execRepo.FindAsync(e => allTestCaseIds.Contains(e.TestCaseId))
+                : new List<Domain.Entities.TestExecution>();
+            var passedTcIds = allExecutions.Where(e => e.IsSuccessful()).Select(e => e.TestCaseId).Distinct().ToList();
+            metrics.PassRate = allTestCaseIds.Count > 0
+                ? Math.Round((double)passedTcIds.Count / allTestCaseIds.Count * 100, 2) : 0;
+
+            // ── 2. Métricas de Defectos (DDP, DRE, MTTR) ──
+            var allDefects = await defectRepo.GetByProjectAsync(projectId);
+            metrics.TotalDefects = allDefects.Count;
+
+            // Defectos detectados durante pruebas (vinculados a una ejecución)
+            var testDefects = allDefects.Where(d => d.TestExecutionId.HasValue).ToList();
+            // Defectos detectados en "producción" (sin TestExecution vinculado)
+            var prodDefects = allDefects.Where(d => !d.TestExecutionId.HasValue).ToList();
+
+            // DDP = Defectos_en_testing / Total_defectos * 100
+            metrics.Ddp = metrics.TotalDefects > 0
+                ? Math.Round((double)testDefects.Count / metrics.TotalDefects * 100, 2) : 0;
+
+            // DRE = Defectos_internos / (Defectos_internos + Defectos_producción) * 100
+            // (equivalente a DDP en este modelo donde todos los defectos son clasificados internamente)
+            metrics.Dre = metrics.Ddp; // Modelo simplificado — mismo cálculo con datos actuales
+
+            // MTTR = Promedio de tiempo entre CreatedAt y ResolvedAt de defectos cerrados
+            var closedDefects = allDefects.Where(d => d.ResolvedAt.HasValue && !d.IsDeleted).ToList();
+            metrics.ClosedDefects = closedDefects.Count;
+            if (closedDefects.Count > 0)
+            {
+                var avgHours = closedDefects.Average(d => (d.ResolvedAt!.Value - d.CreatedAt).TotalHours);
+                metrics.MttrHours = Math.Round(avgHours, 2);
+            }
+
+            // Defectos abiertos
+            metrics.OpenDefects = allDefects.Count(d => !d.IsDeleted && !d.ResolvedAt.HasValue);
+
+            // ── 3. Cobertura de Requisitos ──
+            var requirements = projectDetails?.Requirements?.ToList() ?? [];
+            metrics.TotalRequirements = requirements.Count;
+            if (metrics.TotalRequirements > 0)
+            {
+                var reqIds = requirements.Select(r => r.Id).ToList();
+                var links = await reqTestCaseRepo.FindAsync(rt => reqIds.Contains(rt.RequirementId));
+                var coveredIds = links.Select(rt => rt.RequirementId).Distinct().ToList();
+                metrics.CoveredRequirements = coveredIds.Count;
+                metrics.RequirementCoverageRate = Math.Round((double)metrics.CoveredRequirements / metrics.TotalRequirements * 100, 2);
+            }
+
+            // ── 4. Evaluar Quality Gate ──
+            var failures = new List<string>();
+            if (metrics.RequirementCoverageRate < metrics.MinRequirementCoverage)
+                failures.Add($"Cobertura de requisitos {metrics.RequirementCoverageRate:F1}% < mínimo {metrics.MinRequirementCoverage:F1}%");
+            if (metrics.PassRate < metrics.MinPassRate)
+                failures.Add($"Pass Rate {metrics.PassRate:F1}% < mínimo {metrics.MinPassRate:F1}%");
+            if (metrics.OpenDefects > metrics.MaxOpenDefects)
+                failures.Add($"Defectos abiertos {metrics.OpenDefects} > máximo permitido {metrics.MaxOpenDefects}");
+            if (metrics.RequireSutLinked && projectDetails?.SystemUnderTestId == null)
+                failures.Add("No hay Sistemas Bajo Prueba (SUT) vinculados al proyecto");
+
+            metrics.QualityGateFailures = failures;
+            metrics.QualityGatePassed = failures.Count == 0;
+
+            logger.LogInformation(
+                "Métricas ISTQB calculadas para {Project}: PassRate={PassRate}%, DDP={Ddp}%, MTTR={Mttr}h, QG={QG}",
+                project.Name, metrics.PassRate, metrics.Ddp, metrics.MttrHours, metrics.QualityGatePassed ? "PASS" : "FAIL");
+
+            return metrics;
+        }
+
+        /// <summary>
+        /// Fase 1 ISTQB — Actualiza los umbrales del Quality Gate de un proyecto.
+        /// </summary>
+        public async Task UpdateQualityGateAsync(Guid projectId, double minReqCoverage, double minPassRate, int maxOpenDefects, bool requireSut)
+        {
+            var project = await projectRepo.GetByIdAsync(projectId)
+                ?? throw new EntityNotFoundException(nameof(Project), projectId);
+
+            project.MinRequirementCoverage = minReqCoverage;
+            project.MinPassRate = minPassRate;
+            project.MaxOpenDefects = maxOpenDefects;
+            project.RequireSutLinked = requireSut;
+            project.UpdatedAt = DateTime.UtcNow;
+
+            projectRepo.Update(project);
+            await _uow.SaveChangesAsync();
+
+            logger.LogInformation(
+                "Quality Gate actualizado para proyecto {ProjectId}: CovReq>={MinReq}%, PassRate>={MinPass}%, MaxDefects<={MaxDef}",
+                projectId, minReqCoverage, minPassRate, maxOpenDefects);
         }
     }
 }

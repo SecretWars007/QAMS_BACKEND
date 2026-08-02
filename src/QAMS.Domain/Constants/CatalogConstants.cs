@@ -51,5 +51,12 @@ namespace QAMS.Domain.Constants
             public const string Desktop = "DESKTOP";
             public const string DataProcessing = "DATA_PROCESSING";
         }
+
+        public static class PlatformTypes
+        {
+            public const string Web = "WEB";
+            public const string Desktop = "DESKTOP";
+            public const string DataProcessing = "DATA_PROCESSING";
+        }
     }
 }

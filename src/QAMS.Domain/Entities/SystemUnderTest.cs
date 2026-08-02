@@ -11,8 +11,9 @@ namespace QAMS.Domain.Entities
     public class SystemUnderTest : IAuditable, ISoftDelete
     {
         public Guid Id { get; set; } = Guid.NewGuid();
-        public Guid ProjectId { get; set; }
-        public virtual Project Project { get; set; } = null!;
+        
+        public virtual ICollection<Project> Projects { get; set; } = [];
+
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string? Version { get; set; }

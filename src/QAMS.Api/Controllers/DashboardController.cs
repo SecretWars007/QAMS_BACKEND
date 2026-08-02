@@ -108,5 +108,43 @@ namespace QAMS.Api.Controllers
             var data = await _dashboardService.GetBurndownDataAsync(projectId);
             return Ok(data);
         }
+
+        /// <summary>
+        /// ISTQB Fase 1: Obtiene KPIs avanzados (DDP, DRE, MTTR) y el estado del Quality Gate de un proyecto.
+        /// </summary>
+        /// <param name="projectId">ID del proyecto.</param>
+        /// <returns>Objeto IstqbMetricsDto con métricas ISTQB y resultado del Quality Gate.</returns>
+        [HttpGet("project/{projectId:guid}/istqb-metrics")]
+        [HasPermission("DASHBOARD_VIEW")]
+        public async Task<IActionResult> GetIstqbMetrics(Guid projectId)
+        {
+            _logger.LogInformation("GET /api/dashboard/project/{ProjectId}/istqb-metrics", projectId);
+            var metrics = await _dashboardService.GetIstqbMetricsAsync(projectId);
+            return Ok(metrics);
+        }
+
+        /// <summary>
+        /// ISTQB Fase 1: Actualiza los umbrales del Quality Gate de un proyecto. Requiere permiso PROJECT_MANAGE.
+        /// </summary>
+        [HttpPut("project/{projectId:guid}/quality-gate")]
+        [HasPermission("PROJECT_MANAGE")]
+        public async Task<IActionResult> UpdateQualityGate(Guid projectId, [FromBody] UpdateQualityGateRequest request)
+        {
+            _logger.LogInformation("PUT /api/dashboard/project/{ProjectId}/quality-gate", projectId);
+            await _dashboardService.UpdateQualityGateAsync(
+                projectId,
+                request.MinRequirementCoverage,
+                request.MinPassRate,
+                request.MaxOpenDefects,
+                request.RequireSutLinked);
+            return NoContent();
+        }
     }
+
+    public record UpdateQualityGateRequest(
+        double MinRequirementCoverage,
+        double MinPassRate,
+        int MaxOpenDefects,
+        bool RequireSutLinked
+    );
 }

@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using QAMS.Application.DTOs.Auth;
 using QAMS.Tests.IntegrationTests.Infrastructure;
@@ -10,7 +10,7 @@ using Xunit;
 
 namespace QAMS.Tests.IntegrationTests.Endpoints;
 
-[Collection("Integration tests")]
+[Collection(SharedTestCollection.Name)]
 public class AuthEndpointsTests(QamsIntegrationTestFactory factory) : IntegrationTestBase(factory)
 {
     [Fact]
@@ -96,3 +96,5 @@ public class AuthEndpointsTests(QamsIntegrationTestFactory factory) : Integratio
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }
+
+

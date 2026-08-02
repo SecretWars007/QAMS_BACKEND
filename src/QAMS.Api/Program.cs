@@ -76,7 +76,11 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 // JWT
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
 builder.Services.Configure<JwtSettings>(jwtSection);
-var jwt = jwtSection.Get<JwtSettings>()!;
+var jwt = jwtSection.Get<JwtSettings>();
+if (jwt == null || string.IsNullOrEmpty(jwt.Secret))
+{
+    throw new InvalidOperationException("La sección 'JwtSettings' o 'Secret' no están configurados en los archivos de configuración (SEC-B05).");
+}
 
 // Encryption
 var encryptionSection = builder.Configuration.GetSection("EncryptionSettings");
@@ -132,6 +136,9 @@ builder.Services.AddScoped<IDefectService, DefectService>();
 builder.Services.AddScoped<ISystemUnderTestService, SystemUnderTestService>();
 builder.Services.AddScoped<ITestPlanService, TestPlanService>();
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IExploratoryService, ExploratoryService>();
+builder.Services.AddScoped<ITestEnvironmentService, TestEnvironmentService>();
 
 // Filtros de autorización personalizados
 builder.Services.AddScoped<QAMS.Api.Filters.ApiKeyAuthorizationFilter>();
@@ -155,12 +162,15 @@ builder.Services.AddRateLimiter(options =>
 {
     options.AddFixedWindowLimiter("AuthLimit", opt =>
     {
-        opt.PermitLimit = 100;
+        // SEC-B03: Límite estricto de 5 peticiones/minuto en producción/desarrollo para evitar fuerza bruta, 100/minuto en Testing o si DISABLE_RATE_LIMIT es true
+        var isTestingOrDisabled = builder.Environment.EnvironmentName == "Testing" || Environment.GetEnvironmentVariable("DISABLE_RATE_LIMIT") == "true";
+        opt.PermitLimit = isTestingOrDisabled ? 100 : 5;
         opt.Window = TimeSpan.FromMinutes(1);
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        opt.QueueLimit = 20;
+        opt.QueueLimit = isTestingOrDisabled ? 20 : 0;
     });
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
 });
 builder.Services.AddSwaggerGen(c =>
 {
@@ -245,10 +255,22 @@ builder.Services.AddCors(o =>
                 try
                 {
                     var host = new Uri(origin).Host;
-                    return host.EndsWith(".onrender.com", StringComparison.OrdinalIgnoreCase) ||
-                           host.Equals("onrender.com", StringComparison.OrdinalIgnoreCase) ||
-                           host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
-                           host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+                    
+                    // SEC-B04: En desarrollo y pruebas se permite localhost/127.0.0.1
+                    if (builder.Environment.IsDevelopment() || builder.Environment.EnvironmentName == "Testing")
+                    {
+                        return host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                               host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+                    }
+                    
+                    // En producción, solo se permite coincidencia exacta con FRONTEND_URL configurado
+                    if (!string.IsNullOrEmpty(frontendUrl))
+                    {
+                        var allowedHost = new Uri(frontendUrl).Host;
+                        return host.Equals(allowedHost, StringComparison.OrdinalIgnoreCase);
+                    }
+                    
+                    return false;
                 }
                 catch { return false; }
             })
@@ -278,6 +300,36 @@ if (!string.IsNullOrEmpty(port))
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// SEC-B01: Cabeceras de seguridad HTTP estándar (MIME sniffing, Clickjacking, CSP, Referrer, HSTS)
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    
+    var path = context.Request.Path.Value ?? "";
+    if (path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase))
+    {
+        // Swagger UI requiere unsafe-inline
+        context.Response.Headers.Append("Content-Security-Policy",
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'");
+    }
+    else
+    {
+        context.Response.Headers.Append("Content-Security-Policy",
+            "default-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'");
+    }
+    
+    if (!app.Environment.IsDevelopment() && app.Environment.EnvironmentName != "Testing")
+    {
+        context.Response.Headers.Append("Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains; preload");
+    }
+    await next();
+});
+
 app.UseMiddleware<EncryptionMiddleware>();
 
 // Middleware para enviar Token Antiforgery (XSRF) al frontend
@@ -326,48 +378,58 @@ using (var scope = app.Services.CreateScope())
             await Task.Delay(5000); // ✅ No bloquea el thread pool (reemplaza Thread.Sleep)
         }
 
-        app.Logger.LogInformation("Iniciando aplicación de migraciones...");
-
-        // Try apply migrations; if none or fails, fall back to EnsureCreated
-        try
+        // Skip migrations completely during Testing (Integration Tests)
+        // because the Test Factory (QamsIntegrationTestFactory) handles DB schema creation
+        // via EnsureCreatedAsync() against Testcontainers.
+        if (!environment.IsEnvironment("Testing"))
         {
-            var pendingMigrations = db.Database.GetPendingMigrations();
-            if (pendingMigrations.Any())
-            {
-                app.Logger.LogInformation("Se encontraron {Count} migraciones pendientes. Aplicando...", pendingMigrations.Count());
-                db.Database.Migrate();
-                app.Logger.LogInformation("Migraciones aplicadas exitosamente.");
-            }
-            else
-            {
-                app.Logger.LogInformation("No hay migraciones pendientes.");
+            app.Logger.LogInformation("Iniciando aplicación de migraciones...");
 
-                // Si no hay migrations aplicadas (proyecto usa EnsureCreated en dev o DB vacía sin historial), crear esquema
-                var applied = db.Database.GetAppliedMigrations();
-                if (applied?.Any() != true)
+            // Try apply migrations; if none or fails, fall back to EnsureCreated
+            try
+            {
+                var pendingMigrations = db.Database.GetPendingMigrations();
+                if (pendingMigrations.Any())
                 {
-                    app.Logger.LogInformation("No se encontraron migraciones aplicadas en el historial; intentando EnsureCreated().");
+                    app.Logger.LogInformation("Se encontraron {Count} migraciones pendientes. Aplicando...", pendingMigrations.Count());
+                    db.Database.Migrate();
+                    app.Logger.LogInformation("Migraciones aplicadas exitosamente.");
+                }
+                else
+                {
+                    app.Logger.LogInformation("No hay migraciones pendientes.");
+
+                    // Si no hay migrations aplicadas (proyecto usa EnsureCreated en dev o DB vacía sin historial), crear esquema
+                    var applied = db.Database.GetAppliedMigrations();
+                    if (applied?.Any() != true)
+                    {
+                        app.Logger.LogInformation("No se encontraron migraciones aplicadas en el historial; intentando EnsureCreated().");
+                        db.Database.EnsureCreated();
+                    }
+                }
+            }
+            catch (Exception migEx)
+            {
+                app.Logger.LogWarning(migEx, "Migrate() falló. Intentando EnsureCreated() como fallback...");
+                try
+                {
                     db.Database.EnsureCreated();
+                    app.Logger.LogInformation(migEx, "EnsureCreated() completado exitosamente.");
+                }
+                catch (Exception ensureEx)
+                {
+                    app.Logger.LogError(ensureEx, "CRÍTICO: EnsureCreated() también falló. No se pudieron crear las tablas.");
+                    if (environment.IsProduction())
+                    {
+                        // En producción queremos saber si esto falla críticamente
+                        throw;
+                    }
                 }
             }
         }
-        catch (Exception migEx)
+        else
         {
-            app.Logger.LogWarning(migEx, "Migrate() falló. Intentando EnsureCreated() como fallback...");
-            try
-            {
-                db.Database.EnsureCreated();
-                app.Logger.LogInformation(migEx, "EnsureCreated() completado exitosamente.");
-            }
-            catch (Exception ensureEx)
-            {
-                app.Logger.LogError(ensureEx, "CRÍTICO: EnsureCreated() también falló. No se pudieron crear las tablas.");
-                if (environment.IsProduction())
-                {
-                    // En producción queremos saber si esto falla críticamente
-                    throw;
-                }
-            }
+            app.Logger.LogInformation("Ambiente 'Testing' detectado. Omitiendo migraciones automáticas en startup de API.");
         }
     }
     catch (Exception ex)
@@ -381,16 +443,13 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Habilitar Swagger sólo en Desarrollo o Testing
-if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Testing")
+// Habilitar Swagger siempre en pre-producción para facilitar la certificación ISTQB
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "QAMS API v1");
-        c.RoutePrefix = "swagger";
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "QAMS API v1");
+    c.RoutePrefix = "swagger";
+});
 
 app.UseStaticFiles();
 app.UseRouting();

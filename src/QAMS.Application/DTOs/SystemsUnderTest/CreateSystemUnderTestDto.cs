@@ -6,9 +6,6 @@ namespace QAMS.Application.DTOs.SystemsUnderTest
 {
     public class CreateSystemUnderTestDto
     {
-        [Required(ErrorMessage = "El ID del proyecto es obligatorio.")]
-        public Guid ProjectId { get; set; }
-
         [Required(ErrorMessage = "El nombre del sistema es obligatorio.")]
         [StringLength(150, MinimumLength = 3)]
         public string Name { get; set; } = string.Empty;

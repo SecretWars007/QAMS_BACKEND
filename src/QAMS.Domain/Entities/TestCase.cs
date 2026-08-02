@@ -21,12 +21,24 @@ namespace QAMS.Domain.Entities
         public bool IsActive { get; set; } = true;
         public int VersionNumber { get; set; } = 1;
         public bool IsLatestVersion { get; set; } = true;
+        public Guid? ParentTestCaseId { get; set; }
+        public TestCase? ParentTestCase { get; set; }
+
+        public bool IsBdd { get; set; } = false;
+        public string? BddScenario { get; set; }
 
         public decimal EstimatedTimeHours { get; set; } = 0;
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public int TestTypeId { get; set; }
         public TestType? TestType { get; set; }
+        public int? DesignTechniqueId { get; set; }
+        public TestDesignTechnique? DesignTechnique { get; set; }
+
+        // Risk-Based Testing (RBT - ISTQB)
+        public int ImpactLevel { get; set; } = 3;
+        public int LikelihoodLevel { get; set; } = 3;
+        public int RiskScore => ImpactLevel * LikelihoodLevel;
 
         // ISoftDelete
         public bool IsDeleted { get; set; } = false;

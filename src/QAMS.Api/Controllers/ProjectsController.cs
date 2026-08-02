@@ -28,6 +28,15 @@ namespace QAMS.Api.Controllers
         public async Task<IActionResult> GetAll()
         {
             _logger.LogInformation("GET /api/projects - Obteniendo todos los proyectos.");
+
+            // Si es un Tester pero NO es Administrador ni QA Lead, filtramos los proyectos
+            if (User.IsInRole("Tester") && !User.IsInRole("Administrator") && !User.IsInRole("QA Lead") && !User.IsInRole("Líder de Pruebas (Lead)"))
+            {
+                var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var userId = userIdStr != null ? Guid.Parse(userIdStr) : Guid.Empty;
+                return Ok(await _projectService.GetMyProjectsAsync(userId));
+            }
+
             return Ok(await _projectService.GetAllAsync());
         }
 
@@ -64,6 +73,7 @@ namespace QAMS.Api.Controllers
         /// <param name="dto">Datos básicos del proyecto.</param>
         /// <returns>El proyecto recién creado.</returns>
         [HttpPost]
+        [Authorize(Roles = "QA Lead,Administrator")]
         [HasPermission("PROJECTS_CREATE")]
         public async Task<IActionResult> Create([FromBody] CreateProjectDto dto)
         {
@@ -79,6 +89,7 @@ namespace QAMS.Api.Controllers
         /// <param name="dto">Nuevos datos del proyecto.</param>
         /// <returns>El proyecto actualizado.</returns>
         [HttpPut("{id:guid}")]
+        [Authorize(Roles = "QA Lead,Administrator")]
         [HasPermission("PROJECTS_UPDATE")]
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateProjectDto dto)
         {
@@ -92,6 +103,7 @@ namespace QAMS.Api.Controllers
         /// <param name="id">ID del proyecto a eliminar.</param>
         /// <returns>Sin contenido (NoContent).</returns>
         [HttpDelete("{id:guid}")]
+        [Authorize(Roles = "QA Lead,Administrator")]
         [HasPermission("PROJECTS_DELETE")]
         public async Task<IActionResult> Delete(Guid id)
         {
@@ -121,6 +133,7 @@ namespace QAMS.Api.Controllers
         /// <param name="dto">Detalles de la devolución.</param>
         /// <returns>El registro de devolución creado.</returns>
         [HttpPost("{id:guid}/devolution")]
+        [Authorize(Roles = "QA Lead,Administrator")]
         [HasPermission("PROJECTS_UPDATE")]
         public async Task<IActionResult> RegisterDevolution(Guid id, [FromBody] RegisterDevolutionDto dto)
         {
@@ -137,6 +150,7 @@ namespace QAMS.Api.Controllers
         /// <param name="dto">Detalles de la respuesta.</param>
         /// <returns>La devolución actualizada con la respuesta.</returns>
         [HttpPost("devolution/{devolutionId:guid}/response")]
+        [Authorize(Roles = "QA Lead,Administrator")]
         [HasPermission("PROJECTS_UPDATE")]
         public async Task<IActionResult> RespondDevolution(Guid devolutionId, [FromBody] RespondDevolutionDto dto)
         {

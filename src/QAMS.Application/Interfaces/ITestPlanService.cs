@@ -9,6 +9,7 @@ namespace QAMS.Application.Interfaces
         Task<TestPlanDto> GetByIdAsync(Guid id);
         Task<TestPlanDto> CreateAsync(CreateTestPlanDto dto);
         Task<TestPlanDto> UpdateAsync(Guid id, UpdateTestPlanDto dto);
+        Task ApproveAsync(Guid id, ApproveTestPlanDto dto);
         Task DeleteAsync(Guid id);
     }
 }

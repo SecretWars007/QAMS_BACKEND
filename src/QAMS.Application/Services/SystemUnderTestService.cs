@@ -18,20 +18,20 @@ namespace QAMS.Application.Services
         IProjectRepository projectRepo,
         ICatalogRepository<PlatformType> platformTypeRepo,
         IUnitOfWork uow,
+        QAMS.Domain.Ports.Services.IEmailService emailService,
+        IUserRepository userRepo,
+        ICurrentUserService currentUserService,
         ILogger<SystemUnderTestService> logger) : ISystemUnderTestService
     {
-        public async Task<IReadOnlyList<SystemUnderTestDto>> GetByProjectIdAsync(Guid projectId)
+        public async Task<IReadOnlyList<SystemUnderTestDto>> GetAllAsync()
         {
-            logger.LogInformation("Obteniendo sistemas bajo prueba para el proyecto {ProjectId}.", projectId);
-            var suts = await sutRepo.FindAsync(s => s.ProjectId == projectId);
+            logger.LogInformation("Obteniendo todos los sistemas bajo prueba.");
+            var suts = await sutRepo.FindAsync(s => !s.IsDeleted);
             foreach (var sut in suts)
             {
-                if (sut.PlatformType == null && sut.PlatformTypeId > 0)
+                if (sut.PlatformType == null && sut.PlatformTypeId > 0 && await platformTypeRepo.GetByIdAsync(sut.PlatformTypeId) is { } pt)
                 {
-                    if (await platformTypeRepo.GetByIdAsync(sut.PlatformTypeId) is { } pt)
-                    {
-                        sut.PlatformType = pt;
-                    }
+                    sut.PlatformType = pt;
                 }
             }
             return suts.Select(MapToDto).ToList();
@@ -42,18 +42,9 @@ namespace QAMS.Application.Services
             var sut = await sutRepo.GetByIdAsync(id);
             if (sut == null) return null;
 
-            if (sut.Project == null)
+            if (sut.PlatformType == null && sut.PlatformTypeId > 0 && await platformTypeRepo.GetByIdAsync(sut.PlatformTypeId) is { } pt)
             {
-                sut.Project = await projectRepo.GetByIdAsync(sut.ProjectId)
-                    ?? throw new DomainException($"El proyecto asociado {sut.ProjectId} no existe.");
-            }
-
-            if (sut.PlatformType == null && sut.PlatformTypeId > 0)
-            {
-                if (await platformTypeRepo.GetByIdAsync(sut.PlatformTypeId) is { } pt)
-                {
-                    sut.PlatformType = pt;
-                }
+                sut.PlatformType = pt;
             }
 
             return MapToDto(sut);
@@ -61,10 +52,15 @@ namespace QAMS.Application.Services
 
         public async Task<SystemUnderTestDto> CreateAsync(CreateSystemUnderTestDto dto)
         {
-            logger.LogInformation("Registrando sistema {SutName} en proyecto {ProjectId}.", dto.Name, dto.ProjectId);
+            logger.LogInformation("Registrando sistema {SutName}.", dto.Name);
 
-            var project = await projectRepo.GetByIdAsync(dto.ProjectId)
-                ?? throw new EntityNotFoundException(nameof(Project), dto.ProjectId);
+            // Validar nombre duplicado a nivel global
+            var existing = await sutRepo.FindAsync(s =>
+                s.Name.ToLower() == dto.Name.Trim().ToLower() &&
+                !s.IsDeleted);
+
+            if (existing.Any())
+                throw new DuplicateEntityException($"Ya existe un sistema bajo prueba con el nombre '{dto.Name}'.");
 
             var platformTypeId = dto.PlatformTypeId <= 0 ? 1 : dto.PlatformTypeId;
             var platformType = await platformTypeRepo.GetByIdAsync(platformTypeId)
@@ -76,7 +72,6 @@ namespace QAMS.Application.Services
             var sut = new SystemUnderTest
             {
                 Id = Guid.NewGuid(),
-                ProjectId = dto.ProjectId,
                 Name = dto.Name,
                 Description = dto.Description,
                 Version = dto.Version,
@@ -92,8 +87,10 @@ namespace QAMS.Application.Services
             await sutRepo.AddAsync(sut);
             await uow.SaveChangesAsync();
 
-            sut.Project = project;
             sut.PlatformType = platformType;
+
+            await NotifySutActionAsync(sut, "Creado", $"El Sistema Bajo Prueba '{sut.Name}' ha sido creado.");
+
             return MapToDto(sut);
         }
 
@@ -104,7 +101,19 @@ namespace QAMS.Application.Services
             var sut = await sutRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(SystemUnderTest), id);
 
-            if (dto.Name is not null) sut.Name = dto.Name;
+            // Validar nombre duplicado al actualizar (excluir el propio SUT)
+            if (dto.Name is not null)
+            {
+                var duplicate = await sutRepo.FindAsync(s =>
+                    s.Id != id &&
+                    s.Name.ToLower() == dto.Name.Trim().ToLower() &&
+                    !s.IsDeleted);
+
+                if (duplicate.Any())
+                    throw new DomainException($"Ya existe un sistema bajo prueba con el nombre '{dto.Name}'.");
+
+                sut.Name = dto.Name;
+            }
             if (dto.Description is not null) sut.Description = dto.Description;
             if (dto.Version is not null) sut.Version = dto.Version;
             if (dto.Environment is not null) sut.Environment = dto.Environment;
@@ -130,12 +139,9 @@ namespace QAMS.Application.Services
             sutRepo.Update(sut);
             await uow.SaveChangesAsync();
 
-            if (sut.Project == null)
-            {
-                sut.Project = await projectRepo.GetByIdAsync(sut.ProjectId)
-                    ?? throw new DomainException($"El proyecto asociado {sut.ProjectId} no existe.");
-            }
             sut.PlatformType = platformType;
+
+            await NotifySutActionAsync(sut, "Actualizado", $"El Sistema Bajo Prueba '{sut.Name}' ha sido actualizado.");
 
             return MapToDto(sut);
         }
@@ -146,12 +152,21 @@ namespace QAMS.Application.Services
             var sut = await sutRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(SystemUnderTest), id);
 
+            // Validar si tiene proyectos relacionados
+            var hasProjects = await projectRepo.AnyAsync(p => p.SystemUnderTestId == id && !p.IsDeleted);
+            if (hasProjects)
+            {
+                throw new DomainException($"No se puede eliminar el Sistema Bajo Prueba '{sut.Name}' porque tiene proyectos relacionados.");
+            }
+
             sut.IsDeleted = true;
             sut.DeletedAt = DateTime.UtcNow;
             sut.IsActive = false;
 
             sutRepo.Update(sut);
             await uow.SaveChangesAsync();
+
+            await NotifySutActionAsync(sut, "Eliminado", $"El Sistema Bajo Prueba '{sut.Name}' ha sido eliminado.");
         }
 
         private static void ValidateAndAssignPlatformDetails(
@@ -168,7 +183,7 @@ namespace QAMS.Application.Services
             processName = null;
 
             var code = platformType.Code.ToUpperInvariant();
-            if (code == CatalogConstants.PlatformType.Web || platformType.Id == 1)
+            if (code == CatalogConstants.PlatformTypes.Web || platformType.Id == 1)
             {
                 if (string.IsNullOrWhiteSpace(rawBaseUrl))
                 {
@@ -176,7 +191,7 @@ namespace QAMS.Application.Services
                 }
                 baseUrl = rawBaseUrl.Trim();
             }
-            else if (code == CatalogConstants.PlatformType.Desktop || platformType.Id == 2)
+            else if (code == CatalogConstants.PlatformTypes.Desktop || platformType.Id == 2)
             {
                 if (string.IsNullOrWhiteSpace(rawExecutablePath))
                 {
@@ -184,7 +199,7 @@ namespace QAMS.Application.Services
                 }
                 executablePath = rawExecutablePath.Trim();
             }
-            else if (code == CatalogConstants.PlatformType.DataProcessing || platformType.Id == 3)
+            else if (code == CatalogConstants.PlatformTypes.DataProcessing || platformType.Id == 3)
             {
                 if (string.IsNullOrWhiteSpace(rawProcessName))
                 {
@@ -198,11 +213,27 @@ namespace QAMS.Application.Services
             }
         }
 
+        private async Task NotifySutActionAsync(SystemUnderTest sut, string action, string body)
+        {
+            try
+            {
+                if (!currentUserService.UserId.HasValue) return;
+
+                var user = await userRepo.GetByIdAsync(currentUserService.UserId.Value);
+                if (user != null)
+                {
+                    await emailService.SendEmailAsync(user.Email, $"SUT {action}: {sut.Name}", body);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to send SUT notification email");
+            }
+        }
+
         private static SystemUnderTestDto MapToDto(SystemUnderTest sut) => new()
         {
             Id = sut.Id,
-            ProjectId = sut.ProjectId,
-            ProjectName = sut.Project?.Name ?? string.Empty,
             Name = sut.Name,
             Description = sut.Description,
             Version = sut.Version,

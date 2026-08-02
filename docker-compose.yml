@@ -1,6 +1,11 @@
 version: '3.8'
 name: qams-backend
 
+# ============================================================
+# Docker Compose – Desarrollo Local
+# Usa variables de entorno del archivo .env (copia de .env.example)
+# Para pre-producción usa: docker-compose.preproduccion.yml
+# ============================================================
 
 services:
   # Base de Datos PostgreSQL
@@ -8,16 +13,16 @@ services:
     image: postgres:16-alpine
     container_name: qams-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-      POSTGRES_DB: qams_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      POSTGRES_DB: ${POSTGRES_DB:-qams_db}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,19 +49,21 @@ services:
   # QAMS API Backend
   api:
     build:
-      context: c:/diplomado/QAMS
+      context: .
       dockerfile: Dockerfile
     container_name: qams-backend
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=qams_db;Username=postgres;Password=postgres123"
-      JwtSettings__Secret: "TuClaveSecretaSuperSeguraDe64CaracteresMinimoPorFavor!!2025QAMS"
-      JwtSettings__Issuer: "QAMS.Api"
-      JwtSettings__Audience: "QAMS.Client"
-      EncryptionSettings__Key: "12345678901234567890123456789012"
-      EncryptionSettings__IV: "1234567890123456"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-qams_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres123}"
+      JwtSettings__Secret: ${JWT_SECRET}
+      JwtSettings__Issuer: ${JWT_ISSUER:-QAMS.Api}
+      JwtSettings__Audience: ${JWT_AUDIENCE:-QAMS.Client}
+      EncryptionSettings__Key: ${ENCRYPTION_KEY}
+      EncryptionSettings__IV: ${ENCRYPTION_IV}
       Redis__Configuration: "redis:6379"
-      FRONTEND_URL: "http://localhost:4200"
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+      SmtpSettings__Host: ${SMTP_HOST:-smtp.gmail.com}
+      SmtpSettings__Port: ${SMTP_PORT:-587}
       SmtpSettings__Username: ${SMTP_USERNAME}
       SmtpSettings__Password: ${SMTP_PASSWORD}
       SmtpSettings__FromEmail: ${SMTP_USERNAME}

@@ -71,7 +71,30 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 .HasForeignKey(p => p.ProjectStatusId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Property(p => p.SystemUnderTestId).HasColumnName("system_under_test_id");
+            builder.HasOne(p => p.SystemUnderTest)
+                .WithMany(sut => sut.Projects)
+                .HasForeignKey(p => p.SystemUnderTestId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.Property(p => p.DevolucionesCounter).HasColumnName("devoluciones_counter").HasDefaultValue(0);
+
+            // Quality Gate thresholds — ISTQB Exit Criteria configurables por proyecto
+            builder.Property(p => p.MinRequirementCoverage)
+                .HasColumnName("min_requirement_coverage")
+                .HasColumnType("double precision")
+                .HasDefaultValue(90.0);
+            builder.Property(p => p.MinPassRate)
+                .HasColumnName("min_pass_rate")
+                .HasColumnType("double precision")
+                .HasDefaultValue(85.0);
+            builder.Property(p => p.MaxOpenDefects)
+                .HasColumnName("max_open_defects")
+                .HasDefaultValue(0);
+            builder.Property(p => p.RequireSutLinked)
+                .HasColumnName("require_sut_linked")
+                .HasDefaultValue(true);
+
         }
     }
 }

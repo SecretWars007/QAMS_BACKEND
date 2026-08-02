@@ -75,7 +75,10 @@ namespace QAMS.Application.Services
                 EstimatedTimeHours = dto.EstimatedTimeHours,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
+                ImpactLevel = dto.ImpactLevel > 0 ? dto.ImpactLevel : 3,
+                LikelihoodLevel = dto.LikelihoodLevel > 0 ? dto.LikelihoodLevel : 3,
                 TestTypeId = dto.TestTypeId > 0 ? dto.TestTypeId : 1, // Default: Funcional Manual
+                DesignTechniqueId = dto.DesignTechniqueId,
                 CreatedByUserId = currentUserService.UserId,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
@@ -179,8 +182,9 @@ namespace QAMS.Application.Services
             _ = await priorityRepo.GetByIdAsync(dto.PriorityId)
                 ?? throw new EntityNotFoundException(nameof(TestCasePriority), dto.PriorityId);
 
-            // Marcar versión antigua como obsoleta
+            // Marcar versión antigua como obsoleta y solo lectura
             oldTestCase.IsLatestVersion = false;
+            oldTestCase.IsActive = false; // Se desactiva la versión antigua
             oldTestCase.UpdatedAt = DateTime.UtcNow;
             oldTestCase.UpdatedByUserId = currentUserService.UserId;
             testCaseRepo.Update(oldTestCase);
@@ -189,6 +193,9 @@ namespace QAMS.Application.Services
             var newTestCase = new TestCase
             {
                 Id = Guid.NewGuid(),
+                ParentTestCaseId = oldTestCase.Id,
+                VersionNumber = oldTestCase.VersionNumber + 1,
+                IsLatestVersion = true,
                 ProjectId = oldTestCase.ProjectId,
                 TestSuiteId = oldTestCase.TestSuiteId,
                 Title = dto.Title,
@@ -199,10 +206,11 @@ namespace QAMS.Application.Services
                 EstimatedTimeHours = dto.EstimatedTimeHours,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
+                ImpactLevel = dto.ImpactLevel > 0 ? dto.ImpactLevel : oldTestCase.ImpactLevel,
+                LikelihoodLevel = dto.LikelihoodLevel > 0 ? dto.LikelihoodLevel : oldTestCase.LikelihoodLevel,
                 TestTypeId = dto.TestTypeId > 0 ? dto.TestTypeId : oldTestCase.TestTypeId,
+                DesignTechniqueId = dto.DesignTechniqueId,
                 IsActive = oldTestCase.IsActive,
-                VersionNumber = oldTestCase.VersionNumber + 1,
-                IsLatestVersion = true,
                 CreatedByUserId = currentUserService.UserId,
                 CreatedAt = DateTime.UtcNow
             };

@@ -58,5 +58,13 @@ namespace QAMS.Api.Controllers
             await _testPlanService.DeleteAsync(id);
             return NoContent();
         }
+
+        [HttpPost("{id}/approve")]
+        [Authorize(Roles = "QA Lead,Administrator")]
+        public async Task<IActionResult> Approve(Guid id, [FromBody] ApproveTestPlanDto dto)
+        {
+            await _testPlanService.ApproveAsync(id, dto);
+            return Ok();
+        }
     }
 }

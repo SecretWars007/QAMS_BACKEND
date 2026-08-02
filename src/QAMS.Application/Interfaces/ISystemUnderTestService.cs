@@ -8,7 +8,7 @@ namespace QAMS.Application.Interfaces
 {
     public interface ISystemUnderTestService
     {
-        Task<IReadOnlyList<SystemUnderTestDto>> GetByProjectIdAsync(Guid projectId);
+        Task<IReadOnlyList<SystemUnderTestDto>> GetAllAsync();
         Task<SystemUnderTestDto?> GetByIdAsync(Guid id);
         Task<SystemUnderTestDto> CreateAsync(CreateSystemUnderTestDto dto);
         Task<SystemUnderTestDto> UpdateAsync(Guid id, UpdateSystemUnderTestDto dto);

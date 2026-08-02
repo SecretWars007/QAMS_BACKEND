@@ -12,7 +12,6 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.ToTable("systems_under_test");
             builder.HasKey(sut => sut.Id);
             builder.Property(sut => sut.Id).HasColumnName("id");
-            builder.Property(sut => sut.ProjectId).HasColumnName("project_id").IsRequired();
             builder.Property(sut => sut.Name).HasColumnName("name").IsRequired().HasMaxLength(150);
             builder.Property(sut => sut.Description).HasColumnName("description").HasMaxLength(1000);
             builder.Property(sut => sut.Version).HasColumnName("version").HasMaxLength(50);
@@ -33,11 +32,6 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(sut => sut.UpdatedByUserId).HasColumnName("updated_by_user_id");
 
             // Relationships
-            builder.HasOne(sut => sut.Project)
-                .WithMany(p => p.SystemsUnderTest)
-                .HasForeignKey(sut => sut.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             builder.HasOne(sut => sut.PlatformType)
                 .WithMany(pt => pt.SystemsUnderTest)
                 .HasForeignKey(sut => sut.PlatformTypeId)

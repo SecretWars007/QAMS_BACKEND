@@ -29,6 +29,9 @@ namespace QAMS.Domain.Entities
         public int StatusId { get; set; }
         public TestPlanStatus? Status { get; set; }
 
+        public bool IsClosed { get; set; } = false;
+        public TestPlanApprovalLog? ApprovalLog { get; set; }
+
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
         public Guid? DeletedByUserId { get; set; }
