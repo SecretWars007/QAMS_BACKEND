@@ -22,10 +22,10 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(al => al.Comments)
                 .HasMaxLength(1000);
 
-            // Relación Uno a Uno con TestPlan
+            // Relación Uno a Muchos con TestPlan
             builder.HasOne(al => al.TestPlan)
-                .WithOne(tp => tp.ApprovalLog)
-                .HasForeignKey<TestPlanApprovalLog>(al => al.TestPlanId)
+                .WithMany(tp => tp.ApprovalLogs)
+                .HasForeignKey(al => al.TestPlanId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Relación con User (Firmante)

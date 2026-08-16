@@ -10,7 +10,7 @@ using QAMS.Domain.Ports.Repositories;
 namespace QAMS.Application.Services
 {
     public class RequirementService(
-        IGenericRepository<Requirement> requirementRepo,
+        IRequirementRepository requirementRepo,
         IProjectRepository projectRepo,
         IGenericRepository<TestCase> testCaseRepo,
         IGenericRepository<RequirementTestCase> reqTestCaseRepo,
@@ -21,8 +21,8 @@ namespace QAMS.Application.Services
         public async Task<List<RequirementDto>> GetByProjectIdAsync(Guid projectId)
         {
             logger.LogInformation("Obteniendo requisitos para el proyecto {ProjectId}.", projectId);
-            var requirements = await requirementRepo.FindAsync(r => r.ProjectId == projectId);
-            return mapper.Map<List<RequirementDto>>(requirements.OrderBy(r => r.CreatedAt).ToList());
+            var requirements = await requirementRepo.GetByProjectWithCatalogsAsync(projectId);
+            return mapper.Map<List<RequirementDto>>(requirements);
         }
 
         public async Task<RequirementDto> GetByIdAsync(Guid id)
@@ -40,6 +40,12 @@ namespace QAMS.Application.Services
             var project = await projectRepo.GetByIdAsync(projectId)
                 ?? throw new EntityNotFoundException(nameof(Project), projectId);
 
+            var existingReqs = await requirementRepo.FindAsync(r => r.ProjectId == projectId && r.Code.ToLower() == dto.Code.Trim().ToLower());
+            if (existingReqs.Any())
+            {
+                throw new DomainException($"El código '{dto.Code}' ya está en uso en este proyecto.");
+            }
+
             var requirement = mapper.Map<Requirement>(dto);
             requirement.ProjectId = projectId;
 
@@ -49,7 +55,7 @@ namespace QAMS.Application.Services
             return mapper.Map<RequirementDto>(requirement);
         }
 
-        public async Task<RequirementDto> UpdateAsync(Guid id, CreateRequirementDto dto)
+        public async Task<RequirementDto> UpdateAsync(Guid id, UpdateRequirementDto dto)
         {
             logger.LogInformation("Actualizando requisito {RequirementId}.", id);
 
@@ -63,6 +69,7 @@ namespace QAMS.Application.Services
             requirement.RequirementTypeId = dto.RequirementTypeId;
             requirement.RequirementPriorityId = dto.RequirementPriorityId;
             requirement.RequirementComplexityId = dto.RequirementComplexityId;
+            requirement.RequirementStatusId = dto.RequirementStatusId;
             requirement.Source = dto.Source;
 
             requirementRepo.Update(requirement);

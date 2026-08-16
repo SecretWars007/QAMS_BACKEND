@@ -6,5 +6,6 @@ namespace QAMS.Domain.Ports.Repositories
     public interface ITestSuiteRepository : IGenericRepository<TestSuite>
     {
         Task<IReadOnlyList<TestSuite>> GetByProjectWithTestCasesAsync(Guid projectId);
+        Task<IReadOnlyList<TestSuite>> GetByTestPlanWithTestCasesAsync(Guid testPlanId);
     }
 }

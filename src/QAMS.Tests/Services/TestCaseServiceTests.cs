@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.TestCases;
@@ -130,8 +130,7 @@ public class TestCaseServiceTests(QamsIntegrationTestFactory factory) : Integrat
             [
                 new() { Action = "Updated Step 1", StepOrder = 1, ExpectedResult = "Paso 1 pasa" },
                 new() { Action = "New Step 2", StepOrder = 2, ExpectedResult = "Paso 2 pasa" }
-            ],
-            CertifierUserIds = []
+            ]
         };
 
         // Act: llamar al endpoint HTTP PUT en lugar del servicio directamente
@@ -174,8 +173,10 @@ public class TestCaseServiceTests(QamsIntegrationTestFactory factory) : Integrat
         // Assert
         await ExecuteInScopeAsync(async db =>
         {
-            var tc = await db.TestCases.FindAsync(testCaseId);
+            var tc = await db.TestCases.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == testCaseId);
+            tc.Should().NotBeNull();
             tc!.IsActive.Should().BeFalse();
+            tc.IsDeleted.Should().BeTrue();
         });
     }
 

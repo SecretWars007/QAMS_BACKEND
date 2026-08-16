@@ -56,9 +56,19 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         /// <summary>Catálogo de tipos de plataforma para Sistemas Bajo Prueba.</summary>
         public DbSet<PlatformType> PlatformTypes => Set<PlatformType>();
 
+        public DbSet<SuiteAutomationStatus> SuiteAutomationStatuses => Set<SuiteAutomationStatus>();
+        public DbSet<Tag> Tags => Set<Tag>();
+        public DbSet<TestSuiteTag> TestSuiteTags => Set<TestSuiteTag>();
+
         // =======================================================================
         // MÓDULO ISTQB — PRUEBAS ESTÁTICAS Y TÉCNICAS DE DISEÑO
         // =======================================================================
+        public DbSet<TestStrategy> TestStrategies => Set<TestStrategy>();
+        public DbSet<TestPlanType> TestPlanTypes => Set<TestPlanType>();
+        public DbSet<TestLevel> TestLevels => Set<TestLevel>();
+        public DbSet<RiskLevel> RiskLevels => Set<RiskLevel>();
+        public DbSet<TestPlanEnvironment> TestPlanEnvironments => Set<TestPlanEnvironment>();
+
         public DbSet<ReviewType> ReviewTypes => Set<ReviewType>();
         public DbSet<ReviewStatus> ReviewStatuses => Set<ReviewStatus>();
         public DbSet<FindingType> FindingTypes => Set<FindingType>();
@@ -250,11 +260,14 @@ namespace QAMS.Infrastructure.Persistence.Configurations
 
         /// <summary>Catálogo de estados de defecto (OPEN/IN_PROGRESS/RESOLVED/CLOSED/REJECTED)</summary>
         public DbSet<DefectStatus> DefectStatuses => Set<DefectStatus>();
+        public DbSet<DefectSeverity> DefectSeverities => Set<DefectSeverity>();
 
         public DbSet<TestPlan> TestPlans => Set<TestPlan>();
         public DbSet<TestPlanApprovalLog> TestPlanApprovalLogs => Set<TestPlanApprovalLog>();
         public DbSet<TestPlanStatus> TestPlanStatuses => Set<TestPlanStatus>();
         public DbSet<TestPlanCriteria> TestPlanCriteria => Set<TestPlanCriteria>();
+        public DbSet<TestPlanMilestone> TestPlanMilestones => Set<TestPlanMilestone>();
+        public DbSet<TestPlanRisk> TestPlanRisks => Set<TestPlanRisk>();
         public DbSet<TestPlanSuite> TestPlanSuites => Set<TestPlanSuite>();
         public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
 
@@ -320,9 +333,9 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 if (typeof(ISoftDelete).IsAssignableFrom(clrType))
                 {
                     var method = typeof(QamsDbContext)
-                        .GetMethod(nameof(SetSoftDeleteFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                        .GetMethod(nameof(SetSoftDeleteFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
                         ?.MakeGenericMethod(clrType);
-                    method?.Invoke(this, [modelBuilder]);
+                    method?.Invoke(null, [modelBuilder]);
                 }
 
                 // 2. Configuración Dinámica de Navigaciones de Auditoría (CreatedBy, UpdatedBy, DeletedBy)

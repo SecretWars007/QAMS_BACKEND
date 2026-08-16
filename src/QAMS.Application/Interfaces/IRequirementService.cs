@@ -8,7 +8,7 @@ namespace QAMS.Application.Interfaces
         Task<List<RequirementDto>> GetByProjectIdAsync(Guid projectId);
         Task<RequirementDto> GetByIdAsync(Guid id);
         Task<RequirementDto> CreateAsync(Guid projectId, CreateRequirementDto dto);
-        Task<RequirementDto> UpdateAsync(Guid id, CreateRequirementDto dto);
+        Task<RequirementDto> UpdateAsync(Guid id, UpdateRequirementDto dto);
         Task DeleteAsync(Guid id);
 
         /// <summary>Vincula un caso de prueba a un requisito (trazabilidad ISTQB)</summary>

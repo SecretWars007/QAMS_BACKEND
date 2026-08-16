@@ -132,4 +132,110 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             );
         }
     }
+    public class TestStrategyConfiguration : IEntityTypeConfiguration<TestStrategy>
+    {
+        public void Configure(EntityTypeBuilder<TestStrategy> builder)
+        {
+            builder.ToTable("test_strategies");
+            builder.HasKey(c => c.Id);
+            builder.Property(c => c.Id).ValueGeneratedOnAdd();
+            builder.Property(c => c.Code).HasMaxLength(50).IsRequired();
+            builder.Property(c => c.Name).HasMaxLength(100).IsRequired();
+            builder.HasIndex(c => c.Code).IsUnique();
+
+            builder.HasData(
+                new TestStrategy { Id = 1, Code = "FUNCIONAL", Name = "Pruebas Funcionales", SortOrder = 1 },
+                new TestStrategy { Id = 2, Code = "REGRESION", Name = "Pruebas de Regresión", SortOrder = 2 },
+                new TestStrategy { Id = 3, Code = "SEGURIDAD", Name = "Pruebas de Seguridad", SortOrder = 3 },
+                new TestStrategy { Id = 4, Code = "AUTOMATIZADA", Name = "Pruebas Automatizadas", SortOrder = 4 },
+                new TestStrategy { Id = 5, Code = "RENDIMIENTO", Name = "Pruebas de Rendimiento / Carga", SortOrder = 5 },
+                new TestStrategy { Id = 6, Code = "EXPLORATORIA", Name = "Pruebas Exploratorias", SortOrder = 6 },
+                new TestStrategy { Id = 7, Code = "UAT", Name = "Pruebas de Aceptación (UAT)", SortOrder = 7 },
+                new TestStrategy { Id = 8, Code = "INTEGRACION", Name = "Pruebas de Integración", SortOrder = 8 },
+                new TestStrategy { Id = 9, Code = "MIXTA", Name = "Estrategia Mixta", SortOrder = 9 }
+            );
+        }
+    }
+
+    public class RiskLevelConfiguration : IEntityTypeConfiguration<RiskLevel>
+    {
+        public void Configure(EntityTypeBuilder<RiskLevel> builder)
+        {
+            builder.ToTable("risk_levels");
+            builder.HasKey(c => c.Id);
+            builder.Property(c => c.Id).ValueGeneratedOnAdd();
+            builder.Property(c => c.Code).HasMaxLength(50).IsRequired();
+            builder.Property(c => c.Name).HasMaxLength(100).IsRequired();
+            builder.HasIndex(c => c.Code).IsUnique();
+
+            builder.HasData(
+                new RiskLevel { Id = 1, Code = "NO_RISK", Name = "Sin Riesgo Identificado", SortOrder = 1 },
+                new RiskLevel { Id = 2, Code = "LOW", Name = "Riesgo Bajo", SortOrder = 2 },
+                new RiskLevel { Id = 3, Code = "MEDIUM", Name = "Riesgo Medio", SortOrder = 3 },
+                new RiskLevel { Id = 4, Code = "HIGH", Name = "Riesgo Alto", SortOrder = 4 },
+                new RiskLevel { Id = 5, Code = "CRITICAL", Name = "Riesgo Crítico / Bloqueante", SortOrder = 5 }
+            );
+        }
+    }
+
+    public class TestPlanEnvironmentConfiguration : IEntityTypeConfiguration<TestPlanEnvironment>
+    {
+        public void Configure(EntityTypeBuilder<TestPlanEnvironment> builder)
+        {
+            builder.ToTable("test_plan_environments");
+            builder.HasKey(c => c.Id);
+            builder.Property(c => c.Id).ValueGeneratedOnAdd();
+            builder.Property(c => c.Code).HasMaxLength(50).IsRequired();
+            builder.Property(c => c.Name).HasMaxLength(100).IsRequired();
+            builder.HasIndex(c => c.Code).IsUnique();
+
+            builder.HasData(
+                new TestPlanEnvironment { Id = 1, Code = "LOCAL", Name = "Entorno Local (Development)", SortOrder = 1 },
+                new TestPlanEnvironment { Id = 2, Code = "QA", Name = "Entorno QA / Testing", SortOrder = 2 },
+                new TestPlanEnvironment { Id = 3, Code = "STAGING", Name = "Entorno Staging / Pre-producción", SortOrder = 3 },
+                new TestPlanEnvironment { Id = 4, Code = "PROD", Name = "Entorno de Producción (Smoke Testing)", SortOrder = 4 },
+                new TestPlanEnvironment { Id = 5, Code = "MULTIPLATFORM", Name = "Entorno Multi-plataforma (Web + Mobile)", SortOrder = 5 },
+                new TestPlanEnvironment { Id = 6, Code = "CLOUD", Name = "Ambiente Cloud (AWS / GCP / Azure)", SortOrder = 6 }
+            );
+        }
+    }
+    public class TestPlanTypeConfiguration : IEntityTypeConfiguration<TestPlanType>
+    {
+        public void Configure(EntityTypeBuilder<TestPlanType> builder)
+        {
+            builder.ToTable("test_plan_types");
+            builder.HasKey(c => c.Id);
+            builder.Property(c => c.Id).ValueGeneratedOnAdd();
+            builder.Property(c => c.Code).HasMaxLength(50).IsRequired();
+            builder.Property(c => c.Name).HasMaxLength(100).IsRequired();
+            builder.HasIndex(c => c.Code).IsUnique();
+
+            builder.HasData(
+                new TestPlanType { Id = 1, Code = "MASTER", Name = "Plan Maestro de Pruebas", SortOrder = 1 },
+                new TestPlanType { Id = 2, Code = "LEVEL", Name = "Plan de Pruebas por Nivel", SortOrder = 2 },
+                new TestPlanType { Id = 3, Code = "ITERATION", Name = "Plan de Pruebas por Iteración", SortOrder = 3 }
+            );
+        }
+    }
+
+    public class TestLevelConfiguration : IEntityTypeConfiguration<TestLevel>
+    {
+        public void Configure(EntityTypeBuilder<TestLevel> builder)
+        {
+            builder.ToTable("test_levels");
+            builder.HasKey(c => c.Id);
+            builder.Property(c => c.Id).ValueGeneratedOnAdd();
+            builder.Property(c => c.Code).HasMaxLength(50).IsRequired();
+            builder.Property(c => c.Name).HasMaxLength(100).IsRequired();
+            builder.HasIndex(c => c.Code).IsUnique();
+
+            builder.HasData(
+                new TestLevel { Id = 1, Code = "UNIT", Name = "Pruebas Unitarias", SortOrder = 1 },
+                new TestLevel { Id = 2, Code = "INTEGRATION", Name = "Pruebas de Integración", SortOrder = 2 },
+                new TestLevel { Id = 3, Code = "SYSTEM", Name = "Pruebas de Sistema", SortOrder = 3 },
+                new TestLevel { Id = 4, Code = "ACCEPTANCE", Name = "Pruebas de Aceptación (UAT)", SortOrder = 4 },
+                new TestLevel { Id = 5, Code = "REGRESSION", Name = "Pruebas de Regresión", SortOrder = 5 }
+            );
+        }
+    }
 }

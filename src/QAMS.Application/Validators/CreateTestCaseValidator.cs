@@ -50,11 +50,7 @@ namespace QAMS.Application.Validators
                 .NotEmpty().WithMessage("El escenario BDD (Gherkin) es obligatorio cuando IsBdd = true.")
                 .When(x => x.IsBdd);
 
-            // Validar rango de fechas si se proporcionan
-            RuleFor(x => x)
-                .Must(x => !x.StartDate.HasValue || !x.EndDate.HasValue || x.EndDate >= x.StartDate)
-                .WithMessage("La fecha de fin no puede ser anterior a la fecha de inicio.")
-                .When(x => x.StartDate.HasValue && x.EndDate.HasValue);
+
 
             // Validar pasos si se envían
             RuleForEach(x => x.Steps)

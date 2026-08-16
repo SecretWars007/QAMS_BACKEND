@@ -23,6 +23,14 @@ namespace QAMS.Application.DTOs.Defects
         public string DefectPriorityCode { get; set; } = string.Empty;
         public string DefectPriorityName { get; set; } = string.Empty;
 
+        public int DefectSeverityId { get; set; }
+        public string DefectSeverityCode { get; set; } = string.Empty;
+        public string DefectSeverityName { get; set; } = string.Empty;
+
+        public string? EnvironmentInfo { get; set; }
+        public string? AttachmentUrl { get; set; }
+        public string? AttachmentFileName { get; set; }
+
         public int DefectStatusId { get; set; }
         public string DefectStatusCode { get; set; } = string.Empty;
         public string DefectStatusName { get; set; } = string.Empty;

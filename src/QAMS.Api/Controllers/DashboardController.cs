@@ -25,15 +25,20 @@ namespace QAMS.Api.Controllers
         /// <returns>Objeto con contadores de proyectos, casos de prueba y ejecuciones.</returns>
         [HttpGet]
         [HasPermission("DASHBOARD_VIEW")]
-        public async Task<IActionResult> GetSummary([FromQuery] Guid? userId = null)
+        public async Task<IActionResult> GetSummary(
+            [FromQuery] Guid? userId = null,
+            [FromQuery] Guid? sutId = null,
+            [FromQuery] Guid? testerUserId = null)
         {
             var currentUserIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             var currentUserId = currentUserIdStr != null ? Guid.Parse(currentUserIdStr) : Guid.Empty;
-
             var targetUserId = userId ?? currentUserId;
 
-            _logger.LogInformation("GET /api/Dashboard - Obteniendo resumen para usuario {UserId}", targetUserId);
-            var summary = await _dashboardService.GetSummaryAsync(targetUserId);
+            // Determinar si el usuario tiene rol privilegiado
+            bool isPrivileged = User.IsInRole("Administrator") || User.IsInRole("Líder de Pruebas (Lead)");
+
+            _logger.LogInformation("GET /api/Dashboard - Obteniendo resumen para usuario {UserId}. Privileged: {IsPrivileged}", targetUserId, isPrivileged);
+            var summary = await _dashboardService.GetSummaryAsync(targetUserId, isPrivileged, sutId, testerUserId);
             return Ok(summary);
         }
 

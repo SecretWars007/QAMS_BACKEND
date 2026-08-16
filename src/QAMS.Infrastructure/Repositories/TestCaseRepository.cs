@@ -25,7 +25,6 @@ namespace QAMS.Infrastructure.Repositories
                 .Include(tc => tc.TestSuite)
                 .Include(tc => tc.TestSteps.OrderBy(s => s.StepOrder))
                 .Include(tc => tc.Priority)
-                .Include(tc => tc.Certifiers).ThenInclude(c => c.User)
                 .Include(tc => tc.RequirementTestCases)
                 .FirstOrDefaultAsync(tc => tc.Id == testCaseId);
         }
@@ -41,7 +40,6 @@ namespace QAMS.Infrastructure.Repositories
                 .Include(tc => tc.TestSuite)
                 .Include(tc => tc.TestSteps.OrderBy(s => s.StepOrder))
                 .Include(tc => tc.Priority)
-                .Include(tc => tc.Certifiers).ThenInclude(c => c.User)
                 .OrderBy(tc => tc.Title)
                 .AsNoTracking()
                 .ToListAsync();
@@ -60,7 +58,7 @@ namespace QAMS.Infrastructure.Repositories
                 .Include(tc => tc.Priority)
                 .Include(tc => tc.CreatedBy)
                 .Include(tc => tc.TestType)
-                .Include(tc => tc.Certifiers).ThenInclude(c => c.User)
+                .Include(tc => tc.RequirementTestCases)
                 .OrderBy(tc => tc.Title)
                 .AsNoTracking()
                 .ToListAsync();
@@ -79,7 +77,7 @@ namespace QAMS.Infrastructure.Repositories
                 .Include(tc => tc.Priority)
                 .Include(tc => tc.CreatedBy)
                 .Include(tc => tc.TestType)
-                .Include(tc => tc.Certifiers).ThenInclude(c => c.User)
+                .Include(tc => tc.RequirementTestCases)
                 .OrderBy(tc => tc.Title)
                 .AsNoTracking()
                 .ToListAsync();

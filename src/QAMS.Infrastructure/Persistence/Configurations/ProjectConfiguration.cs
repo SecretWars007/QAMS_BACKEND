@@ -14,7 +14,8 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.HasKey(p => p.Id);
             builder.Property(p => p.Id).HasColumnName("id");
             builder.Property(p => p.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
-            builder.HasIndex(p => p.Name).IsUnique();
+            builder.HasIndex(p => p.Name).IsUnique(); // Note: Managed manually in DB with WHERE is_deleted = false
+            builder.HasQueryFilter(p => !p.IsDeleted);
             builder.Property(p => p.Description).HasColumnName("description").HasMaxLength(1000);
             builder.Property(p => p.StartDate).HasColumnName("start_date");
             builder.Property(p => p.EndDate).HasColumnName("end_date");

@@ -27,8 +27,10 @@ RUN dotnet publish "QAMS.Api.csproj" -c Release -o /app/publish /p:UseAppHost=fa
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS runtime
 WORKDIR /app
 
-# Crear usuario no privilegiado para ejecución (Seguridad)
-# (dotnet aspnet-alpine ya incluye un usuario 'app' con UID 1654 desde .NET 8+)
+# Crear directorio de uploads con permisos para el usuario app
+RUN mkdir -p /app/uploads && chown -R app:app /app/uploads
+
+# Ejecutar como usuario no privilegiado
 USER app
 
 # Copiar binarios desde el stage de build

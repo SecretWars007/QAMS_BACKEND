@@ -9,9 +9,20 @@ namespace QAMS.Infrastructure.Repositories
     public class DefectRepository(QamsDbContext context)
         : GenericRepository<Defect>(context), IDefectRepository
     {
+        public override async Task<Defect?> GetByIdAsync(Guid id)
+            => await _dbSet
+                .Include(d => d.DefectPriority)
+                .Include(d => d.DefectSeverity)
+                .Include(d => d.DefectStatus)
+                .Include(d => d.ReportedBy)
+                .Include(d => d.AssignedTo)
+                .Include(d => d.TestCase)
+                .FirstOrDefaultAsync(d => d.Id == id);
+
         public async Task<IReadOnlyList<Defect>> GetByProjectAsync(Guid projectId)
             => await _dbSet
                 .Include(d => d.DefectPriority)
+                .Include(d => d.DefectSeverity)
                 .Include(d => d.DefectStatus)
                 .Include(d => d.ReportedBy)
                 .Include(d => d.AssignedTo)
@@ -23,6 +34,7 @@ namespace QAMS.Infrastructure.Repositories
         public async Task<IReadOnlyList<Defect>> GetByTestCaseAsync(Guid testCaseId)
             => await _dbSet
                 .Include(d => d.DefectPriority)
+                .Include(d => d.DefectSeverity)
                 .Include(d => d.DefectStatus)
                 .Include(d => d.ReportedBy)
                 .Where(d => d.TestCaseId == testCaseId)
@@ -32,6 +44,7 @@ namespace QAMS.Infrastructure.Repositories
         public async Task<IReadOnlyList<Defect>> GetByTestExecutionAsync(Guid testExecutionId)
             => await _dbSet
                 .Include(d => d.DefectPriority)
+                .Include(d => d.DefectSeverity)
                 .Include(d => d.DefectStatus)
                 .Where(d => d.TestExecutionId == testExecutionId)
                 .AsNoTracking()
@@ -40,6 +53,7 @@ namespace QAMS.Infrastructure.Repositories
         public async Task<IReadOnlyList<Defect>> GetAssignedToUserAsync(Guid userId)
             => await _dbSet
                 .Include(d => d.DefectPriority)
+                .Include(d => d.DefectSeverity)
                 .Include(d => d.DefectStatus)
                 .Include(d => d.Project)
                 .Where(d => d.AssignedToUserId == userId)

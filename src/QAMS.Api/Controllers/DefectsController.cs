@@ -46,6 +46,23 @@ namespace QAMS.Api.Controllers
             return Ok(updated);
         }
 
+        [HttpPost("{id}/attachment")]
+        public async Task<IActionResult> UploadAttachment(Guid projectId, Guid id, [FromForm] IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { error = "El archivo es obligatorio." });
+
+            if (file.Length > 50 * 1024 * 1024)
+                return BadRequest(new { error = "El archivo excede el tamaño máximo de 50 MB." });
+
+            var existing = await defectService.GetByIdAsync(id);
+            if (existing == null || existing.ProjectId != projectId) return NotFound();
+
+            using var stream = file.OpenReadStream();
+            var updated = await defectService.UploadAttachmentAsync(id, stream, file.FileName, file.ContentType);
+            return Ok(updated);
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid projectId, Guid id)
         {

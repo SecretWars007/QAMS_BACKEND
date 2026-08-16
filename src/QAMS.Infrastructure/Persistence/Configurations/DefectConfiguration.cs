@@ -23,7 +23,11 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(d => d.ActualResult).HasColumnName("actual_result").HasMaxLength(2000);
             builder.Property(d => d.ExpectedResult).HasColumnName("expected_result").HasMaxLength(2000);
             builder.Property(d => d.DefectPriorityId).HasColumnName("defect_priority_id").IsRequired();
+            builder.Property(d => d.DefectSeverityId).HasColumnName("defect_severity_id").IsRequired();
             builder.Property(d => d.DefectStatusId).HasColumnName("defect_status_id").IsRequired();
+            builder.Property(d => d.EnvironmentInfo).HasColumnName("environment_info").HasMaxLength(1000);
+            builder.Property(d => d.AttachmentUrl).HasColumnName("attachment_url").HasMaxLength(1000);
+            builder.Property(d => d.AttachmentFileName).HasColumnName("attachment_file_name").HasMaxLength(300);
             builder.Property(d => d.ReportedByUserId).HasColumnName("reported_by_user_id").IsRequired();
             builder.Property(d => d.AssignedToUserId).HasColumnName("assigned_to_user_id");
             builder.Property(d => d.ResolvedAt).HasColumnName("resolved_at");
@@ -63,6 +67,12 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.HasOne(d => d.DefectPriority)
                 .WithMany(dp => dp.Defects)
                 .HasForeignKey(d => d.DefectPriorityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Relación: Defecto → Severidad
+            builder.HasOne(d => d.DefectSeverity)
+                .WithMany(ds => ds.Defects)
+                .HasForeignKey(d => d.DefectSeverityId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Relación: Defecto → Estado

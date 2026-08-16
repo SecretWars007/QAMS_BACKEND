@@ -49,6 +49,11 @@ namespace QAMS.Application.Mappings
             CreateMap<StepResultStatus, CatalogItemDto>();
             CreateMap<TaskPriority, CatalogItemDto>();
             CreateMap<TestCasePriority, CatalogItemDto>();
+            CreateMap<TestStrategy, CatalogItemDto>();
+            CreateMap<RiskLevel, CatalogItemDto>();
+            CreateMap<TestPlanEnvironment, CatalogItemDto>();
+            CreateMap<TestPlanType, CatalogItemDto>();
+            CreateMap<TestLevel, CatalogItemDto>();
         }
 
         private void ConfigureProjectMappings()
@@ -60,7 +65,19 @@ namespace QAMS.Application.Mappings
                 .ForMember(d => d.ProjectName, o => o.MapFrom(s => s.Project != null ? s.Project.Name : string.Empty))
                 .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty))
                 .ForMember(d => d.Status, o => o.MapFrom(s => s.Status != null ? new CatalogItemDto { Id = s.Status.Id, Name = s.Status.Name } : null))
+                .ForMember(d => d.TestManagerName, o => o.MapFrom(s => s.TestManager != null ? s.TestManager.FullName : string.Empty))
                 .ForMember(d => d.TestSuites, o => o.MapFrom(s => s.TestPlanSuites.Select(tps => tps.TestSuite)));
+
+            CreateMap<TestPlanMilestone, TestPlanMilestoneDto>();
+            CreateMap<TestPlanMilestoneDto, TestPlanMilestone>();
+
+            CreateMap<TestPlanRisk, TestPlanRiskDto>();
+            CreateMap<TestPlanRiskDto, TestPlanRisk>();
+
+            CreateMap<TestPlanApprovalLog, TestPlanApprovalLogDto>()
+                .ForMember(d => d.UserFullName, o => o.MapFrom(s => s.User != null ? s.User.FullName : string.Empty))
+                .ForMember(d => d.UserEmail, o => o.MapFrom(s => s.User != null ? s.User.Email : string.Empty))
+                .ForMember(d => d.SignatureDate, o => o.MapFrom(s => s.CreatedAt));
 
             CreateMap<CreateTestPlanDto, TestPlan>();
 
@@ -84,6 +101,7 @@ namespace QAMS.Application.Mappings
                 .ForMember(d => d.RequirementComplexityName, o => o.MapFrom(s => s.RequirementComplexity != null ? s.RequirementComplexity.Name : string.Empty))
                 .ForMember(d => d.RequirementStatusName, o => o.MapFrom(s => s.RequirementStatus != null ? s.RequirementStatus.Name : string.Empty));
             CreateMap<CreateRequirementDto, Requirement>();
+            CreateMap<UpdateRequirementDto, Requirement>();
 
             CreateMap<ProjectDevolution, ProjectDevolutionDto>()
                 .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty));
@@ -101,14 +119,26 @@ namespace QAMS.Application.Mappings
                 .ForMember(d => d.ImpactLevel, o => o.MapFrom(s => s.ImpactLevel))
                 .ForMember(d => d.LikelihoodLevel, o => o.MapFrom(s => s.LikelihoodLevel))
                 .ForMember(d => d.RiskScore, o => o.MapFrom(s => s.RiskScore))
-                .ForMember(d => d.CertifierNames, o => o.MapFrom(s => s.Certifiers.Where(c => c.User != null).Select(c => c.User!.FullName)))
-                .ForMember(d => d.CertifierUserIds, o => o.MapFrom(s => s.Certifiers.Select(c => c.UserId)))
+
                 .ForMember(d => d.Steps, o => o.MapFrom(s => s.TestSteps))
-                .ForMember(d => d.DesignTechniqueName, o => o.MapFrom(s => s.DesignTechnique != null ? s.DesignTechnique.Name : string.Empty));
+                .ForMember(d => d.DesignTechniqueName, o => o.MapFrom(s => s.DesignTechnique != null ? s.DesignTechnique.Name : string.Empty))
+                .ForMember(d => d.RequirementIds, o => o.MapFrom(s => s.RequirementTestCases.Select(rtc => rtc.RequirementId).ToList()))
+                .ForMember(d => d.IsBdd, o => o.MapFrom(s => s.IsBdd))
+                .ForMember(d => d.BddScenario, o => o.MapFrom(s => s.BddScenario));
 
             CreateMap<TestSuite, TestSuiteDto>()
                 .ForMember(d => d.TestCaseCount, o => o.MapFrom(s => s.TestCases.Count))
-                .ForMember(d => d.StatusName, o => o.MapFrom(s => s.Status != null ? s.Status.Name : string.Empty));
+                .ForMember(d => d.StatusName, o => o.MapFrom(s => s.Status != null ? s.Status.Name : string.Empty))
+                .ForMember(d => d.ExecutionPriorityName, o => o.MapFrom(s => s.ExecutionPriority != null ? s.ExecutionPriority.Name : string.Empty))
+                .ForMember(d => d.TestLevelName, o => o.MapFrom(s => s.TestLevel != null ? s.TestLevel.Name : string.Empty))
+                .ForMember(d => d.TestTypeName, o => o.MapFrom(s => s.TestType != null ? s.TestType.Name : string.Empty))
+                .ForMember(d => d.AutomationStatusName, o => o.MapFrom(s => s.AutomationStatus != null ? s.AutomationStatus.Name : string.Empty))
+                .ForMember(d => d.TestDesignTechniqueName, o => o.MapFrom(s => s.TestDesignTechnique != null ? s.TestDesignTechnique.Name : string.Empty))
+                .ForMember(d => d.ReviewStatusName, o => o.MapFrom(s => s.ReviewStatus != null ? s.ReviewStatus.Name : string.Empty))
+                .ForMember(d => d.TestEnvironmentName, o => o.MapFrom(s => s.TestEnvironment != null ? s.TestEnvironment.Name : string.Empty))
+                .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner != null ? s.Owner.FullName : string.Empty))
+                .ForMember(d => d.Tags, o => o.MapFrom(s => s.Tags.Where(t => t.Tag != null).Select(t => t.Tag!.Name).ToList()))
+                .ForMember(d => d.TestPlanId, o => o.MapFrom(s => s.TestPlanSuites.Select(tps => (Guid?)tps.TestPlanId).FirstOrDefault()));
 
             CreateMap<TestStep, TestStepDto>();
         }
@@ -120,13 +150,17 @@ namespace QAMS.Application.Mappings
                 .ForMember(d => d.TesterName, o => o.MapFrom(s => s.Tester != null ? s.Tester.FullName : string.Empty))
                 .ForMember(d => d.StatusName, o => o.MapFrom(s => s.Status != null ? s.Status.Name : string.Empty))
                 .ForMember(d => d.StatusCode, o => o.MapFrom(s => s.Status != null ? s.Status.Code : string.Empty))
+                .ForMember(d => d.TestPlanName, o => o.MapFrom(s => s.TestPlan != null ? s.TestPlan.Name : string.Empty))
                 .ForMember(d => d.StepResults, o => o.MapFrom(s => s.StepResults.OrderBy(sr => sr.TestStep != null ? sr.TestStep.StepOrder : 0)));
 
             CreateMap<ExecutionStepResult, StepResultDto>()
                 .ForMember(d => d.StatusName, o => o.MapFrom(s => s.Status != null ? s.Status.Name : string.Empty))
+                .ForMember(d => d.StatusCode, o => o.MapFrom(s => s.Status != null ? s.Status.Code : string.Empty))
                 .ForMember(d => d.StepOrder, o => o.MapFrom(s => s.TestStep != null ? s.TestStep.StepOrder : 0))
                 .ForMember(d => d.Action, o => o.MapFrom(s => s.TestStep != null ? s.TestStep.Action : string.Empty))
-                .ForMember(d => d.Evidences, o => o.MapFrom(s => s.Evidences));
+                .ForMember(d => d.ExpectedResult, o => o.MapFrom(s => s.TestStep != null ? s.TestStep.ExpectedResult : string.Empty))
+                .ForMember(d => d.Evidences, o => o.MapFrom(s => s.Evidences))
+                .ForMember(d => d.Observations, o => o.MapFrom(s => s.Observations));
 
             CreateMap<ExecutionStepObservation, ObservationDto>()
                 .ForMember(d => d.CreatedByUserName, o => o.MapFrom(s => s.CreatedBy != null ? s.CreatedBy.FullName : string.Empty))

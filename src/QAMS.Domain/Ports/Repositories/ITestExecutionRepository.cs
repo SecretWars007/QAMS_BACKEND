@@ -12,5 +12,6 @@ namespace QAMS.Domain.Ports.Repositories
         Task<IReadOnlyList<TestExecution>> GetByProjectAsync(Guid projectId);
         Task<Dictionary<int, int>> GetStatusCountsByProjectAsync(Guid projectId);
         Task<Dictionary<int, int>> GetStatusCountsByUserAsync(Guid userId);
+        Task<IReadOnlyList<TestExecution>> GetFilteredExecutionsAsync(Guid? testCaseId, Guid? projectId, Guid? testSuiteId, Guid? testPlanId);
     }
 }

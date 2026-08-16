@@ -10,6 +10,8 @@ using QAMS.Application.Interfaces;
 
 using QAMS.Domain.Entities;
 using QAMS.Domain.Ports.Repositories;
+using Microsoft.EntityFrameworkCore;
+using QAMS.Infrastructure.Persistence.Configurations;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -23,6 +25,7 @@ namespace QAMS.Infrastructure.Services
         IEvidenceRepository evidenceRepo,
         QAMS.Application.Interfaces.Repositories.ITestPlanRepository testPlanRepo,
         IDashboardService dashboardService,
+        QamsDbContext dbContext,
         ILogger<PdfReportService> logger) : IReportService
     {
         private readonly IProjectRepository _projectRepo = projectRepo;
@@ -31,8 +34,11 @@ namespace QAMS.Infrastructure.Services
         private readonly IEvidenceRepository _evidenceRepo = evidenceRepo;
         private readonly QAMS.Application.Interfaces.Repositories.ITestPlanRepository _testPlanRepo = testPlanRepo;
         private readonly IDashboardService _dashboardService = dashboardService;
+        private readonly QamsDbContext _db = dbContext;
         private readonly ILogger<PdfReportService> _logger = logger;
-        private readonly string _uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        private readonly string _uploadsPath =
+            Environment.GetEnvironmentVariable("UPLOADS_PATH")
+            ?? Path.Combine(AppContext.BaseDirectory, "uploads");
         private const string ColorPrimary = "#1A237E";
         private const string ColorSuccess = "#2E7D32";
         private const string ColorLightPrimary = "#E8EAF6";
@@ -1139,37 +1145,111 @@ namespace QAMS.Infrastructure.Services
         }
         public async Task<byte[]> GenerateTestSummaryReportAsync(Guid testPlanId)
         {
-            var plan = await _testPlanRepo.GetByIdWithDetailsAsync(testPlanId);
+            var plan = await _db.Set<TestPlan>()
+                .Include(tp => tp.Project)
+                .Include(tp => tp.Status)
+                .Include(tp => tp.TestManager)
+                .Include(tp => tp.Criteria)
+                .FirstOrDefaultAsync(tp => tp.Id == testPlanId);
+
             if (plan == null) return [];
+
+            // 1. Obtener ejecuciones asociadas a este plan de pruebas
+            var executions = await _db.Set<TestExecution>()
+                .Where(e => e.TestPlanId == testPlanId && !e.IsDeleted)
+                .Include(e => e.Status)
+                .ToListAsync();
+            var executionList = executions.ToList();
+            var execIds = executionList.Select(e => e.Id).ToList();
+
+            // 2. Obtener los casos de prueba que corresponden al plan a través de sus suites
+            var testCases = await _db.Set<TestCase>()
+                .Where(tc => _db.Set<TestPlanSuite>()
+                    .Where(tps => tps.TestPlanId == testPlanId)
+                    .Select(tps => tps.TestSuiteId)
+                    .Contains(tc.TestSuiteId))
+                .Where(tc => !tc.IsDeleted)
+                .ToListAsync();
+
+            // 3. Agrupar la última ejecución por caso de prueba para calcular métricas
+            var latestExecutions = executionList
+                .GroupBy(e => e.TestCaseId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.ExecutionDate).First());
+
+            int totalCases = testCases.Count;
+            int passedCount = testCases.Count(tc => latestExecutions.TryGetValue(tc.Id, out var exec) && exec.IsSuccessful());
+            int failedCount = testCases.Count(tc => latestExecutions.TryGetValue(tc.Id, out var exec) && exec.IsFailed());
+            int blockedCount = testCases.Count(tc => latestExecutions.TryGetValue(tc.Id, out var exec) && exec.Status?.Code == "BLOCKED");
+            int pendingCount = totalCases - passedCount - failedCount - blockedCount;
+            decimal compliance = totalCases > 0 ? (decimal)passedCount / totalCases * 100 : 0m;
+
+            // 4. Obtener defectos reportados durante las ejecuciones de este plan
+            var defects = new List<Defect>();
+            if (execIds.Count > 0)
+            {
+                defects = await _db.Set<Defect>()
+                    .Where(d => d.TestExecutionId != null && execIds.Contains(d.TestExecutionId.Value) && !d.IsDeleted)
+                    .Include(d => d.DefectSeverity)
+                    .Include(d => d.DefectStatus)
+                    .Include(d => d.TestCase)
+                    .ToListAsync();
+            }
+
+            int openDefects = defects.Count(d => d.DefectStatus != null && d.DefectStatus.Code != "CLOSED" && d.DefectStatus.Code != "RESOLVED");
+            int closedDefects = defects.Count - openDefects;
+
+            // 5. Determinar dictamen de liberación basado en criterios
+            bool allExitCriteriaMet = plan.Criteria
+                .Where(c => c.CriteriaType == "EXIT")
+                .All(c => c.IsMet);
+
+            // Si hay criterios de salida y todos están cumplidos, y no hay casos fallidos
+            bool isPassed = (plan.Criteria.Any(c => c.CriteriaType == "EXIT") ? allExitCriteriaMet : (compliance >= 85m)) && failedCount == 0;
+            string dictamen = isPassed ? "APROBADO PARA PRODUCCIÓN (GO FOR RELEASE)" : "RECHAZADO / CRITERIOS NO CUMPLIDOS (NO-GO)";
+            string dictamenColor = isPassed ? ColorSuccess : ColorDanger;
+            string dictamenBg = isPassed ? "#E8F5E9" : "#FFEBEE";
+
+            var generatedAt = DateTime.Now;
+            var managerName = plan.TestManager?.FullName ?? plan.Project?.Leader?.FullName ?? plan.CreatedBy?.FullName ?? "Manager de Pruebas";
 
             var document = Document.Create(container =>
             {
                 container.Page(page =>
                 {
                     page.Size(PageSizes.A4);
-                    page.Margin(1, Unit.Centimetre);
+                    page.Margin(1.2f, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(10));
+                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial"));
 
-                    page.Header().Element(c =>
-                        c.BorderBottom(1).BorderColor(ColorPrimary).PaddingBottom(5)
-                        .Row(row =>
-                        {
-                            row.RelativeItem().Column(col =>
-                            {
-                                col.Item().Text($"Test Summary Report - {plan.Name}").FontSize(18).FontColor(ColorPrimary).Bold();
-                                col.Item().Text($"Proyecto: {plan.Project?.Name}").FontSize(10).FontColor(Colors.Grey.Medium);
-                            });
-                        }));
-
-                    page.Content().PaddingVertical(10).Column(column =>
+                    // HEADER
+                    page.Header().BorderBottom(2).BorderColor(ColorPrimary).PaddingBottom(5).Row(row =>
                     {
-                        column.Spacing(20);
+                        row.RelativeItem().Column(col =>
+                        {
+                            col.Item().Text("TEST SUMMARY REPORT (ISO/IEC/IEEE 29119-3)").FontSize(16).ExtraBold().FontColor(ColorPrimary);
+                            col.Item().Text($"Plan de Pruebas: {plan.Name}").FontSize(11).Bold();
+                            col.Item().Text($"Proyecto: {plan.Project?.Name} | Emisión: {generatedAt:dd/MM/yyyy HH:mm}").FontSize(8).Italic().FontColor(ColorGrey);
+                        });
+                        row.AutoItem().Height(40).AlignCenter().Text("QAMS").FontSize(22).ExtraBold().FontColor(ColorPrimary);
+                    });
 
-                        column.Item().Text("1. Resumen Ejecutivo (Executive Summary)").FontSize(14).FontColor(ColorPrimary).Bold();
+                    page.Content().PaddingVertical(15).Column(column =>
+                    {
+                        column.Spacing(15);
+
+                        // DICTAMEN BANNER
+                        column.Item().Border(1).BorderColor(dictamenColor).Background(dictamenBg).Padding(10).Column(vBox =>
+                        {
+                            vBox.Item().AlignCenter().Text("DICTAMEN DE CERTIFICACIÓN DE PLAN").FontSize(8).Bold().FontColor(dictamenColor);
+                            vBox.Item().AlignCenter().Text(dictamen).FontSize(13).ExtraBold().FontColor(dictamenColor);
+                        });
+
+                        // 1. RESUMEN EJECUTIVO
+                        column.Item().Text("1. Resumen Ejecutivo (Executive Summary)").FontSize(12).FontColor(ColorPrimary).Bold();
                         column.Item().Text(plan.Objectives ?? "Sin objetivos definidos.");
 
-                        column.Item().Text("2. Criterios de Entrada y Salida (Entry / Exit Criteria)").FontSize(14).FontColor(ColorPrimary).Bold();
+                        // 2. CRITERIOS DE ENTRADA Y SALIDA
+                        column.Item().Text("2. Criterios de Entrada y Salida (Entry / Exit Criteria)").FontSize(12).FontColor(ColorPrimary).Bold();
                         if (plan.Criteria != null && plan.Criteria.Any())
                         {
                             column.Item().Table(table =>
@@ -1183,37 +1263,153 @@ namespace QAMS.Infrastructure.Services
 
                                 table.Header(header =>
                                 {
-                                    header.Cell().Background(ColorLightPrimary).Padding(2).Text("Tipo").Bold();
-                                    header.Cell().Background(ColorLightPrimary).Padding(2).Text("Descripción").Bold();
-                                    header.Cell().Background(ColorLightPrimary).Padding(2).Text("Estado").Bold();
+                                    header.Cell().Background(ColorLightPrimary).Padding(4).Text("Tipo").Bold().FontSize(8);
+                                    header.Cell().Background(ColorLightPrimary).Padding(4).Text("Descripción").Bold().FontSize(8);
+                                    header.Cell().Background(ColorLightPrimary).Padding(4).Text("Estado").Bold().FontSize(8);
                                 });
 
                                 foreach (var crit in plan.Criteria)
                                 {
-                                    table.Cell().BorderBottom(1).BorderColor(ColorBorder).Padding(2).Text(crit.CriteriaType);
-                                    table.Cell().BorderBottom(1).BorderColor(ColorBorder).Padding(2).Text(crit.Description);
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(crit.CriteriaType).FontSize(8);
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(crit.Description).FontSize(8);
 
                                     string estado = crit.IsMet ? "CUMPLIDO" : "PENDIENTE";
                                     string color = crit.IsMet ? ColorSuccess : ColorDanger;
 
-                                    table.Cell().BorderBottom(1).BorderColor(ColorBorder).Padding(2).Text(estado).FontColor(color).Bold();
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(estado).FontColor(color).Bold().FontSize(8);
                                 }
                             });
                         }
                         else
                         {
-                            column.Item().Text("No hay criterios definidos para este plan de pruebas.").Italic();
+                            column.Item().Text("No hay criterios definidos para este plan de pruebas.").Italic().FontSize(8).FontColor(ColorGrey);
                         }
+
+                        // 3. MÉTRICAS DE EJECUCIÓN DEL PLAN
+                        column.Item().Text("3. Resumen de Ejecución de Pruebas (Test Execution Summary)").FontSize(12).FontColor(ColorPrimary).Bold();
+                        column.Item().Row(row =>
+                        {
+                            row.RelativeItem().Border(0.5f).BorderColor(ColorBorder).Padding(6).Column(stat =>
+                            {
+                                stat.Item().AlignCenter().Text("CASOS EN PLAN").FontSize(7).FontColor(ColorGrey);
+                                stat.Item().AlignCenter().Text(totalCases.ToString()).FontSize(14).Bold();
+                            });
+                            row.RelativeItem().PaddingLeft(4).Border(0.5f).BorderColor("#C8E6C9").Background("#F1F8E9").Padding(6).Column(stat =>
+                            {
+                                stat.Item().AlignCenter().Text("APROBADOS").FontSize(7).FontColor(ColorSuccess);
+                                stat.Item().AlignCenter().Text(passedCount.ToString()).FontSize(14).Bold().FontColor(ColorSuccess);
+                            });
+                            row.RelativeItem().PaddingLeft(4).Border(0.5f).BorderColor("#FFCDD2").Background("#FFEBEE").Padding(6).Column(stat =>
+                            {
+                                stat.Item().AlignCenter().Text("FALLIDOS").FontSize(7).FontColor(ColorDanger);
+                                stat.Item().AlignCenter().Text(failedCount.ToString()).FontSize(14).Bold().FontColor(ColorDanger);
+                            });
+                            row.RelativeItem().PaddingLeft(4).Border(0.5f).BorderColor(ColorBorder).Padding(6).Column(stat =>
+                            {
+                                stat.Item().AlignCenter().Text("BLOQUEADOS").FontSize(7).FontColor(ColorGrey);
+                                stat.Item().AlignCenter().Text(blockedCount.ToString()).FontSize(14).Bold();
+                            });
+                            row.RelativeItem().PaddingLeft(4).Border(0.5f).BorderColor(ColorBorder).Padding(6).Column(stat =>
+                            {
+                                stat.Item().AlignCenter().Text("PENDIENTES").FontSize(7).FontColor(ColorGrey);
+                                stat.Item().AlignCenter().Text(pendingCount.ToString()).FontSize(14).Bold();
+                            });
+                            row.RelativeItem().PaddingLeft(4).Border(0.5f).BorderColor(ColorBorder).Padding(6).Column(stat =>
+                            {
+                                stat.Item().AlignCenter().Text("PASS RATE").FontSize(7).FontColor(ColorGrey);
+                                stat.Item().AlignCenter().Text($"{compliance:N1}%").FontSize(14).Bold().FontColor(compliance >= 85m ? ColorSuccess : ColorDanger);
+                            });
+                        });
+
+                        // 4. DETALLE DE DEFECTOS REGISTRADOS
+                        column.Item().Text("4. Resumen de Defectos (Defects & Incidents Summary)").FontSize(12).FontColor(ColorPrimary).Bold();
+                        column.Item().Text($"Total de defectos asociados a ejecuciones de este plan: {defects.Count} (Abiertos: {openDefects} | Resueltos/Cerrados: {closedDefects})").FontSize(8).FontColor(ColorGrey);
+                        
+                        if (defects.Count > 0)
+                        {
+                            column.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(80); // ID/Caso
+                                    columns.RelativeColumn(3); // Título
+                                    columns.ConstantColumn(70); // Severidad
+                                    columns.ConstantColumn(70); // Estado
+                                });
+
+                                table.Header(h =>
+                                {
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Caso/Ref").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Título del Defecto").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Severidad").Bold().FontSize(8);
+                                    h.Cell().Background(ColorLightPrimary).Padding(4).Text("Estado").Bold().FontSize(8);
+                                });
+
+                                foreach (var def in defects.Take(15)) // Mostrar hasta 15 para evitar documentos excesivamente largos
+                                {
+                                    var refCode = def.TestCase != null ? $"TC-{def.TestCase.Id.ToString()[..6].ToUpper()}" : "General";
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(refCode).FontSize(8);
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(def.Title).FontSize(8);
+                                    
+                                    string sevName = def.DefectSeverity?.Name ?? "Media";
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(sevName).FontSize(8);
+                                    
+                                    string statName = def.DefectStatus?.Name ?? "Nuevo";
+                                    table.Cell().BorderBottom(0.5f).BorderColor(ColorBorder).Padding(4).Text(statName).FontSize(8);
+                                }
+                            });
+                            if (defects.Count > 15)
+                            {
+                                column.Item().Text($"... y {defects.Count - 15} defectos adicionales documentados en el registro del proyecto.").Italic().FontSize(8).FontColor(ColorGrey);
+                            }
+                        }
+                        else
+                        {
+                            column.Item().Text("No se registraron defectos durante la ejecución de las pruebas asociadas a este plan.").Italic().FontSize(8).FontColor(ColorGrey);
+                        }
+
+                        // 5. FIRMAS DE CONFORMIDAD (ISO/IEC/IEEE 29119-3)
+                        column.Item().PaddingTop(10).Background("#F0F4FF").Border(0.5f).BorderColor(ColorPrimary).Padding(8).Column(stamp =>
+                        {
+                            stamp.Item().Row(r =>
+                            {
+                                r.RelativeItem().Text($"Documento oficial generado el: {generatedAt:dd/MM/yyyy} a las {generatedAt:HH:mm} UTC-4").FontSize(7).FontColor(ColorGrey);
+                                r.AutoItem().Text("ISO/IEC/IEEE 29119-3 COMPLIANT").FontSize(7).Bold().FontColor(ColorPrimary);
+                            });
+                            stamp.Item().PaddingTop(2).Text("Este documento constituye el Test Summary Report Oficial conforme al estándar ISO/IEC/IEEE 29119-3. Su contenido ha sido consolidado automáticamente y refleja el veredicto final del plan de pruebas.").FontSize(7).Italic().FontColor(ColorGrey);
+                        });
+
+                        column.Item().PaddingTop(20).Row(row =>
+                        {
+                            row.RelativeItem().Column(sig =>
+                            {
+                                sig.Item().AlignCenter().Text("_________________________________").FontSize(8);
+                                sig.Item().AlignCenter().Text(managerName).FontSize(8).Bold().FontColor(ColorPrimary);
+                                sig.Item().AlignCenter().Text("Responsable de Pruebas (Test Lead / Manager)").FontSize(7).FontColor(ColorGrey);
+                                sig.Item().AlignCenter().Text($"Fecha: {generatedAt:dd/MM/yyyy}").FontSize(7).FontColor(ColorGrey).Italic();
+                            });
+                            row.RelativeItem().Column(sig =>
+                            {
+                                sig.Item().AlignCenter().Text("_________________________________").FontSize(8);
+                                sig.Item().AlignCenter().Text("Líder de Desarrollo / Dev Lead").FontSize(8).Bold();
+                                sig.Item().AlignCenter().Text("Equipo de Desarrollo").FontSize(7).FontColor(ColorGrey);
+                                sig.Item().AlignCenter().Text("Fecha: ___/___/______").FontSize(7).FontColor(ColorGrey).Italic();
+                            });
+                            row.RelativeItem().Column(sig =>
+                            {
+                                sig.Item().AlignCenter().Text("_________________________________").FontSize(8);
+                                sig.Item().AlignCenter().Text("Product Owner / Cliente").FontSize(8).Bold();
+                                sig.Item().AlignCenter().Text("Aceptación Final / Liberación").FontSize(7).FontColor(ColorGrey);
+                                sig.Item().AlignCenter().Text("Fecha: ___/___/______").FontSize(7).FontColor(ColorGrey).Italic();
+                            });
+                        });
                     });
 
-                    page.Footer().Element(c =>
-                        c.AlignCenter().Text(t =>
-                        {
-                            t.Span("Página ");
-                            t.CurrentPageNumber();
-                            t.Span(" de ");
-                            t.TotalPages();
-                        }));
+                    page.Footer().AlignCenter().Text(x =>
+                    {
+                        x.Span("Test Summary Report (ISO 29119-3) - Página ");
+                        x.CurrentPageNumber();
+                    });
                 });
             });
 
@@ -1401,10 +1597,10 @@ namespace QAMS.Infrastructure.Services
                                 planInfo.Cell().Text(activePlan.Name ?? "N/A").FontSize(8);
                                 planInfo.Cell().Text("Estado:").Bold().FontSize(8);
                                 planInfo.Cell().Text(activePlan.Status?.Name ?? "N/A").FontSize(8);
-                                if (!string.IsNullOrEmpty(activePlan.TestStrategy))
+                                if (activePlan.TestStrategy != null && !string.IsNullOrEmpty(activePlan.TestStrategy.Name))
                                 {
                                     planInfo.Cell().PaddingTop(4).Text("Estrategia:").Bold().FontSize(8);
-                                    planInfo.Cell().PaddingTop(4).Text(activePlan.TestStrategy).FontSize(8);
+                                    planInfo.Cell().PaddingTop(4).Text(activePlan.TestStrategy.Name).FontSize(8);
                                     planInfo.Cell();
                                     planInfo.Cell();
                                 }

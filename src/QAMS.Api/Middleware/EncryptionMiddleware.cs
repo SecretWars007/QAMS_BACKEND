@@ -72,34 +72,45 @@ public class EncryptionMiddleware(RequestDelegate next, ILogger<EncryptionMiddle
 
         // 2. Intercept Response Body
         var originalBodyStream = context.Response.Body;
-        using var responseBody = new MemoryStream();
+        var responseBody = new MemoryStream();
         context.Response.Body = responseBody;
 
-        await _next(context);
-
-        // 3. Encrypt Response Body
-        if (context.Response.ContentType != null && context.Response.ContentType.Contains("application/json"))
+        try
         {
-            context.Response.Body = originalBodyStream;
-            responseBody.Seek(0, SeekOrigin.Begin);
-            var plainTextResponse = await new StreamReader(responseBody).ReadToEndAsync();
+            await _next(context);
 
-            if (!string.IsNullOrEmpty(plainTextResponse))
+            // 3. Encrypt Response Body
+            if (context.Response.ContentType != null && context.Response.ContentType.Contains("application/json"))
             {
-                var encryptedResponse = encryptionService.Encrypt(plainTextResponse);
-                var envelope = new EncryptionEnvelope { Data = encryptedResponse };
-                var jsonResponse = JsonSerializer.Serialize(envelope);
+                context.Response.Body = originalBodyStream;
+                responseBody.Seek(0, SeekOrigin.Begin);
+                var plainTextResponse = await new StreamReader(responseBody).ReadToEndAsync();
 
-                var responseData = Encoding.UTF8.GetBytes(jsonResponse);
-                context.Response.ContentLength = responseData.Length;
-                await context.Response.Body.WriteAsync(responseData);
+                if (!string.IsNullOrEmpty(plainTextResponse))
+                {
+                    var encryptedResponse = encryptionService.Encrypt(plainTextResponse);
+                    var envelope = new EncryptionEnvelope { Data = encryptedResponse };
+                    var jsonResponse = JsonSerializer.Serialize(envelope);
+
+                    var responseData = Encoding.UTF8.GetBytes(jsonResponse);
+                    context.Response.ContentLength = responseData.Length;
+                    await context.Response.Body.WriteAsync(responseData);
+                }
+            }
+            else
+            {
+                responseBody.Seek(0, SeekOrigin.Begin);
+                await responseBody.CopyToAsync(originalBodyStream);
+                context.Response.Body = originalBodyStream;
             }
         }
-        else
+        finally
         {
-            responseBody.Seek(0, SeekOrigin.Begin);
-            await responseBody.CopyToAsync(originalBodyStream);
-            context.Response.Body = originalBodyStream;
+            if (context.Response.Body == responseBody)
+            {
+                context.Response.Body = originalBodyStream;
+            }
+            responseBody.Dispose();
         }
     }
 

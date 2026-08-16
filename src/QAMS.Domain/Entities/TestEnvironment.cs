@@ -50,7 +50,5 @@ namespace QAMS.Domain.Entities
         public Guid? UpdatedByUserId { get; set; }
         public virtual User? UpdatedBy { get; set; }
 
-        // Planes de prueba que usan este entorno
-        public virtual ICollection<TestPlan> TestPlans { get; set; } = [];
     }
 }

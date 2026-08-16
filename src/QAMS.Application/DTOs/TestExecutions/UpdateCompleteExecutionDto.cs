@@ -8,8 +8,12 @@ namespace QAMS.Application.DTOs.TestExecutions
         [StringLength(2000, ErrorMessage = "Las notas no pueden exceder los 2000 caracteres.")]
         public string? Notes { get; set; }
 
+        public Guid? TesterId { get; set; }
+
         [Range(0, 999, ErrorMessage = "Las horas reales deben estar entre 0 y 999.")]
         public decimal? ActualTimeHours { get; set; }
+
+        public Guid? TestPlanId { get; set; }
 
         public int? GlobalStatusId { get; set; }
 

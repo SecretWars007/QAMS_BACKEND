@@ -1,0 +1,10 @@
+INSERT INTO permissions (id, code, description, module, created_at) VALUES (gen_random_uuid(), 'EXPLORATORY_VIEW', 'EXPLORATORY_VIEW', 'Exploratory', NOW());
+INSERT INTO permissions (id, code, description, module, created_at) VALUES (gen_random_uuid(), 'EXPLORATORY_CREATE', 'EXPLORATORY_CREATE', 'Exploratory', NOW());
+INSERT INTO permissions (id, code, description, module, created_at) VALUES (gen_random_uuid(), 'EXPLORATORY_UPDATE', 'EXPLORATORY_UPDATE', 'Exploratory', NOW());
+INSERT INTO permissions (id, code, description, module, created_at) VALUES (gen_random_uuid(), 'EXPLORATORY_DELETE', 'EXPLORATORY_DELETE', 'Exploratory', NOW());
+INSERT INTO permissions (id, code, description, module, created_at) VALUES (gen_random_uuid(), 'ENVIRONMENTS_VIEW', 'ENVIRONMENTS_VIEW', 'Environments', NOW());
+INSERT INTO permissions (id, code, description, module, created_at) VALUES (gen_random_uuid(), 'ENVIRONMENTS_CREATE', 'ENVIRONMENTS_CREATE', 'Environments', NOW());
+INSERT INTO permissions (id, code, description, module, created_at) VALUES (gen_random_uuid(), 'ENVIRONMENTS_UPDATE', 'ENVIRONMENTS_UPDATE', 'Environments', NOW());
+INSERT INTO permissions (id, code, description, module, created_at) VALUES (gen_random_uuid(), 'ENVIRONMENTS_DELETE', 'ENVIRONMENTS_DELETE', 'Environments', NOW());
+INSERT INTO role_permissions (role_id, permission_id, assigned_at) SELECT '33333333-3333-3333-3333-333333333333', id, NOW() FROM permissions WHERE code IN ('EXPLORATORY_VIEW','EXPLORATORY_CREATE','EXPLORATORY_UPDATE','EXPLORATORY_DELETE','ENVIRONMENTS_VIEW','ENVIRONMENTS_CREATE','ENVIRONMENTS_UPDATE','ENVIRONMENTS_DELETE') ON CONFLICT DO NOTHING;
+INSERT INTO role_permissions (role_id, permission_id, assigned_at) SELECT '11111111-1111-1111-1111-111111111111', id, NOW() FROM permissions WHERE code IN ('EXPLORATORY_VIEW','EXPLORATORY_CREATE','EXPLORATORY_UPDATE','EXPLORATORY_DELETE','ENVIRONMENTS_VIEW','ENVIRONMENTS_CREATE','ENVIRONMENTS_UPDATE','ENVIRONMENTS_DELETE') ON CONFLICT DO NOTHING;

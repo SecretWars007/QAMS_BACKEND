@@ -52,7 +52,7 @@ namespace QAMS.Api.Controllers
         /// </summary>
         [HttpPut("{id:guid}")]
         [HasPermission("PROJECTS_UPDATE")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] CreateRequirementDto dto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRequirementDto dto)
         {
             logger.LogInformation("PUT /api/requirements/{Id}", id);
             return Ok(await requirementService.UpdateAsync(id, dto));

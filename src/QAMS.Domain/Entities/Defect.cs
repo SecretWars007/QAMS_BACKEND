@@ -40,8 +40,15 @@ namespace QAMS.Domain.Entities
         public int DefectPriorityId { get; set; }
         public DefectPriority? DefectPriority { get; set; }
 
+        public int DefectSeverityId { get; set; }
+        public DefectSeverity? DefectSeverity { get; set; }
+
         public int DefectStatusId { get; set; }
         public DefectStatus? DefectStatus { get; set; }
+
+        public string? EnvironmentInfo { get; set; }
+        public string? AttachmentUrl { get; set; }
+        public string? AttachmentFileName { get; set; }
 
         // Responsables
         public Guid ReportedByUserId { get; set; }

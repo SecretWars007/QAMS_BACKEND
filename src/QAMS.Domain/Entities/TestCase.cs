@@ -16,6 +16,7 @@ namespace QAMS.Domain.Entities
         public string? Description { get; set; }
         public string Preconditions { get; set; } = string.Empty;
         public string ExpectedResult { get; set; } = string.Empty;
+        public string? Postconditions { get; set; }
         public int PriorityId { get; set; }
         public TestCasePriority? Priority { get; set; }
         public bool IsActive { get; set; } = true;
@@ -28,8 +29,6 @@ namespace QAMS.Domain.Entities
         public string? BddScenario { get; set; }
 
         public decimal EstimatedTimeHours { get; set; } = 0;
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
         public int TestTypeId { get; set; }
         public TestType? TestType { get; set; }
         public int? DesignTechniqueId { get; set; }
@@ -39,6 +38,8 @@ namespace QAMS.Domain.Entities
         public int ImpactLevel { get; set; } = 3;
         public int LikelihoodLevel { get; set; } = 3;
         public int RiskScore => ImpactLevel * LikelihoodLevel;
+
+        public int? LastCycleNumber { get; set; }
 
         // ISoftDelete
         public bool IsDeleted { get; set; } = false;
@@ -56,7 +57,6 @@ namespace QAMS.Domain.Entities
 
         public ICollection<TestStep> TestSteps { get; set; } = [];
         public ICollection<TestExecution> TestExecutions { get; set; } = [];
-        public ICollection<TestCaseCertifier> Certifiers { get; set; } = [];
 
         /// <summary>Requisitos cubiertos por este caso de prueba (M:N) — trazabilidad ISTQB</summary>
         public ICollection<RequirementTestCase> RequirementTestCases { get; set; } = [];

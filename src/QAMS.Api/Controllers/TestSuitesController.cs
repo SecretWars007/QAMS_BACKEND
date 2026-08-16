@@ -59,6 +59,19 @@ namespace QAMS.Api.Controllers
         }
 
         /// <summary>
+        /// Obtiene todas las suites de pruebas pertenecientes a un plan de pruebas. Requiere permiso PROJECTS_VIEW.
+        /// </summary>
+        /// <param name="testPlanId">ID del plan de pruebas.</param>
+        /// <returns>Lista de suites de pruebas.</returns>
+        [HttpGet("plan/{testPlanId:guid}")]
+        [HasPermission("PROJECTS_VIEW")]
+        public async Task<IActionResult> GetByTestPlan(Guid testPlanId)
+        {
+            _logger.LogInformation("GET /api/testsuites/plan/{TestPlanId}", testPlanId);
+            return Ok(await _service.GetByTestPlanIdAsync(testPlanId));
+        }
+
+        /// <summary>
         /// Actualiza el nombre o descripción de una suite. Requiere permiso PROJECTS_UPDATE.
         /// </summary>
         /// <param name="id">ID de la suite a actualizar.</param>
@@ -84,6 +97,17 @@ namespace QAMS.Api.Controllers
             _logger.LogInformation("DELETE /api/testsuites/{SuiteId}", id);
             await _service.DeleteAsync(id);
             return NoContent();
+        }
+
+        /// <summary>
+        /// Alterna el estado activo/inactivo de una suite. Requiere permiso PROJECTS_UPDATE.
+        /// </summary>
+        [HttpPatch("{id:guid}/toggle-status")]
+        [HasPermission("PROJECTS_UPDATE")]
+        public async Task<IActionResult> ToggleStatus(Guid id)
+        {
+            _logger.LogInformation("PATCH /api/testsuites/{SuiteId}/toggle-status", id);
+            return Ok(await _service.ToggleStatusAsync(id));
         }
 
         /// <summary>

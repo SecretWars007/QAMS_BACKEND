@@ -23,6 +23,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(sut => sut.IsActive).HasColumnName("is_active").HasDefaultValue(true);
 
             // Auditoría y Borrado Lógico
+            builder.HasQueryFilter(sut => !sut.IsDeleted);
             builder.Property(sut => sut.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
             builder.Property(sut => sut.DeletedAt).HasColumnName("deleted_at");
             builder.Property(sut => sut.DeletedByUserId).HasColumnName("deleted_by_user_id");

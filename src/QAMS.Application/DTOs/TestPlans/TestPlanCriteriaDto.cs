@@ -16,5 +16,8 @@ namespace QAMS.Application.DTOs.TestPlans
         public string Description { get; set; } = string.Empty;
 
         public bool IsMet { get; set; }
+
+        public string Priority { get; set; } = "MANDATORY";
+        public string Category { get; set; } = "ENVIRONMENT";
     }
 }

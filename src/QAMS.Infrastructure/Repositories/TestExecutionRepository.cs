@@ -22,6 +22,7 @@ namespace QAMS.Infrastructure.Repositories
         {
             return _dbSet
                 .Include(te => te.TestCase)
+                .Include(te => te.TestPlan)
                 .Include(te => te.Tester)
                 .Include(te => te.Status)
                 .Include(te => te.StepResults)
@@ -30,6 +31,13 @@ namespace QAMS.Infrastructure.Repositories
                     .ThenInclude(sr => sr.Status)
                 .Include(te => te.StepResults)
                     .ThenInclude(sr => sr.Evidences)
+                        .ThenInclude(ev => ev.FileType)
+                .Include(te => te.StepResults)
+                    .ThenInclude(sr => sr.Observations)
+                        .ThenInclude(ob => ob.CreatedBy)
+                .Include(te => te.StepResults)
+                    .ThenInclude(sr => sr.Observations)
+                        .ThenInclude(ob => ob.RespondedBy)
                 .Include(te => te.Evidences)
                     .ThenInclude(ev => ev.FileType)
                 .FirstOrDefaultAsync(te => te.Id == executionId);
@@ -117,6 +125,40 @@ namespace QAMS.Infrastructure.Repositories
                 .Select(g => new { StatusId = g.Key, Count = g.Count() })
                 .AsNoTracking()
                 .ToDictionaryAsync(x => x.StatusId, x => x.Count);
+        }
+
+        public async Task<IReadOnlyList<TestExecution>> GetFilteredExecutionsAsync(Guid? testCaseId, Guid? projectId, Guid? testSuiteId, Guid? testPlanId)
+        {
+            var query = _dbSet.AsQueryable();
+
+            if (testCaseId.HasValue)
+            {
+                query = query.Where(te => te.TestCaseId == testCaseId.Value);
+            }
+
+            if (projectId.HasValue)
+            {
+                query = query.Where(te => te.TestCase!.ProjectId == projectId.Value);
+            }
+
+            if (testSuiteId.HasValue)
+            {
+                query = query.Where(te => te.TestCase!.TestSuiteId == testSuiteId.Value);
+            }
+
+            if (testPlanId.HasValue)
+            {
+                query = query.Where(te => te.TestPlanId == testPlanId.Value);
+            }
+
+            return await query
+                .Include(te => te.TestCase)
+                .Include(te => te.TestPlan)
+                .Include(te => te.Tester)
+                .Include(te => te.Status)
+                .OrderByDescending(te => te.ExecutionDate)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }

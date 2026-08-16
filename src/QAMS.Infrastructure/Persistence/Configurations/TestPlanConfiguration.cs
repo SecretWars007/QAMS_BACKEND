@@ -37,6 +37,36 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 .HasForeignKey(tp => tp.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasOne(tp => tp.TestStrategy)
+                .WithMany()
+                .HasForeignKey(tp => tp.TestStrategyId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(tp => tp.RiskLevel)
+                .WithMany()
+                .HasForeignKey(tp => tp.RiskLevelId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(tp => tp.TestEnvironment)
+                .WithMany()
+                .HasForeignKey(tp => tp.TestEnvironmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(tp => tp.TestPlanType)
+                .WithMany()
+                .HasForeignKey(tp => tp.TestPlanTypeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(tp => tp.TestLevel)
+                .WithMany()
+                .HasForeignKey(tp => tp.TestLevelId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(tp => tp.TestManager)
+                .WithMany()
+                .HasForeignKey(tp => tp.TestManagerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             builder.HasQueryFilter(tp => !tp.IsDeleted);
         }
     }

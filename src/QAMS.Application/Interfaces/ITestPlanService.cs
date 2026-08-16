@@ -6,6 +6,7 @@ namespace QAMS.Application.Interfaces
     {
         Task<IEnumerable<TestPlanDto>> GetAllAsync();
         Task<IEnumerable<TestPlanDto>> GetByProjectAsync(Guid projectId);
+        Task<IEnumerable<TestPlanDto>> GetBySutAsync(Guid sutId);
         Task<TestPlanDto> GetByIdAsync(Guid id);
         Task<TestPlanDto> CreateAsync(CreateTestPlanDto dto);
         Task<TestPlanDto> UpdateAsync(Guid id, UpdateTestPlanDto dto);

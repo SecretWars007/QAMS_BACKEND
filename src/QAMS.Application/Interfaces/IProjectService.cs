@@ -8,7 +8,7 @@ namespace QAMS.Application.Interfaces
     public interface IProjectService
     {
         Task<ProjectDto> GetByIdAsync(Guid id);
-        Task<List<ProjectDto>> GetAllAsync(Guid? sutId = null);
+        Task<List<ProjectDto>> GetAllAsync(Guid? sutId = null, Guid? testerUserId = null);
         Task<ProjectDto> CreateAsync(CreateProjectDto dto);
         Task<ProjectDto> UpdateAsync(Guid id, CreateProjectDto dto);
         Task DeleteAsync(Guid id);

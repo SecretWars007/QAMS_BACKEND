@@ -7,7 +7,9 @@ namespace QAMS.Infrastructure.FileStorage
     /// <summary>Almacena archivos en disco local. OCP: reemplazable por S3.</summary>
     public class LocalFileStorageService(ILogger<LocalFileStorageService> logger) : IFileStorageService
     {
-        private readonly string _basePath = EnsureDirectory(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads"));
+        private readonly string _basePath = EnsureDirectory(
+            Environment.GetEnvironmentVariable("UPLOADS_PATH")
+            ?? Path.Combine(AppContext.BaseDirectory, "uploads"));
         private readonly ILogger<LocalFileStorageService> _logger = logger;
 
         private static string EnsureDirectory(string path)

@@ -16,9 +16,12 @@ namespace QAMS.Application.DTOs.TestPlans
         // ISTQB Fields
         public string? Scope { get; set; }
         public string? OutOfScope { get; set; }
-        public string? TestStrategy { get; set; }
-        public string? RiskAnalysis { get; set; }
-        public string? EnvironmentRequirements { get; set; }
+        public int? TestStrategyId { get; set; }
+        public int? TestPlanTypeId { get; set; }
+        public int? TestLevelId { get; set; }
+        public Guid? TestManagerId { get; set; }
+        public int? RiskLevelId { get; set; }
+        public int? TestEnvironmentId { get; set; }
         public string? TestSchedule { get; set; }
         public decimal EstimatedEffortHours { get; set; }
 
@@ -33,5 +36,7 @@ namespace QAMS.Application.DTOs.TestPlans
 
         public List<Guid>? TestSuiteIds { get; set; }
         public List<TestPlanCriteriaDto>? Criteria { get; set; }
+        public List<TestPlanMilestoneDto>? Milestones { get; set; }
+        public List<TestPlanRiskDto>? Risks { get; set; }
     }
 }

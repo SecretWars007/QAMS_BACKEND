@@ -15,6 +15,9 @@ namespace QAMS.Application.DTOs.TestExecutions
         public decimal? ActualTimeHours { get; set; }
         public DateTime ExecutionDate { get; set; }
         public DateTime? CompletedAt { get; set; }
+        public int CycleNumber { get; set; }
+        public Guid? TestPlanId { get; set; }
+        public string? TestPlanName { get; set; }
         public List<StepResultDto> StepResults { get; set; } = [];
         public List<EvidenceDto> Evidences { get; set; } = [];
     }

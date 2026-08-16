@@ -25,14 +25,14 @@ namespace QAMS.Application.DTOs.TestCases
         [StringLength(1000, ErrorMessage = "El resultado esperado no puede exceder los 1000 caracteres.")]
         public string ExpectedResult { get; set; } = string.Empty;
 
+        [StringLength(1000, ErrorMessage = "Las postcondiciones no pueden exceder los 1000 caracteres.")]
+        public string? Postconditions { get; set; }
+
         [Required(ErrorMessage = "La prioridad es obligatoria.")]
         public int PriorityId { get; set; }
 
         [Range(0, 1000, ErrorMessage = "El tiempo estimado debe estar entre 0 y 1000 horas.")]
         public decimal EstimatedTimeHours { get; set; }
-
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
 
         [Required(ErrorMessage = "El tipo de prueba es obligatorio.")]
         public int TestTypeId { get; set; }
@@ -45,8 +45,8 @@ namespace QAMS.Application.DTOs.TestCases
         public bool IsBdd { get; set; } = false;
         public string? BddScenario { get; set; }
 
-        public List<Guid> CertifierUserIds { get; set; } = [];
         public List<CreateTestStepDto> Steps { get; set; } = [];
+        public List<Guid> RequirementIds { get; set; } = [];
     }
 
     public class CreateTestStepDto

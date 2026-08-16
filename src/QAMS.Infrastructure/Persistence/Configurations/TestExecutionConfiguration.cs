@@ -13,6 +13,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.HasKey(te => te.Id);
             builder.Property(te => te.Id).HasColumnName("id");
             builder.Property(te => te.TestCaseId).HasColumnName("test_case_id");
+            builder.Property(te => te.TestPlanId).HasColumnName("test_plan_id");
             builder.Property(te => te.TesterId).HasColumnName("tester_id");
             builder.Property(te => te.StatusId).HasColumnName("status_id").IsRequired();
             builder.HasIndex(te => te.StatusId).HasDatabaseName("ix_test_executions_status_id");
@@ -20,6 +21,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(te => te.ActualTimeHours).HasColumnName("actual_time_hours").HasColumnType("numeric(5,2)");
             builder.Property(te => te.ExecutionDate).HasColumnName("execution_date");
             builder.Property(te => te.CompletedAt).HasColumnName("completed_at");
+            builder.Property(te => te.CycleNumber).HasColumnName("cycle_number").IsRequired();
 
             // Auditoría y Borrado Lógico
             builder.Property(te => te.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
@@ -40,6 +42,11 @@ namespace QAMS.Infrastructure.Persistence.Configurations
                 .WithMany(tc => tc.TestExecutions)
                 .HasForeignKey(te => te.TestCaseId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(te => te.TestPlan)
+                .WithMany()
+                .HasForeignKey(te => te.TestPlanId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             builder.HasOne(te => te.Tester)
                 .WithMany(u => u.TestExecutions)

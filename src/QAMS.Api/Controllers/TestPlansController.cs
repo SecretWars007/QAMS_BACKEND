@@ -32,6 +32,13 @@ namespace QAMS.Api.Controllers
             return Ok(plans);
         }
 
+        [HttpGet("sut/{sutId}")]
+        public async Task<ActionResult<IEnumerable<TestPlanDto>>> GetBySut(Guid sutId)
+        {
+            var plans = await _testPlanService.GetBySutAsync(sutId);
+            return Ok(plans);
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<TestPlanDto>> GetById(Guid id)
         {

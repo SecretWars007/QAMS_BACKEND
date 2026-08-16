@@ -23,6 +23,9 @@ namespace QAMS.Domain.Entities
 
         public bool IsMet { get; set; } = false;
 
+        public string Priority { get; set; } = "MANDATORY"; // MANDATORY, DESIRABLE
+        public string Category { get; set; } = "ENVIRONMENT"; // ENVIRONMENT, COVERAGE, DEFECTS, DOCUMENTATION
+
         // IAuditable
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public Guid? CreatedByUserId { get; set; }

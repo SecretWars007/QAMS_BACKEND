@@ -11,6 +11,7 @@ namespace QAMS.Application.Interfaces
         Task<TestExecutionDto> GetByIdAsync(Guid id);
         Task<List<TestExecutionDto>> GetByTestCaseAsync(Guid testCaseId);
         Task<List<TestExecutionDto>> GetByTesterAsync(Guid testerId);
+        Task<List<TestExecutionDto>> GetFilteredExecutionsAsync(Guid? testCaseId, Guid? projectId, Guid? testSuiteId, Guid? testPlanId);
         Task<TestExecutionDto> CreateAsync(Guid testerId, CreateTestExecutionDto dto);
         Task<TestExecutionDto> CreateCompleteAsync(Guid testerId, CreateCompleteExecutionDto dto);
         Task<TestExecutionDto> UpdateStepResultAsync(Guid executionId, UpdateStepResultDto dto);

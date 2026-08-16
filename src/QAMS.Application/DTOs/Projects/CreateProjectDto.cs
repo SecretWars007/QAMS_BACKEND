@@ -13,7 +13,7 @@ namespace QAMS.Application.DTOs.Projects
         public Guid? LeaderId { get; set; }
         public int ProjectPriorityId { get; set; } = 2; // Default: Medium (Assuming 2 is Medium based on seed)
         public int ProjectStatusId { get; set; }
-        public Guid? SystemUnderTestId { get; set; }
+        public Guid SystemUnderTestId { get; set; }
         public List<Guid>? TesterIds { get; set; }
     }
 }

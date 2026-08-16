@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -165,7 +165,7 @@ public class UserServiceTests(QamsIntegrationTestFactory factory) : IntegrationT
         // Assert
         await ExecuteInScopeAsync(async db =>
         {
-            var updatedUser = await db.Users.FindAsync(targetUser.Id);
+            var updatedUser = await db.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == targetUser.Id);
             updatedUser!.IsActive.Should().BeFalse();
             updatedUser.IsDeleted.Should().BeTrue();
         });

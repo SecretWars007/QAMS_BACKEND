@@ -451,6 +451,13 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
+var uploadsPath = Environment.GetEnvironmentVariable("UPLOADS_PATH") ?? Path.Combine(AppContext.BaseDirectory, "uploads");
+if (!Directory.Exists(uploadsPath)) Directory.CreateDirectory(uploadsPath);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
 app.UseStaticFiles();
 app.UseRouting();
 app.UseRateLimiter();

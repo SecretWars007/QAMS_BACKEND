@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -22,7 +22,23 @@ public class ProjectServiceTests(QamsIntegrationTestFactory factory) : Integrati
         return scope.ServiceProvider.GetRequiredService<IProjectService>();
     }
 
-    private async Task<(Guid projectId, User owner)> CreateTestProjectAsync(string name)
+    private async Task<Guid> CreateSystemUnderTestAsync()
+    {
+        var sutId = Guid.NewGuid();
+        await ExecuteInScopeAsync(async db =>
+        {
+            db.SystemsUnderTest.Add(new SystemUnderTest
+            {
+                Id = sutId,
+                Name = $"SUT {Guid.NewGuid():N}",
+                IsActive = true
+            });
+            await db.SaveChangesAsync();
+        });
+        return sutId;
+    }
+
+    private async Task<(Guid projectId, User owner)> CreateTestProjectAsync(string name, Guid? sutId = null)
     {
         var user = await CreateTestUserAsync("proj_owner");
         var projectId = Guid.NewGuid();
@@ -36,7 +52,8 @@ public class ProjectServiceTests(QamsIntegrationTestFactory factory) : Integrati
                 IsActive = true,
                 CreatedByUserId = user.Id,
                 ProjectStatusId = 1,
-                ProjectPriorityId = 1
+                ProjectPriorityId = 1,
+                SystemUnderTestId = sutId
             });
             await db.SaveChangesAsync();
         });
@@ -81,12 +98,13 @@ public class ProjectServiceTests(QamsIntegrationTestFactory factory) : Integrati
     {
         // Arrange
         var uniqueName = $"Duplicate Project {Guid.NewGuid():N}";
-        await CreateTestProjectAsync(uniqueName);
+        var sutId = await CreateSystemUnderTestAsync();
+        await CreateTestProjectAsync(uniqueName, sutId);
 
         using var scope = Factory.Services.CreateScope();
         var service = GetService(scope);
 
-        var dto = new CreateProjectDto { Name = uniqueName, ProjectStatusId = 1, ProjectPriorityId = 1 };
+        var dto = new CreateProjectDto { Name = uniqueName, ProjectStatusId = 1, ProjectPriorityId = 1, SystemUnderTestId = sutId };
 
         // Act & Assert
         await Assert.ThrowsAsync<DomainException>(() => service.CreateAsync(dto));
@@ -98,6 +116,7 @@ public class ProjectServiceTests(QamsIntegrationTestFactory factory) : Integrati
         // Arrange â€” necesitamos un usuario autenticado para CurrentUserService
         var testerUser = await CreateTestUserAsync("proj_tester_create", "Tester");
         var uniqueName = $"New Integration Project {Guid.NewGuid():N}";
+        var sutId = await CreateSystemUnderTestAsync();
 
         var dto = new CreateProjectDto
         {
@@ -105,6 +124,7 @@ public class ProjectServiceTests(QamsIntegrationTestFactory factory) : Integrati
             Description = "Test",
             ProjectStatusId = 1,
             ProjectPriorityId = 1,
+            SystemUnderTestId = sutId,
             TesterIds = [testerUser.Id]
         };
 
@@ -145,7 +165,7 @@ public class ProjectServiceTests(QamsIntegrationTestFactory factory) : Integrati
         // Assert
         await ExecuteInScopeAsync(async db =>
         {
-            var project = await db.Projects.FindAsync(projectId);
+            var project = await db.Projects.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == projectId);
             project!.IsActive.Should().BeFalse();
         });
     }
@@ -155,10 +175,11 @@ public class ProjectServiceTests(QamsIntegrationTestFactory factory) : Integrati
     {
         // Arrange
         var originalName = $"Original Project {Guid.NewGuid():N}";
-        var (projectId, _) = await CreateTestProjectAsync(originalName);
+        var sutId = await CreateSystemUnderTestAsync();
+        var (projectId, _) = await CreateTestProjectAsync(originalName, sutId);
 
         var updatedName = $"Updated Project {Guid.NewGuid():N}";
-        var dto = new CreateProjectDto { Name = updatedName, ProjectStatusId = 1, ProjectPriorityId = 1 };
+        var dto = new CreateProjectDto { Name = updatedName, ProjectStatusId = 1, ProjectPriorityId = 1, SystemUnderTestId = sutId };
 
         using var scope = Factory.Services.CreateScope();
         var service = GetService(scope);

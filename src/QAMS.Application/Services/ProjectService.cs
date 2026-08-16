@@ -32,12 +32,15 @@ namespace QAMS.Application.Services
             return mapper.Map<ProjectDto>(project);
         }
 
-        public async Task<List<ProjectDto>> GetAllAsync(Guid? sutId = null)
+        public async Task<List<ProjectDto>> GetAllAsync(Guid? sutId = null, Guid? testerUserId = null)
         {
-            logger.LogInformation("Obteniendo todos los proyectos activos con detalles. SutId: {SutId}", sutId);
+            logger.LogInformation("Obteniendo todos los proyectos activos con detalles. SutId: {SutId}, TesterUserId: {TesterUserId}", sutId, testerUserId);
             try
             {
-                var projects = await projectRepo.FindWithDetailsAsync(p => p.IsActive && (!sutId.HasValue || p.SystemUnderTestId == sutId.Value));
+                var projects = await projectRepo.FindWithDetailsAsync(p => p.IsActive 
+                    && (!sutId.HasValue || p.SystemUnderTestId == sutId.Value)
+                    && (!testerUserId.HasValue || p.ProjectTesters.Any(pt => pt.UserId == testerUserId.Value))
+                );
                 return mapper.Map<List<ProjectDto>>(projects);
             }
             catch (Exception ex)
@@ -51,7 +54,8 @@ namespace QAMS.Application.Services
         {
             logger.LogInformation("Creando proyecto '{Name}'. UserID: {UserId}", dto.Name, currentUserService.UserId);
 
-            if (await projectRepo.AnyAsync(p => p.Name == dto.Name))
+            var existing = await projectRepo.FindAsync(p => p.Name.ToLower() == dto.Name.Trim().ToLower() && !p.IsDeleted && p.IsActive);
+            if (existing.Any())
                 throw new DomainException($"El proyecto '{dto.Name}' ya existe.");
 
             var project = new Project
@@ -102,6 +106,13 @@ namespace QAMS.Application.Services
             var project = await projectRepo.GetWithDetailsAsync(id)
                 ?? throw new EntityNotFoundException(nameof(Project), id);
 
+            if (dto.Name != null)
+            {
+                var existing = await projectRepo.FindAsync(p => p.Name.ToLower() == dto.Name.Trim().ToLower() && p.Id != id);
+                if (existing.Any())
+                    throw new DomainException($"El proyecto '{dto.Name}' ya existe.");
+            }
+
             project.Name = dto.Name;
             project.Description = dto.Description;
             project.StartDate = dto.StartDate;
@@ -117,9 +128,23 @@ namespace QAMS.Application.Services
 
             if (dto.TesterIds != null)
             {
-                // Sincronizar testers
-                project.ProjectTesters.Clear();
-                await AssignTestersAsync(project, dto.TesterIds);
+                // Sincronizar testers evitando conflictos de tracking en EF
+                var currentTesters = project.ProjectTesters.ToList();
+                foreach (var current in currentTesters)
+                {
+                    if (!dto.TesterIds.Contains(current.UserId))
+                    {
+                        project.ProjectTesters.Remove(current);
+                    }
+                }
+
+                var currentTesterIds = project.ProjectTesters.Select(pt => pt.UserId).ToList();
+                var newTesterIds = dto.TesterIds.Where(id => !currentTesterIds.Contains(id)).ToList();
+                
+                if (newTesterIds.Any())
+                {
+                    await AssignTestersAsync(project, newTesterIds);
+                }
             }
 
             projectRepo.Update(project);
@@ -138,6 +163,8 @@ namespace QAMS.Application.Services
                 ?? throw new EntityNotFoundException(nameof(Project), id);
 
             project.IsActive = false;
+            project.IsDeleted = true;
+            project.DeletedAt = DateTime.UtcNow;
             project.UpdatedAt = DateTime.UtcNow;
             projectRepo.Update(project);
             await uow.SaveChangesAsync();

@@ -71,10 +71,11 @@ namespace QAMS.Application.Services
                 Description = dto.Description,
                 Preconditions = dto.Preconditions ?? string.Empty,
                 ExpectedResult = dto.ExpectedResult,
+                Postconditions = dto.Postconditions,
                 PriorityId = dto.PriorityId,
                 EstimatedTimeHours = dto.EstimatedTimeHours,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
+                IsBdd = dto.IsBdd,
+                BddScenario = dto.BddScenario,
                 ImpactLevel = dto.ImpactLevel > 0 ? dto.ImpactLevel : 3,
                 LikelihoodLevel = dto.LikelihoodLevel > 0 ? dto.LikelihoodLevel : 3,
                 TestTypeId = dto.TestTypeId > 0 ? dto.TestTypeId : 1, // Default: Funcional Manual
@@ -100,17 +101,19 @@ namespace QAMS.Application.Services
                 );
             }
 
-            // Agregar certificadores
-            foreach (var certifierId in dto.CertifierUserIds)
+
+
+            // Asociar Requisitos (trazabilidad)
+            if (dto.RequirementIds != null)
             {
-                testCase.Certifiers.Add(
-                    new TestCaseCertifier
+                foreach (var reqId in dto.RequirementIds)
+                {
+                    testCase.RequirementTestCases.Add(new RequirementTestCase
                     {
-                        TestCaseId = testCase.Id,
-                        UserId = certifierId,
-                        AssignedAt = DateTime.UtcNow
-                    }
-                );
+                        RequirementId = reqId,
+                        TestCaseId = testCase.Id
+                    });
+                }
             }
 
             await testCaseRepo.AddAsync(testCase);
@@ -202,10 +205,11 @@ namespace QAMS.Application.Services
                 Description = dto.Description,
                 Preconditions = dto.Preconditions ?? string.Empty,
                 ExpectedResult = dto.ExpectedResult,
+                Postconditions = dto.Postconditions,
                 PriorityId = dto.PriorityId,
                 EstimatedTimeHours = dto.EstimatedTimeHours,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
+                IsBdd = dto.IsBdd,
+                BddScenario = dto.BddScenario,
                 ImpactLevel = dto.ImpactLevel > 0 ? dto.ImpactLevel : oldTestCase.ImpactLevel,
                 LikelihoodLevel = dto.LikelihoodLevel > 0 ? dto.LikelihoodLevel : oldTestCase.LikelihoodLevel,
                 TestTypeId = dto.TestTypeId > 0 ? dto.TestTypeId : oldTestCase.TestTypeId,
@@ -215,17 +219,18 @@ namespace QAMS.Application.Services
                 CreatedAt = DateTime.UtcNow
             };
 
-            // Copiar Requirements si están cargados o si hay relación
-            if (oldTestCase.RequirementTestCases != null)
+            // Asociar Requisitos (trazabilidad)
+            var reqIdsToUse = dto.RequirementIds != null && dto.RequirementIds.Count > 0
+                ? dto.RequirementIds
+                : oldTestCase.RequirementTestCases?.Select(rtc => rtc.RequirementId).ToList() ?? [];
+
+            foreach (var reqId in reqIdsToUse)
             {
-                foreach (var req in oldTestCase.RequirementTestCases)
+                newTestCase.RequirementTestCases.Add(new RequirementTestCase
                 {
-                    newTestCase.RequirementTestCases.Add(new RequirementTestCase
-                    {
-                        RequirementId = req.RequirementId,
-                        TestCaseId = newTestCase.Id
-                    });
-                }
+                    RequirementId = reqId,
+                    TestCaseId = newTestCase.Id
+                });
             }
 
             // Copiar pasos
@@ -244,21 +249,52 @@ namespace QAMS.Application.Services
                 );
             }
 
-            // Copiar certificadores
-            foreach (var userId in dto.CertifierUserIds)
-            {
-                newTestCase.Certifiers.Add(
-                    new TestCaseCertifier
-                    {
-                        TestCaseId = newTestCase.Id,
-                        UserId = userId,
-                        AssignedAt = DateTime.UtcNow
-                    }
-                );
-            }
+
 
             await testCaseRepo.AddAsync(newTestCase);
             await uow.SaveChangesAsync();
+
+            // Registrar automáticamente en Kanban la nueva versión
+            try
+            {
+                var boards = await kanbanBoardRepo.GetByProjectAsync(newTestCase.ProjectId);
+                var board = boards is { Count: > 0 } ? boards[0] : null;
+                if (board != null)
+                {
+                    var fullBoard = await kanbanBoardRepo.GetFullBoardAsync(board.Id);
+                    var todoColumn = fullBoard?.Columns.FirstOrDefault(c => c.Name == "Por Hacer");
+
+                    if (todoColumn != null)
+                    {
+                        await kanbanService.CreateTaskAsync(new QAMS.Application.DTOs.Kanban.CreateKanbanTaskDto
+                        {
+                            KanbanColumnId = todoColumn.Id,
+                            Title = newTestCase.Title + " (v" + newTestCase.VersionNumber + ")",
+                            Description = newTestCase.Description,
+                            TestCaseId = newTestCase.Id,
+                            PriorityId = 2,
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error al crear tarea Kanban para la nueva versión {TestCaseId}.", newTestCase.Id);
+            }
+
+            // Registrar ejecución automática
+            try
+            {
+                await execService.CreateAsync(currentUserService.UserId ?? Guid.Empty, new QAMS.Application.DTOs.TestExecutions.CreateTestExecutionDto
+                {
+                    TestCaseId = newTestCase.Id,
+                    Notes = "Ejecución automática al generar nueva versión."
+                });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error al crear ejecución automática para la versión {TestCaseId}.", newTestCase.Id);
+            }
 
             var created = await testCaseRepo.GetWithStepsAsync(newTestCase.Id);
             return mapper.Map<TestCaseDto>(created);
@@ -280,9 +316,7 @@ namespace QAMS.Application.Services
                 await testCaseRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestCase), id);
 
-            testCase.IsActive = false;
-            testCase.UpdatedAt = DateTime.UtcNow;
-            testCaseRepo.Update(testCase);
+            testCaseRepo.Delete(testCase);
             await uow.SaveChangesAsync();
         }
     }

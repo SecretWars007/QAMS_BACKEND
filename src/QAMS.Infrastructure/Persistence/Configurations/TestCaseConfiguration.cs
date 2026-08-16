@@ -20,6 +20,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(tc => tc.Description).HasColumnName("description").HasMaxLength(2000);
             builder.Property(tc => tc.Preconditions).HasColumnName("preconditions").HasMaxLength(1000);
             builder.Property(tc => tc.ExpectedResult).HasColumnName("expected_result").HasMaxLength(1000).IsRequired();
+            builder.Property(tc => tc.Postconditions).HasColumnName("postconditions").HasMaxLength(1000);
             builder.Property(tc => tc.PriorityId).HasColumnName("priority_id").IsRequired();
             builder.Property(tc => tc.IsActive).HasColumnName("is_active").HasDefaultValue(true);
             builder.Property(tc => tc.VersionNumber).HasColumnName("version_number").HasDefaultValue(1);
@@ -30,11 +31,10 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(tc => tc.BddScenario).HasColumnName("bdd_scenario");
 
             builder.Property(tc => tc.EstimatedTimeHours).HasColumnName("estimated_time_hours").HasColumnType("decimal(6,2)").HasDefaultValue(0);
-            builder.Property(tc => tc.StartDate).HasColumnName("start_date");
-            builder.Property(tc => tc.EndDate).HasColumnName("end_date");
             builder.Property(tc => tc.TestTypeId).HasColumnName("test_type_id").HasDefaultValue(1); // Default: Funcional Manual
             builder.Property(tc => tc.ImpactLevel).HasColumnName("impact_level").HasDefaultValue(3);
             builder.Property(tc => tc.LikelihoodLevel).HasColumnName("likelihood_level").HasDefaultValue(3);
+            builder.Property(tc => tc.LastCycleNumber).HasColumnName("last_cycle_number");
 
             // Auditoría y Borrado Lógico
             builder.Property(tc => tc.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);

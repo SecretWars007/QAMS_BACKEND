@@ -37,10 +37,18 @@ namespace QAMS.Application.DTOs.Defects
         [Range(1, int.MaxValue, ErrorMessage = "La prioridad debe ser un valor válido.")]
         public int DefectPriorityId { get; set; }
 
+        [Required(ErrorMessage = "La severidad del defecto es obligatoria.")]
+        [Range(1, int.MaxValue, ErrorMessage = "La severidad debe ser un valor válido.")]
+        public int DefectSeverityId { get; set; }
+
         /// <summary>Estado inicial: si no se especifica, se usará OPEN (Id=1)</summary>
         public int DefectStatusId { get; set; } = 1;
 
         public Guid? AssignedToUserId { get; set; }
+
+        public string? EnvironmentInfo { get; set; }
+        public string? AttachmentUrl { get; set; }
+        public string? AttachmentFileName { get; set; }
     }
 
     public class UpdateDefectDto
@@ -61,8 +69,13 @@ namespace QAMS.Application.DTOs.Defects
         public string? ExpectedResult { get; set; }
 
         public int? DefectPriorityId { get; set; }
+        public int? DefectSeverityId { get; set; }
         public int? DefectStatusId { get; set; }
         public Guid? AssignedToUserId { get; set; }
+
+        public string? EnvironmentInfo { get; set; }
+        public string? AttachmentUrl { get; set; }
+        public string? AttachmentFileName { get; set; }
 
         [StringLength(2000)]
         public string? ResolutionNotes { get; set; }

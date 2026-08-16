@@ -13,6 +13,8 @@ namespace QAMS.Domain.Entities
         public Guid Id { get; set; }
         public Guid TestCaseId { get; set; }
         public TestCase? TestCase { get; set; }
+        public Guid? TestPlanId { get; set; }
+        public TestPlan? TestPlan { get; set; }
         public Guid TesterId { get; set; }
         public User? Tester { get; set; }
         public int StatusId { get; set; }
@@ -21,6 +23,7 @@ namespace QAMS.Domain.Entities
         public decimal ActualTimeHours { get; set; } = 0m;
         public DateTime ExecutionDate { get; set; } = DateTime.UtcNow;
         public DateTime? CompletedAt { get; set; }
+        public int CycleNumber { get; set; }
 
         public ICollection<ExecutionStepResult> StepResults { get; set; } = [];
         public ICollection<Evidence> Evidences { get; set; } = [];

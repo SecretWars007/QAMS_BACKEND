@@ -20,7 +20,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
 
             // Relación con TestCase
             builder.HasOne(tc => tc.TestCase)
-                .WithMany(t => t.Certifiers)
+                .WithMany()
                 .HasForeignKey(tc => tc.TestCaseId)
                 .OnDelete(DeleteBehavior.Cascade);
 

@@ -21,7 +21,8 @@ namespace QAMS.Application.Services
         ILogger<TestSuiteService> logger,
         IEmailService emailService,
         ICurrentUserService currentUserService,
-        IUserRepository userRepo
+        IUserRepository userRepo,
+        IGenericRepository<TestPlanSuite> testPlanSuiteRepo
     ) : ITestSuiteService
     {
 
@@ -29,8 +30,13 @@ namespace QAMS.Application.Services
         {
             logger.LogInformation("Creando suite de pruebas '{Name}' para el proyecto {ProjectId}.", dto.Name, dto.ProjectId);
 
+            if (!dto.TestPlanId.HasValue || dto.TestPlanId == Guid.Empty)
+            {
+                throw new DomainException("El escenario debe estar relacionado a un plan de pruebas.");
+            }
+
             // Validar nombre duplicado en el mismo proyecto
-            var existing = await testSuiteRepo.FindAsync(s => s.ProjectId == dto.ProjectId && s.Name.ToLower() == dto.Name.ToLower());
+            var existing = await testSuiteRepo.FindAsync(s => !s.IsDeleted && s.ProjectId == dto.ProjectId && s.Name.ToLower() == dto.Name.ToLower());
             if (existing.Count > 0)
             {
                 throw new DomainException($"Ya existe una suite con el nombre '{dto.Name}' en este proyecto.");
@@ -46,8 +52,34 @@ namespace QAMS.Application.Services
                 Name = dto.Name,
                 Description = dto.Description,
                 StatusId = dto.StatusId,
+                ExecutionPriorityId = dto.ExecutionPriorityId,
+                TestLevelId = dto.TestLevelId,
+                TestTypeId = dto.TestTypeId,
+                AutomationStatusId = dto.AutomationStatusId,
+                TestDesignTechniqueId = dto.TestDesignTechniqueId,
+                ReviewStatusId = dto.ReviewStatusId,
+                TestEnvironmentId = dto.TestEnvironmentId,
+                OwnerUserId = dto.OwnerUserId,
+                Preconditions = dto.Preconditions,
+                CoverageObjective = dto.CoverageObjective,
+                EstimatedDurationHours = dto.EstimatedDurationHours,
                 CreatedAt = DateTime.UtcNow
             };
+
+            foreach (var tagId in dto.TagIds)
+            {
+                suite.Tags.Add(new TestSuiteTag { TestSuiteId = suite.Id, TagId = tagId });
+            }
+
+            if (dto.TestPlanId.HasValue)
+            {
+                suite.TestPlanSuites.Add(new TestPlanSuite
+                {
+                    TestPlanId = dto.TestPlanId.Value,
+                    TestSuiteId = suite.Id,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
 
             await testSuiteRepo.AddAsync(suite);
             await uow.SaveChangesAsync();
@@ -78,7 +110,19 @@ namespace QAMS.Application.Services
             logger.LogInformation("Obteniendo suites de pruebas para proyecto {ProjectId}.", projectId);
 
             var suites = await testSuiteRepo.GetByProjectWithTestCasesAsync(projectId);
-            return mapper.Map<List<TestSuiteDto>>(suites);
+            var dtos = mapper.Map<List<TestSuiteDto>>(suites);
+            EnrichWithMetrics(suites, dtos);
+            return dtos;
+        }
+
+        public async Task<List<TestSuiteDto>> GetByTestPlanIdAsync(Guid testPlanId)
+        {
+            logger.LogInformation("Obteniendo suites de pruebas para plan de pruebas {TestPlanId}.", testPlanId);
+
+            var suites = await testSuiteRepo.GetByTestPlanWithTestCasesAsync(testPlanId);
+            var dtos = mapper.Map<List<TestSuiteDto>>(suites);
+            EnrichWithMetrics(suites, dtos);
+            return dtos;
         }
 
         public async Task DeleteAsync(Guid id)
@@ -101,13 +145,18 @@ namespace QAMS.Application.Services
         {
             logger.LogInformation("Actualizando suite de pruebas {SuiteId}.", id);
 
+            if (!dto.TestPlanId.HasValue || dto.TestPlanId == Guid.Empty)
+            {
+                throw new DomainException("El escenario debe estar relacionado a un plan de pruebas.");
+            }
+
             var suite = await testSuiteRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestSuite), id);
 
             // Validar nombre duplicado (si cambió)
             if (!string.Equals(suite.Name, dto.Name, StringComparison.OrdinalIgnoreCase))
             {
-                var existing = await testSuiteRepo.FindAsync(s => s.ProjectId == suite.ProjectId && s.Name.ToLower() == dto.Name.ToLower());
+                var existing = await testSuiteRepo.FindAsync(s => !s.IsDeleted && s.ProjectId == suite.ProjectId && s.Name.ToLower() == dto.Name.ToLower());
                 if (existing.Count > 0)
                 {
                     throw new DomainException($"Ya existe otra suite con el nombre '{dto.Name}' en este proyecto.");
@@ -117,6 +166,56 @@ namespace QAMS.Application.Services
             suite.Name = dto.Name;
             suite.Description = dto.Description;
             suite.StatusId = dto.StatusId;
+            suite.ExecutionPriorityId = dto.ExecutionPriorityId;
+            suite.TestLevelId = dto.TestLevelId;
+            suite.TestTypeId = dto.TestTypeId;
+            suite.AutomationStatusId = dto.AutomationStatusId;
+            suite.TestDesignTechniqueId = dto.TestDesignTechniqueId;
+            suite.ReviewStatusId = dto.ReviewStatusId;
+            suite.TestEnvironmentId = dto.TestEnvironmentId;
+            suite.OwnerUserId = dto.OwnerUserId;
+            suite.Preconditions = dto.Preconditions;
+            suite.CoverageObjective = dto.CoverageObjective;
+            suite.EstimatedDurationHours = dto.EstimatedDurationHours;
+
+            // Update Tags (Clear existing and add new ones)
+            suite.Tags.Clear();
+            foreach (var tagId in dto.TagIds)
+            {
+                suite.Tags.Add(new TestSuiteTag { TestSuiteId = suite.Id, TagId = tagId });
+            }
+
+            // Sincronizar relación con Plan de Pruebas (TestPlanSuite)
+            if (dto.TestPlanId.HasValue)
+            {
+                var existingRelations = await testPlanSuiteRepo.FindAsync(tps => tps.TestSuiteId == suite.Id);
+                var targetPlanId = dto.TestPlanId.Value;
+
+                var matching = existingRelations.FirstOrDefault(tps => tps.TestPlanId == targetPlanId);
+                if (matching == null)
+                {
+                    // Si se asocia a un plan diferente, limpiamos otras relaciones existentes en este contexto
+                    foreach (var rel in existingRelations)
+                    {
+                        testPlanSuiteRepo.Delete(rel);
+                    }
+
+                    await testPlanSuiteRepo.AddAsync(new TestPlanSuite
+                    {
+                        TestPlanId = targetPlanId,
+                        TestSuiteId = suite.Id,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+            else
+            {
+                var existingRelations = await testPlanSuiteRepo.FindAsync(tps => tps.TestSuiteId == suite.Id);
+                foreach (var rel in existingRelations)
+                {
+                    testPlanSuiteRepo.Delete(rel);
+                }
+            }
 
             testSuiteRepo.Update(suite);
             await uow.SaveChangesAsync();
@@ -253,6 +352,20 @@ namespace QAMS.Application.Services
             await uow.SaveChangesAsync();
         }
 
+        public async Task<TestSuiteDto> ToggleStatusAsync(Guid id)
+        {
+            var suite = await testSuiteRepo.GetByIdAsync(id)
+                ?? throw new EntityNotFoundException(nameof(TestSuite), id);
+
+            // Toggle: 1=Pendiente(Activo) -> 3=Cerrado(Inactivo), and vice versa
+            suite.StatusId = suite.StatusId == 1 ? 3 : 1;
+
+            testSuiteRepo.Update(suite);
+            await uow.SaveChangesAsync();
+
+            return mapper.Map<TestSuiteDto>(suite);
+        }
+
         private async Task NotifyCurrentUserAsync(string subject, Func<string, string, string, string> templateFunc, string suiteName, string projectName)
         {
             try
@@ -270,6 +383,50 @@ namespace QAMS.Application.Services
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error al enviar notificación de suite a usuario logeado.");
+            }
+        }
+
+        private void EnrichWithMetrics(IEnumerable<TestSuite> suites, List<TestSuiteDto> dtos)
+        {
+            foreach (var dto in dtos)
+            {
+                var suite = suites.FirstOrDefault(s => s.Id == dto.Id);
+                if (suite == null) continue;
+
+                int passed = 0, failed = 0, blocked = 0, pending = 0;
+                DateTime? lastExecDate = null;
+
+                foreach (var tc in suite.TestCases)
+                {
+                    var lastExec = tc.TestExecutions.OrderByDescending(e => e.ExecutionDate).FirstOrDefault();
+                    
+                    if (lastExec != null)
+                    {
+                        if (lastExecDate == null || lastExec.ExecutionDate > lastExecDate)
+                        {
+                            lastExecDate = lastExec.ExecutionDate;
+                        }
+
+                        if (lastExec.IsSuccessful()) passed++;
+                        else if (lastExec.IsFailed()) failed++;
+                        else blocked++; // Or in progress
+                    }
+                    else
+                    {
+                        pending++;
+                    }
+                }
+
+                dto.PassedCount = passed;
+                dto.FailedCount = failed;
+                dto.BlockedCount = blocked;
+                dto.PendingCount = pending;
+                dto.LastExecutionDate = lastExecDate;
+                dto.DefectCount = suite.TestCases.Sum(tc => tc.Defects.Count);
+                
+                int totalCompleted = passed + failed + blocked;
+                int totalCases = suite.TestCases.Count;
+                dto.ExecutionProgress = totalCases > 0 ? (int)Math.Round((double)totalCompleted / totalCases * 100) : 0;
             }
         }
     }

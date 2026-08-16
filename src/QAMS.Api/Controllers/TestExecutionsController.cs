@@ -56,6 +56,21 @@ namespace QAMS.Api.Controllers
             => Ok(await _service.GetByTesterAsync(GetUserId()));
 
         /// <summary>
+        /// Obtiene las ejecuciones filtradas por caso, proyecto, suite o plan. Requiere permiso EXECUTIONS_VIEW.
+        /// </summary>
+        [HttpGet]
+        [HasPermission("EXECUTIONS_VIEW")]
+        public async Task<IActionResult> Get(
+            [FromQuery] Guid? testCaseId,
+            [FromQuery] Guid? projectId,
+            [FromQuery] Guid? testSuiteId,
+            [FromQuery] Guid? testPlanId)
+        {
+            var executions = await _service.GetFilteredExecutionsAsync(testCaseId, projectId, testSuiteId, testPlanId);
+            return Ok(executions);
+        }
+
+        /// <summary>
         /// Inicia una nueva ejecución para un caso de prueba. Requiere permiso EXECUTIONS_CREATE.
         /// </summary>
         /// <param name="dto">Datos para iniciar la ejecución.</param>

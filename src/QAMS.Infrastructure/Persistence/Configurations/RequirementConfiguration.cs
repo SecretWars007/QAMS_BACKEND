@@ -17,7 +17,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             builder.Property(r => r.Description).HasColumnName("description");
 
             builder.Property(r => r.Code).HasColumnName("code").HasMaxLength(100).IsRequired();
-            builder.HasIndex(r => r.Code).IsUnique();
+            builder.HasIndex(r => new { r.ProjectId, r.Code }).IsUnique();
             builder.Property(r => r.AcceptanceCriteria).HasColumnName("acceptance_criteria").HasColumnType("text");
             builder.Property(r => r.RequirementTypeId).HasColumnName("requirement_type_id").HasDefaultValue(1);
             builder.Property(r => r.RequirementPriorityId).HasColumnName("requirement_priority_id").HasDefaultValue(1);

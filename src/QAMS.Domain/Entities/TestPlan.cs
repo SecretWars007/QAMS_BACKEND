@@ -16,9 +16,25 @@ namespace QAMS.Domain.Entities
         // --- ISTQB Fields ---
         public string? Scope { get; set; }
         public string? OutOfScope { get; set; }
-        public string? TestStrategy { get; set; }
-        public string? RiskAnalysis { get; set; }
-        public string? EnvironmentRequirements { get; set; }
+
+        public int? TestStrategyId { get; set; }
+        public TestStrategy? TestStrategy { get; set; }
+
+        public int? TestPlanTypeId { get; set; }
+        public TestPlanType? TestPlanType { get; set; }
+
+        public int? TestLevelId { get; set; }
+        public TestLevel? TestLevel { get; set; }
+
+        public Guid? TestManagerId { get; set; }
+        public User? TestManager { get; set; }
+
+        public int? RiskLevelId { get; set; }
+        public RiskLevel? RiskLevel { get; set; }
+
+        public int? TestEnvironmentId { get; set; }
+        public TestPlanEnvironment? TestEnvironment { get; set; }
+
         public string? TestSchedule { get; set; }
         public decimal EstimatedEffortHours { get; set; } = 0m;
         // --------------------
@@ -30,7 +46,8 @@ namespace QAMS.Domain.Entities
         public TestPlanStatus? Status { get; set; }
 
         public bool IsClosed { get; set; } = false;
-        public TestPlanApprovalLog? ApprovalLog { get; set; }
+        
+        public ICollection<TestPlanApprovalLog> ApprovalLogs { get; set; } = [];
 
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
@@ -46,5 +63,7 @@ namespace QAMS.Domain.Entities
 
         public ICollection<TestPlanSuite> TestPlanSuites { get; set; } = [];
         public ICollection<TestPlanCriteria> Criteria { get; set; } = [];
+        public ICollection<TestPlanMilestone> Milestones { get; set; } = [];
+        public ICollection<TestPlanRisk> Risks { get; set; } = [];
     }
 }

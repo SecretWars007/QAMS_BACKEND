@@ -56,8 +56,7 @@ namespace QAMS.Application.Services
 
             // Validar nombre duplicado a nivel global
             var existing = await sutRepo.FindAsync(s =>
-                s.Name.ToLower() == dto.Name.Trim().ToLower() &&
-                !s.IsDeleted);
+                s.Name.ToLower() == dto.Name.Trim().ToLower());
 
             if (existing.Any())
                 throw new DuplicateEntityException($"Ya existe un sistema bajo prueba con el nombre '{dto.Name}'.");
@@ -153,7 +152,7 @@ namespace QAMS.Application.Services
                 ?? throw new EntityNotFoundException(nameof(SystemUnderTest), id);
 
             // Validar si tiene proyectos relacionados
-            var hasProjects = await projectRepo.AnyAsync(p => p.SystemUnderTestId == id && !p.IsDeleted);
+            var hasProjects = await projectRepo.AnyAsync(p => p.SystemUnderTestId == id);
             if (hasProjects)
             {
                 throw new DomainException($"No se puede eliminar el Sistema Bajo Prueba '{sut.Name}' porque tiene proyectos relacionados.");

@@ -24,6 +24,8 @@ namespace QAMS.Application.Services
         ICatalogRepository<StepResultStatus> stepStatusRepo,
         ICatalogRepository<EvidenceType> evidenceTypeRepo,
         IObservationRepository observationRepo,
+        IGenericRepository<KanbanTask> kanbanTaskRepo,
+        IGenericRepository<KanbanColumn> kanbanColumnRepo,
         IFileStorageService fileStorage,
         IUnitOfWork uow,
         IMapper mapper,
@@ -73,6 +75,13 @@ namespace QAMS.Application.Services
             return mapper.Map<List<TestExecutionDto>>(executions);
         }
 
+        public async Task<List<TestExecutionDto>> GetFilteredExecutionsAsync(Guid? testCaseId, Guid? projectId, Guid? testSuiteId, Guid? testPlanId)
+        {
+            logger.LogInformation("Obteniendo ejecuciones filtradas.");
+            var executions = await execRepo.GetFilteredExecutionsAsync(testCaseId, projectId, testSuiteId, testPlanId);
+            return mapper.Map<List<TestExecutionDto>>(executions);
+        }
+
         /// <summary>
         /// Crea una nueva ejecución para un caso de prueba.
         /// Inicializa todos los pasos con estado NOT_EXECUTED.
@@ -100,15 +109,21 @@ namespace QAMS.Application.Services
                 await stepStatusRepo.GetByCodeAsync("NOT_EXECUTED")
                 ?? throw new DomainException("Estado 'NOT_EXECUTED' no encontrado en catálogo.");
 
+            // Calcular número de ciclo secuencial
+            var executions = await execRepo.GetByTestCaseAsync(dto.TestCaseId);
+            var nextCycleNumber = executions.Any() ? executions.Max(e => e.CycleNumber) + 1 : 1;
+
             var execution = new TestExecution
             {
                 Id = Guid.NewGuid(),
                 TestCaseId = dto.TestCaseId,
-                TesterId = testerId,
+                TestPlanId = dto.TestPlanId,
+                TesterId = (dto.TesterId.HasValue && dto.TesterId.Value != Guid.Empty) ? dto.TesterId.Value : testerId,
                 StatusId = pendingStatus.Id,
                 Notes = dto.Notes,
                 ActualTimeHours = dto.ActualTimeHours ?? 0m,
                 ExecutionDate = DateTime.UtcNow,
+                CycleNumber = nextCycleNumber,
             };
 
             // Determinar si hay resultados proporcionados y su influencia en el estado
@@ -146,10 +161,16 @@ namespace QAMS.Application.Services
             }
 
             await execRepo.AddAsync(execution);
+
+            // Actualizar el último ciclo en el caso de prueba
+            testCase.LastCycleNumber = nextCycleNumber;
+            testCaseRepo.Update(testCase);
+
             await uow.SaveChangesAsync();
 
-            // Sincronizar estado con el TestCase
+            // Sincronizar estado con el TestCase y Kanban
             await SyncTestCaseStatusAsync(execution.TestCaseId, execution.StatusId);
+            await SyncKanbanTaskAsync(execution.TestCaseId, execution.TesterId, execution.StatusId);
 
             logger.LogInformation(
                 "Ejecución {ExecId} creada con {StepCount} pasos.",
@@ -217,16 +238,22 @@ namespace QAMS.Application.Services
                 await execStatusRepo.GetByCodeAsync(executionStatusCode)
                 ?? throw new DomainException($"Estado '{executionStatusCode}' no encontrado en catálogo.");
 
+            // Calcular número de ciclo secuencial
+            var executionsComplete = await execRepo.GetByTestCaseAsync(dto.TestCaseId);
+            var nextCycleNumberComplete = executionsComplete.Any() ? executionsComplete.Max(e => e.CycleNumber) + 1 : 1;
+
             var execution = new TestExecution
             {
                 Id = Guid.NewGuid(),
                 TestCaseId = dto.TestCaseId,
-                TesterId = testerId,
+                TestPlanId = dto.TestPlanId,
+                TesterId = (dto.TesterId.HasValue && dto.TesterId.Value != Guid.Empty) ? dto.TesterId.Value : testerId,
                 StatusId = executionStatus.Id,
                 Notes = dto.Notes,
                 ActualTimeHours = dto.ActualTimeHours ?? 0m,
                 ExecutionDate = DateTime.UtcNow,
-                CompletedAt = (allPassed || anyFailed) ? DateTime.UtcNow : null
+                CompletedAt = (allPassed || anyFailed) ? DateTime.UtcNow : null,
+                CycleNumber = nextCycleNumberComplete
             };
 
             if (allPassed || anyFailed)
@@ -253,10 +280,16 @@ namespace QAMS.Application.Services
             }
 
             await execRepo.AddAsync(execution);
+
+            // Actualizar el último ciclo en el caso de prueba
+            testCase.LastCycleNumber = nextCycleNumberComplete;
+            testCaseRepo.Update(testCase);
+
             await uow.SaveChangesAsync();
 
-            // Sincronizar estado con el TestCase
+            // Sincronizar estado con el TestCase y Kanban
             await SyncTestCaseStatusAsync(execution.TestCaseId, execution.StatusId);
+            await SyncKanbanTaskAsync(execution.TestCaseId, execution.TesterId, execution.StatusId);
 
             logger.LogInformation(
                 "Ejecución completa {ExecId} creada con estado {Status} y {StepCount} resultados.",
@@ -316,6 +349,9 @@ namespace QAMS.Application.Services
             execRepo.Update(execution);
             await uow.SaveChangesAsync();
 
+            // Sincronizar con Kanban
+            await SyncKanbanTaskAsync(execution.TestCaseId, null, execution.StatusId);
+
             logger.LogInformation(
                 "Paso {StepId} actualizado en ejecución {ExecId}.",
                 dto.TestStepId,
@@ -351,8 +387,9 @@ namespace QAMS.Application.Services
             execRepo.Update(execution);
             await uow.SaveChangesAsync();
 
-            // Sincronizar estado con el TestCase
+            // Sincronizar estado con el TestCase y Kanban
             await SyncTestCaseStatusAsync(execution.TestCaseId, execution.StatusId);
+            await SyncKanbanTaskAsync(execution.TestCaseId, null, execution.StatusId);
 
             if (status.Code == "PASSED" || status.Code == "FAILED")
             {
@@ -392,8 +429,9 @@ namespace QAMS.Application.Services
             execRepo.Update(execution);
             await uow.SaveChangesAsync();
 
-            // Sincronizar estado con el TestCase
+            // Sincronizar estado con el TestCase y Kanban
             await SyncTestCaseStatusAsync(execution.TestCaseId, execution.StatusId);
+            await SyncKanbanTaskAsync(execution.TestCaseId, null, execution.StatusId);
 
             // Sincronizar horas del proyecto
             if (execution.TestCase != null)
@@ -492,6 +530,14 @@ namespace QAMS.Application.Services
             // 1. Actualizar datos generales
             execution.Notes = dto.Notes;
             execution.ActualTimeHours = dto.ActualTimeHours ?? 0m;
+            if (dto.TestPlanId.HasValue)
+            {
+                execution.TestPlanId = dto.TestPlanId.Value == Guid.Empty ? null : dto.TestPlanId;
+            }
+            if (dto.TesterId.HasValue && dto.TesterId.Value != Guid.Empty)
+            {
+                execution.TesterId = dto.TesterId.Value;
+            }
 
             // 2. Actualizar resultados de pasos
             foreach (var stepResultInput in dto.StepResults)
@@ -512,8 +558,9 @@ namespace QAMS.Application.Services
             execRepo.Update(execution);
             await uow.SaveChangesAsync();
 
-            // Sincronizar estado con el TestCase y horas del proyecto si terminó
+            // Sincronizar estado con el TestCase y Kanban
             await SyncTestCaseStatusAsync(execution.TestCaseId, execution.StatusId);
+            await SyncKanbanTaskAsync(execution.TestCaseId, execution.TesterId, execution.StatusId);
 
             var status = await execStatusRepo.GetByIdAsync(execution.StatusId);
             if (status?.Code == "PASSED" || status?.Code == "FAILED")
@@ -687,6 +734,69 @@ namespace QAMS.Application.Services
 
             logger.LogInformation("Proyecto {ProjectId} actualizado: Ejecutadas {Executed}, Remanentes {Remaining}.",
                 projectId, project.ExecutedHours, project.RemainingHours);
+        }
+
+        private async Task SyncKanbanTaskAsync(Guid testCaseId, Guid? testerId, int? executionStatusId)
+        {
+            try
+            {
+                var tasks = await kanbanTaskRepo.FindAsync(t => t.TestCaseId == testCaseId && !t.IsDeleted);
+                if (!tasks.Any()) return;
+
+                string? statusCode = null;
+                if (executionStatusId.HasValue)
+                {
+                    var status = await execStatusRepo.GetByIdAsync(executionStatusId.Value);
+                    statusCode = status?.Code;
+                }
+
+                foreach (var task in tasks)
+                {
+                    bool updated = false;
+
+                    if (testerId.HasValue && testerId.Value != Guid.Empty && task.AssigneeId != testerId.Value)
+                    {
+                        task.AssigneeId = testerId.Value;
+                        updated = true;
+                    }
+
+                    if (!string.IsNullOrEmpty(statusCode))
+                    {
+                        var currentColumn = await kanbanColumnRepo.GetByIdAsync(task.KanbanColumnId);
+                        if (currentColumn != null)
+                        {
+                            var boardColumns = await kanbanColumnRepo.FindAsync(c => c.BoardId == currentColumn.BoardId && !c.IsDeleted);
+                            KanbanColumn? targetColumn = statusCode switch
+                            {
+                                "PASSED" => boardColumns.FirstOrDefault(c => c.Name.Equals("Completado", StringComparison.OrdinalIgnoreCase) || c.Name.Equals("Done", StringComparison.OrdinalIgnoreCase)),
+                                "FAILED" or "BLOCKED" => boardColumns.FirstOrDefault(c => c.Name.Equals("En Revisión", StringComparison.OrdinalIgnoreCase) || c.Name.Equals("In Review", StringComparison.OrdinalIgnoreCase) || c.Name.Equals("En Progreso", StringComparison.OrdinalIgnoreCase)),
+                                "IN_PROGRESS" => boardColumns.FirstOrDefault(c => c.Name.Equals("En Progreso", StringComparison.OrdinalIgnoreCase) || c.Name.Equals("In Progress", StringComparison.OrdinalIgnoreCase)),
+                                "PENDING" => boardColumns.FirstOrDefault(c => c.Name.Equals("Por Hacer", StringComparison.OrdinalIgnoreCase) || c.Name.Equals("Tareas Pendientes", StringComparison.OrdinalIgnoreCase) || c.Name.Equals("To Do", StringComparison.OrdinalIgnoreCase)),
+                                _ => null
+                            };
+
+                            if (targetColumn != null && targetColumn.Id != task.KanbanColumnId)
+                            {
+                                task.KanbanColumnId = targetColumn.Id;
+                                updated = true;
+                            }
+                        }
+                    }
+
+                    if (updated)
+                    {
+                        task.UpdatedAt = DateTime.UtcNow;
+                        kanbanTaskRepo.Update(task);
+                    }
+                }
+
+                await uow.SaveChangesAsync();
+                logger.LogInformation("Sincronización de Kanban para caso {TestCaseId} completada.", testCaseId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Error al sincronizar tarea Kanban para TestCase {TestCaseId}.", testCaseId);
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using QAMS.Application.DTOs.TestSuites;
@@ -86,6 +86,7 @@ public class TestSuiteServiceTests(QamsIntegrationTestFactory factory) : Integra
         var user = await CreateTestUserAsync("suite_create_user");
         var projectId = Guid.NewGuid();
 
+        var testPlanId = Guid.NewGuid();
         await ExecuteInScopeAsync(async db =>
         {
             db.Projects.Add(new Project
@@ -97,13 +98,25 @@ public class TestSuiteServiceTests(QamsIntegrationTestFactory factory) : Integra
                 ProjectStatusId = 1,
                 ProjectPriorityId = 1
             });
+            db.TestPlans.Add(new TestPlan
+            {
+                Id = testPlanId,
+                ProjectId = projectId,
+                Name = "Suite Test Plan",
+                Objectives = "Integración de suites",
+                StartDate = DateTime.UtcNow,
+                EndDate = DateTime.UtcNow.AddDays(5),
+                StatusId = 1,
+                CreatedByUserId = user.Id
+            });
             await db.SaveChangesAsync();
         });
 
         var dto = new CreateTestSuiteDto
         {
             Name = $"New Suite {Guid.NewGuid():N}",
-            ProjectId = projectId
+            ProjectId = projectId,
+            TestPlanId = testPlanId
         };
 
         // Authenticate

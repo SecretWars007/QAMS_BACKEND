@@ -12,6 +12,7 @@ namespace QAMS.Application.DTOs.TestCases
         public string? Description { get; set; }
         public string? Preconditions { get; set; }
         public string ExpectedResult { get; set; } = string.Empty;
+        public string? Postconditions { get; set; }
         public int PriorityId { get; set; }
         public string PriorityName { get; set; } = string.Empty;
         public string PriorityCode { get; set; } = string.Empty;
@@ -21,8 +22,6 @@ namespace QAMS.Application.DTOs.TestCases
         public DateTime CreatedAt { get; set; }
         public string? CreatedByUserName { get; set; }
         public decimal EstimatedTimeHours { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
         public int TestTypeId { get; set; }
         public string TestTypeName { get; set; } = string.Empty;
         public int? DesignTechniqueId { get; set; }
@@ -30,8 +29,10 @@ namespace QAMS.Application.DTOs.TestCases
         public int ImpactLevel { get; set; } = 3;
         public int LikelihoodLevel { get; set; } = 3;
         public int RiskScore { get; set; } = 9;
-        public List<string> CertifierNames { get; set; } = [];
-        public List<Guid> CertifierUserIds { get; set; } = [];
+        public int? LastCycleNumber { get; set; }
         public List<TestStepDto> Steps { get; set; } = [];
+        public List<Guid> RequirementIds { get; set; } = [];
+        public bool IsBdd { get; set; }
+        public string? BddScenario { get; set; }
     }
 }

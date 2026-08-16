@@ -25,7 +25,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         // Lead (Líder de Pruebas) Permissions
         private static readonly string[] sourceArray0 =
             [
-                "PROJECTS_VIEW", "PROJECTS_CREATE", "PROJECTS_UPDATE",
+                "PROJECTS_VIEW", "PROJECTS_CREATE", "PROJECTS_UPDATE", "PROJECTS_DELETE",
                 "USERS_VIEW",
                 "REQUIREMENTS_VIEW", "REQUIREMENTS_CREATE", "REQUIREMENTS_UPDATE", "REQUIREMENTS_DELETE",
                 "TEST_CASES_VIEW", "TEST_CASES_CREATE", "TEST_CASES_UPDATE", "TEST_CASES_DELETE",

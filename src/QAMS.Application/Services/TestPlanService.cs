@@ -47,6 +47,12 @@ namespace QAMS.Application.Services
             return _mapper.Map<IEnumerable<TestPlanDto>>(plans);
         }
 
+        public async Task<IEnumerable<TestPlanDto>> GetBySutAsync(Guid sutId)
+        {
+            var plans = await _testPlanRepository.GetBySutAsync(sutId);
+            return _mapper.Map<IEnumerable<TestPlanDto>>(plans);
+        }
+
         public async Task<TestPlanDto> GetByIdAsync(Guid id)
         {
             var plan = await _testPlanRepository.GetByIdWithDetailsAsync(id);
@@ -64,6 +70,11 @@ namespace QAMS.Application.Services
 
             var plan = _mapper.Map<TestPlan>(dto);
             plan.StatusId = 1; // Draft / Borrador
+            plan.StartDate = plan.StartDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(plan.StartDate, DateTimeKind.Utc) : plan.StartDate.ToUniversalTime();
+            plan.EndDate = plan.EndDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(plan.EndDate, DateTimeKind.Utc) : plan.EndDate.ToUniversalTime();
+            plan.TestPlanTypeId = dto.TestPlanTypeId;
+            plan.TestLevelId = dto.TestLevelId;
+            plan.TestManagerId = dto.TestManagerId;
 
             if (dto.TestSuiteIds != null && dto.TestSuiteIds.Any())
             {
@@ -80,15 +91,38 @@ namespace QAMS.Application.Services
                 }
             }
 
-            if (dto.Criteria != null && dto.Criteria.Any())
+            if (plan.Criteria != null && plan.Criteria.Any())
             {
-                foreach (var criteriaDto in dto.Criteria)
+                foreach (var c in plan.Criteria)
                 {
-                    plan.Criteria.Add(new TestPlanCriteria
+                    c.IsMet = false; // Siempre inicia sin cumplir
+                }
+            }
+
+            if (dto.Milestones != null && dto.Milestones.Any())
+            {
+                foreach (var m in dto.Milestones)
+                {
+                    plan.Milestones.Add(new TestPlanMilestone
                     {
-                        CriteriaType = criteriaDto.CriteriaType,
-                        Description = criteriaDto.Description,
-                        IsMet = false // Siempre inicia sin cumplir
+                        Name = m.Name,
+                        Description = m.Description,
+                        DueDate = m.DueDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(m.DueDate, DateTimeKind.Utc) : m.DueDate.ToUniversalTime(),
+                        IsCompleted = m.IsCompleted
+                    });
+                }
+            }
+
+            if (dto.Risks != null && dto.Risks.Any())
+            {
+                foreach (var r in dto.Risks)
+                {
+                    plan.Risks.Add(new TestPlanRisk
+                    {
+                        Description = r.Description,
+                        Probability = r.Probability,
+                        Impact = r.Impact,
+                        Mitigation = r.Mitigation
                     });
                 }
             }
@@ -120,14 +154,17 @@ namespace QAMS.Application.Services
             plan.Objectives = dto.Objectives;
             plan.Scope = dto.Scope;
             plan.OutOfScope = dto.OutOfScope;
-            plan.TestStrategy = dto.TestStrategy;
-            plan.RiskAnalysis = dto.RiskAnalysis;
-            plan.EnvironmentRequirements = dto.EnvironmentRequirements;
+            plan.TestStrategyId = dto.TestStrategyId;
+            plan.TestPlanTypeId = dto.TestPlanTypeId;
+            plan.TestLevelId = dto.TestLevelId;
+            plan.TestManagerId = dto.TestManagerId;
+            plan.RiskLevelId = dto.RiskLevelId;
+            plan.TestEnvironmentId = dto.TestEnvironmentId;
             plan.TestSchedule = dto.TestSchedule;
             plan.EstimatedEffortHours = dto.EstimatedEffortHours;
 
-            plan.StartDate = dto.StartDate;
-            plan.EndDate = dto.EndDate;
+            plan.StartDate = dto.StartDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(dto.StartDate, DateTimeKind.Utc) : dto.StartDate.ToUniversalTime();
+            plan.EndDate = dto.EndDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(dto.EndDate, DateTimeKind.Utc) : dto.EndDate.ToUniversalTime();
             plan.StatusId = dto.StatusId;
 
             plan.TestPlanSuites.Clear();
@@ -151,16 +188,107 @@ namespace QAMS.Application.Services
             // Reemplazar criterios de forma sencilla para esta iteración
             if (dto.Criteria != null)
             {
-                plan.Criteria.Clear();
+                var incomingIds = dto.Criteria.Where(c => c.Id != Guid.Empty).Select(c => c.Id).ToList();
+                
+                // Remove missing criteria
+                var toRemove = plan.Criteria.Where(c => !incomingIds.Contains(c.Id)).ToList();
+                foreach (var item in toRemove)
+                {
+                    plan.Criteria.Remove(item);
+                }
+
                 foreach (var criteriaDto in dto.Criteria)
                 {
-                    plan.Criteria.Add(new TestPlanCriteria
+                    if (criteriaDto.Id != Guid.Empty)
                     {
-                        TestPlanId = id,
-                        CriteriaType = criteriaDto.CriteriaType,
-                        Description = criteriaDto.Description,
-                        IsMet = criteriaDto.IsMet
-                    });
+                        var existing = plan.Criteria.FirstOrDefault(c => c.Id == criteriaDto.Id);
+                        if (existing != null)
+                        {
+                            existing.CriteriaType = criteriaDto.CriteriaType;
+                            existing.Description = criteriaDto.Description;
+                            existing.IsMet = criteriaDto.IsMet;
+                            existing.Priority = criteriaDto.Priority;
+                            existing.Category = criteriaDto.Category;
+                        }
+                    }
+                    else
+                    {
+                        plan.Criteria.Add(new TestPlanCriteria
+                        {
+                            TestPlanId = id,
+                            CriteriaType = criteriaDto.CriteriaType,
+                            Description = criteriaDto.Description,
+                            IsMet = criteriaDto.IsMet,
+                            Priority = criteriaDto.Priority,
+                            Category = criteriaDto.Category
+                        });
+                    }
+                }
+            }
+
+            if (dto.Milestones != null)
+            {
+                var incomingIds = dto.Milestones.Where(m => m.Id.HasValue && m.Id.Value != Guid.Empty).Select(m => m.Id.Value).ToList();
+                var toRemove = plan.Milestones.Where(m => !incomingIds.Contains(m.Id)).ToList();
+                foreach (var item in toRemove) plan.Milestones.Remove(item);
+
+                foreach (var mDto in dto.Milestones)
+                {
+                    if (mDto.Id.HasValue && mDto.Id.Value != Guid.Empty)
+                    {
+                        var existing = plan.Milestones.FirstOrDefault(m => m.Id == mDto.Id.Value);
+                        if (existing != null)
+                        {
+                            existing.Name = mDto.Name;
+                            existing.Description = mDto.Description;
+                            existing.DueDate = mDto.DueDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(mDto.DueDate, DateTimeKind.Utc) : mDto.DueDate.ToUniversalTime();
+                            existing.IsCompleted = mDto.IsCompleted;
+                        }
+                    }
+                    else
+                    {
+                        plan.Milestones.Add(new TestPlanMilestone
+                        {
+                            TestPlanId = id,
+                            Name = mDto.Name,
+                            Description = mDto.Description,
+                            DueDate = mDto.DueDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(mDto.DueDate, DateTimeKind.Utc) : mDto.DueDate.ToUniversalTime(),
+                            IsCompleted = mDto.IsCompleted
+                        });
+                    }
+                }
+            }
+
+            if (dto.Risks != null)
+            {
+                var incomingIds = dto.Risks.Where(r => r.Id.HasValue && r.Id.Value != Guid.Empty).Select(r => r.Id.Value).ToList();
+                var toRemove = plan.Risks.Where(r => !incomingIds.Contains(r.Id)).ToList();
+                foreach (var item in toRemove) plan.Risks.Remove(item);
+
+                foreach (var rDto in dto.Risks)
+                {
+                    if (rDto.Id.HasValue && rDto.Id.Value != Guid.Empty)
+                    {
+                        var existing = plan.Risks.FirstOrDefault(r => r.Id == rDto.Id.Value);
+                        if (existing != null)
+                        {
+                            existing.Description = rDto.Description;
+                            existing.Probability = rDto.Probability;
+                            existing.Impact = rDto.Impact;
+                            existing.Mitigation = rDto.Mitigation;
+                        }
+                    }
+                    else
+                    {
+                        plan.Risks.Add(new TestPlanRisk
+                        {
+                            TestPlanId = id,
+                            Description = rDto.Description,
+                            Probability = rDto.Probability,
+                            Impact = rDto.Impact,
+                            Mitigation = rDto.Mitigation
+                        });
+                    }
                 }
             }
 
@@ -211,7 +339,8 @@ namespace QAMS.Application.Services
 
             plan.IsClosed = true;
             plan.StatusId = 4; // Cerrado
-            plan.ApprovalLog = log;
+            plan.ApprovalLogs ??= new List<TestPlanApprovalLog>();
+            plan.ApprovalLogs.Add(log);
 
             _testPlanRepository.Update(plan);
             

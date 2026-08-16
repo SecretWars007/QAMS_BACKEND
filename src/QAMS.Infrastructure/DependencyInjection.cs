@@ -46,6 +46,7 @@ namespace QAMS.Infrastructure
             services.AddScoped<QAMS.Application.Interfaces.Repositories.ITestPlanRepository, TestPlanRepository>();
             services.AddScoped<QAMS.Application.Interfaces.Repositories.IApiKeyRepository, ApiKeyRepository>();
             services.AddScoped<IReviewSessionRepository, ReviewSessionRepository>();
+            services.AddScoped<IRequirementRepository, RequirementRepository>();
 
             // Unit of Work
             services.AddScoped<IUnitOfWork, UnitOfWork>();

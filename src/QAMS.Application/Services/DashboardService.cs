@@ -27,23 +27,32 @@ namespace QAMS.Application.Services
         /// Genera un resumen de métricas para un usuario específico.
         /// Filtra proyectos, ejecuciones y tareas donde el usuario participa.
         /// </summary>
-        public async Task<DashboardSummaryDto> GetSummaryAsync(Guid userId)
+        public async Task<DashboardSummaryDto> GetSummaryAsync(
+            Guid userId, bool isPrivilegedRole = false, Guid? sutId = null, Guid? testerUserId = null)
         {
-            logger.LogInformation("Generando dashboard para el usuario: {UserId}.", userId);
+            logger.LogInformation("Generando dashboard para el usuario: {UserId}. Privileged: {IsPrivileged}", userId, isPrivilegedRole);
 
             var summary = new DashboardSummaryDto();
 
             try
             {
-                // 1. Proyectos donde el usuario participa: como tester O si fue el creador
-                var userProjects = await projectRepo.FindWithDetailsAsync(p =>
-                    p.IsActive && (p.ProjectTesters.Any(pt => pt.UserId == userId) || p.CreatedByUserId == userId));
+                List<Project> userProjects;
 
-                // Si no hay proyectos específicos, pero el usuario es admin/etc (opcional), mantenemos fallback o retornamos lo encontrado
-                if (userProjects.Count == 0)
+                if (isPrivilegedRole)
                 {
-                    logger.LogInformation("Usuario {UserId} no tiene proyectos asignados ni creados. Trayendo todos los activos como fallback.", userId);
-                    userProjects = await projectRepo.FindWithDetailsAsync(p => p.IsActive);
+                    // Líder / Admin: todos los activos, con filtros opcionales
+                    userProjects = await projectRepo.FindWithDetailsAsync(p =>
+                        p.IsActive
+                        && (!sutId.HasValue || p.SystemUnderTestId == sutId.Value)
+                        && (!testerUserId.HasValue || p.ProjectTesters.Any(pt => pt.UserId == testerUserId.Value))
+                    );
+                }
+                else
+                {
+                    // Tester: solo sus proyectos asignados (activos)
+                    userProjects = await projectRepo.FindWithDetailsAsync(p =>
+                        p.IsActive && (p.ProjectTesters.Any(pt => pt.UserId == userId) || p.CreatedByUserId == userId)
+                    );
                 }
 
                 summary.TotalProjects = userProjects.Count;

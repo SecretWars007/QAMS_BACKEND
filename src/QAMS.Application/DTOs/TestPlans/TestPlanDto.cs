@@ -18,9 +18,22 @@ namespace QAMS.Application.DTOs.TestPlans
         // ISTQB Fields
         public string? Scope { get; set; }
         public string? OutOfScope { get; set; }
-        public string? TestStrategy { get; set; }
-        public string? RiskAnalysis { get; set; }
-        public string? EnvironmentRequirements { get; set; }
+        public int? TestStrategyId { get; set; }
+        public CatalogItemDto? TestStrategy { get; set; }
+
+        public int? TestPlanTypeId { get; set; }
+        public CatalogItemDto? TestPlanType { get; set; }
+
+        public int? TestLevelId { get; set; }
+        public CatalogItemDto? TestLevel { get; set; }
+
+        public Guid? TestManagerId { get; set; }
+        public string? TestManagerName { get; set; }
+
+        public int? RiskLevelId { get; set; }
+        public CatalogItemDto? RiskLevel { get; set; }
+        public int? TestEnvironmentId { get; set; }
+        public CatalogItemDto? TestEnvironment { get; set; }
         public string? TestSchedule { get; set; }
         public decimal EstimatedEffortHours { get; set; }
 
@@ -29,11 +42,15 @@ namespace QAMS.Application.DTOs.TestPlans
 
         public int StatusId { get; set; }
         public CatalogItemDto? Status { get; set; }
+        public bool IsClosed { get; set; }
 
         public DateTime CreatedAt { get; set; }
         public string CreatedByUserName { get; set; } = string.Empty;
 
         public List<TestSuiteDto> TestSuites { get; set; } = new();
         public List<TestPlanCriteriaDto> Criteria { get; set; } = new();
+        public List<TestPlanMilestoneDto> Milestones { get; set; } = new();
+        public List<TestPlanRiskDto> Risks { get; set; } = new();
+        public List<TestPlanApprovalLogDto> ApprovalLogs { get; set; } = new();
     }
 }
