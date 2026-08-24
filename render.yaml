@@ -1,23 +1,27 @@
-# c:\diplomado\QAMS\render.yaml
+﻿# Blueprint de Render para QAMS Backend & Database
 databases:
+  # Base de datos PostgreSQL 16 gestionada
   - name: qams-db
     databaseName: qams_db
     user: qams_user
     plan: free
+    region: oregon
+    postgresMajorVersion: 16
 
 services:
+  # API RESTful en .NET 9 (Docker Web Service)
   - type: web
     name: qams-api
-    env: docker
+    runtime: docker
     plan: free
+    region: oregon
     dockerContext: .
     dockerfilePath: Dockerfile
-    healthCheckPath: /swagger
+    healthCheckPath: /health
+    autoDeploy: false
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
-      - key: FRONTEND_URL
-        value: https://qams-web.onrender.com
       - key: ConnectionStrings__DefaultConnection
         fromDatabase:
           name: qams-db
@@ -32,3 +36,15 @@ services:
         value: "60"
       - key: JwtSettings__RefreshTokenExpirationDays
         value: "7"
+      - key: EncryptionSettings__Key
+        value: 12345678901234567890123456789012
+      - key: EncryptionSettings__IV
+        value: 1234567890123456
+      - key: FRONTEND_URL
+        value: https://qams-web.onrender.com
+      - key: DISABLE_RATE_LIMIT
+        value: "true"
+      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
+        value: "true"
+      - key: PUPPETEER_EXECUTABLE_PATH
+        value: /usr/bin/google-chrome-stable
