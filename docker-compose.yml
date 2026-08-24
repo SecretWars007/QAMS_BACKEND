@@ -1,4 +1,4 @@
-version: '3.8'
+﻿version: '3.8'
 name: qams-backend
 
 # ============================================================
@@ -29,23 +29,6 @@ services:
     networks:
       - qams-network
 
-  # Redis para caché (Mensajería/Background)
-  redis:
-    image: redis:7-alpine
-    container_name: qams-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - qams-network
-
   # QAMS API Backend
   api:
     build:
@@ -60,19 +43,18 @@ services:
       JwtSettings__Audience: ${JWT_AUDIENCE:-QAMS.Client}
       EncryptionSettings__Key: ${ENCRYPTION_KEY}
       EncryptionSettings__IV: ${ENCRYPTION_IV}
-      Redis__Configuration: "redis:6379"
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
       SmtpSettings__Host: ${SMTP_HOST:-smtp.gmail.com}
       SmtpSettings__Port: ${SMTP_PORT:-587}
-      SmtpSettings__Username: ${SMTP_USERNAME}
+      SmtpSettings__Username: ${SMTP_USER}
       SmtpSettings__Password: ${SMTP_PASSWORD}
-      SmtpSettings__FromEmail: ${SMTP_USERNAME}
+      SmtpSettings__FromEmail: ${SMTP_FROM:-soporte@qams.io}
+      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome-stable
     ports:
       - "5000:8080"
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     restart: unless-stopped
     networks:
@@ -83,7 +65,6 @@ services:
 
 volumes:
   postgres_data:
-  redis_data:
   uploads_data:
 
 networks:

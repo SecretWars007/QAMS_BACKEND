@@ -5,7 +5,7 @@
 [![C#](https://img.shields.io/badge/C%23-13.0-239120.svg?logo=c-sharp&logoColor=white)](https://docs.microsoft.com/dotnet/csharp/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![EF Core](https://img.shields.io/badge/EF_Core-9.0-512BD4.svg?logo=nuget&logoColor=white)](https://learn.microsoft.com/ef/core/)
-[![Redis](https://img.shields.io/badge/Redis-7-DC382D.svg?logo=redis&logoColor=white)](https://redis.io/)
+[![In-Memory Cache](https://img.shields.io/badge/IMemoryCache-Sub--millisecond-brightgreen.svg?logo=speedtest&logoColor=white)](https://learn.microsoft.com/aspnet/core/performance/caching/memory)
 [![ISTQB Compliant](https://img.shields.io/badge/ISTQB-CTFL_v4.0-brightgreen.svg?logo=checkmarx&logoColor=white)](https://www.istqb.org/)
 [![ISO/IEC/IEEE 29119](https://img.shields.io/badge/ISO%2FIEC%2FIEEE-29119-00599C.svg)](https://www.iso.org/standard/64104.html)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
@@ -19,15 +19,14 @@
    - [Objetivo General y Objetivos Específicos](#12-objetivos-del-proyecto)
 2. [Arquitectura del Sistema (Clean Architecture & SOLID)](#2-arquitectura-del-sistema-clean-architecture--solid)
    - [Diagrama C4 de Contenedores Backend](#21-diagrama-c4-de-contenedores-backend)
-   - [Diagrama de Arquitectura Limpia en 4 Capas](#22-diagrama-de-clean-architecture-4-capas)
+   - [Diagrama de Clean Architecture en 4 Capas](#22-diagrama-de-clean-architecture-4-capas)
    - [Pipeline de Procesamiento HTTP y Filtro RBAC](#23-pipeline-de-procesamiento-http-y-filtro-rbac)
 3. [Modelo de Base de Datos y Gobernanza (PostgreSQL 16)](#3-modelo-de-base-de-datos-y-gobernanza-postgresql-16)
    - [Diagrama Entidad-Relación (MER / DER Completo)](#31-diagrama-entidad-relación-mer--der-completo)
    - [Gobernanza de Datos: Auditoría Automática y Soft-Delete](#32-gobernanza-de-datos-auditoría-automática-y-soft-delete)
-4. [Arquitectura de Caché y Colas con Redis 7](#4-arquitectura-de-caché-y-colas-con-redis-7)
-   - [Rol Arquitectónico de Redis](#41-rol-arquitectónico-de-redis-7)
-   - [Estructuras de Datos y Espacios de Claves (Key Namespaces)](#42-estructuras-de-datos-y-espacios-de-claves-key-namespaces)
-   - [Diagrama de Secuencia: Patrón Cache-Aside RBAC](#43-diagrama-de-secuencia-patrón-cache-aside-rbac)
+4. [Estrategia de Caché de Alto Rendimiento (IMemoryCache)](#4-estrategia-de-caché-de-alto-rendimiento-imemorycache)
+   - [Diseño y Rendimiento en Memoria RAM](#41-diseño-y-rendimiento-en-memoria-ram)
+   - [Diagrama de Secuencia: Patrón Cache-Aside RBAC](#42-diagrama-de-secuencia-patrón-cache-aside-rbac)
 5. [Módulos del API RESTful (Detalle Técnico de Controladores)](#5-módulos-del-api-restful-detalle-técnico-de-controladores)
 6. [Seguridad y Mitigación OWASP Top 10](#6-seguridad-y-mitigación-owasp-top-10)
 7. [Estructura del Proyecto y Árbol de Directorios](#7-estructura-del-proyecto-y-árbol-de-directorios)
@@ -41,7 +40,7 @@
 
 ### 1.1 Justificación del Proyecto
 
-En el desarrollo de software corporativo de alta criticidad, la ausencia de una infraestructura centralizada y trazable para el Aseguramiento de la Calidad (QA) produce cuellos de botella severos, inconsistencias en el seguimiento de defectos y exposición de datos confidenciales. 
+En el desarrollo de software corporativo de alta criticidad, la ausencia de una infraestructura centralizada y trazable para el Aseguramiento de la Calidad (QA) produce cuellos de botella severos, inconsistencias en el seguimiento de defectos y exposición de datos confidenciales.
 
 La mayoría de los sistemas comerciales del mercado operan como plataformas SaaS cerradas, cuyos costos recurrentes por usuario resultan financieramente prohibitivos para equipos de medianas y grandes organizaciones. Adicionalmente, el almacenamiento de defectos, credenciales de entornos de prueba y diagramas de arquitectura en servidores públicos de terceros entra en conflicto directo con normativas estrictas de soberanía de datos (GDPR, ISO/IEC 27001).
 
@@ -52,12 +51,12 @@ La mayoría de los sistemas comerciales del mercado operan como plataformas SaaS
 ### 1.2 Objetivos del Proyecto
 
 #### Objetivo General
-Construir una API RESTful empresarial modular, escalable y altamente segura que centralice y gobierne el Ciclo de Vida de Pruebas de Software (STLC), garantizando persistencia relacional normalizada en PostgreSQL 16, tiempos de respuesta sub-milisegundo con Redis 7 y trazabilidad bidireccional desde requisitos hasta defectos.
+Construir una API RESTful empresarial modular, escalable y altamente segura que centralice y gobierne el Ciclo de Vida de Pruebas de Software (STLC), garantizando persistencia relacional normalizada en PostgreSQL 16, tiempos de respuesta ultra veloces en memoria RAM y trazabilidad bidireccional desde requisitos hasta defectos.
 
 #### Objetivos Específicos
 1. **Garantizar Conformidad con ISTQB CTFL v4.0 e ISO 29119:** Proveer modelos y servicios para los 6 capítulos del syllabus (Fundamentos, Pruebas Estáticas e Inspecciones de Fagan, Técnicas de Diseño de Pruebas, Pruebas Exploratorias basadas en sesiones, Gestión de Riesgos y Quality Gates).
 2. **Implementar una Matriz de Trazabilidad RTM Transaccional:** Mapear en tiempo real las relaciones $M:N$ entre Requisitos $\leftrightarrow$ Casos de Prueba $\leftrightarrow$ Ejecuciones $\leftrightarrow$ Defectos.
-3. **Asegurar Tiempos de Respuesta P95 < 50ms:** Integrar una capa de caché distribuida en memoria RAM mediante **Redis 7** bajo el patrón *Cache-Aside* para permisos RBAC y catálogos de consulta masiva.
+3. **Asegurar Tiempos de Respuesta P95 < 20ms:** Integrar una capa de caché en memoria de alta velocidad mediante **`IMemoryCache`** de ASP.NET Core bajo el patrón *Cache-Aside* para permisos RBAC y autorización atómica.
 4. **Implementar Gobernanza de Datos y Trazabilidad de Auditoría:** Inyectar automáticamente metadatos de auditoría (`IAuditable`: quién creó/modificó cada entidad y fecha UTC exacta) y borrado lógico transparente (`ISoftDelete`) a nivel de DbContext.
 5. **Garantizar Seguridad y Mitigación OWASP Top 10:** Implementar control de acceso granular basado en roles (**RBAC**) con validación declarativa `[HasPermission("...")]`, hashing de contraseñas con **BCrypt** (salt $\ge 12$) y autenticación mediante **JWT Bearer Tokens**.
 6. **Generar Reportes Técnicos Certificados en PDF:** Implementar un motor de renderizado asíncrono con **PuppeteerSharp / Chromium headless** para emitir reportes ejecutivos con firma técnica y estadísticas consolidadas.
@@ -75,23 +74,19 @@ C4Container
     Person(client_user, "Frontend SPA / Pipeline CI/CD", "Consume endpoints REST autenticados con JWT o API Keys.")
     
     System_Boundary(backend_env, "Ecosistema Backend QAMS (Red Docker: qams-network)") {
-        Container(kestrel_api, "QAMS REST API (.NET 9)", "ASP.NET Core 9.0 Web API", "Lógica de negocio, controladores REST, validaciones, mapeo de DTOs y seguridad.")
+        Container(kestrel_api, "QAMS REST API (.NET 9)", "ASP.NET Core 9.0 Web API", "Lógica de negocio, controladores REST, validaciones, caché en RAM IMemoryCache y seguridad.")
         ContainerDb(postgres_db, "Base de Datos Relacional", "PostgreSQL 16 Alpine", "Persistencia transaccional ACID, 3FN/4FN, esquemas normalizados y auditoría.")
-        ContainerDb(redis_cache, "Caché & Message Broker", "Redis 7 Alpine", "Caché distribuida de permisos RBAC, catálogos en memoria y colas de notificación.")
         Container(smtp_service, "Servidor SMTP", "SmtpClient / Worker", "Envío asíncrono de alertas de calidad y notificaciones de bienvenida.")
     }
     
     Rel(client_user, kestrel_api, "Peticiones HTTP RESTful", "JSON / HTTPS Puerto 5000:8080")
     Rel(kestrel_api, postgres_db, "Consultas y Transacciones ACID", "TCP Npgsql Puerto 5432")
-    Rel(kestrel_api, redis_cache, "Caché de Permisos y Colas", "TCP StackExchange.Redis Puerto 6379")
-    Rel(kestrel_api, smtp_service, "Despacho de correos en background", "SMTP TLS Puerto 587")
+    Rel(kestrel_api, smtp_service, "Despacho de correos", "SMTP TLS Puerto 587")
 ```
 
 ---
 
 ### 2.2 Diagrama de Clean Architecture (4 Capas)
-
-El backend implementa rigurosamente el principio de Inversión de Dependencias (DIP) dividiendo el código en 4 capas concéntricas:
 
 ```mermaid
 graph TD
@@ -101,11 +96,11 @@ graph TD
     end
 
     subgraph Infrastructure ["Adaptadores de Infraestructura"]
-        Infra["3. QAMS.Infrastructure\n- QamsDbContext (EF Core 9)\n- Repositorios PostgreSQL (Npgsql)\n- JwtTokenGenerator & PasswordHasher (BCrypt)\n- PdfReportService (PuppeteerSharp)\n- LocalFileStorageService\n- Redis Distributed Cache"]
+        Infra["3. QAMS.Infrastructure\n- QamsDbContext (EF Core 9)\n- Repositorios PostgreSQL (Npgsql)\n- JwtTokenGenerator & PasswordHasher (BCrypt)\n- PdfReportService (PuppeteerSharp)\n- LocalFileStorageService\n- SmtpEmailService"]
     end
 
     subgraph Presentation ["Capa de Presentación y API"]
-        Api["4. QAMS.Api\n- 21 Controladores RESTful\n- Filtros [HasPermission] (RBAC Declarativo)\n- ExceptionHandlingMiddleware\n- Configuración OpenAPI / Swagger\n- Program.cs & Service Registration"]
+        Api["4. QAMS.Api\n- 21 Controladores RESTful\n- Filtros [HasPermission] (RBAC Declarativo)\n- IMemoryCache de Alta Velocidad\n- ExceptionHandlingMiddleware\n- Configuración OpenAPI / Swagger\n- Program.cs & Service Registration"]
     end
 
     Api --> Application
@@ -125,7 +120,7 @@ sequenceDiagram
     actor Client as Cliente (Angular SPA / CI Pipeline)
     participant JwtAuth as JwtBearer Middleware
     participant RbacFilter as HasPermissionFilter
-    participant Redis as Redis 7 Cache
+    participant MemCache as IMemoryCache (RAM Local)
     participant Ctrl as API Controller
     participant Srv as Application Service
     participant UoW as Unit of Work / EF Core
@@ -135,13 +130,13 @@ sequenceDiagram
     JwtAuth->>JwtAuth: Validar firma HMAC-SHA256, Issuer, Audience y Expiración
     JwtAuth->>RbacFilter: Contexto con ClaimsPrincipal (UserId, Roles)
     
-    RbacFilter->>Redis: GET rbac:perm:{userId}
-    alt Permisos en Caché (Hit)
-        Redis-->>RbacFilter: Lista de códigos de permiso en RAM (JSON/Set)
+    RbacFilter->>MemCache: TryGetValue("rbac_permissions_{userId}")
+    alt Permisos en Caché (Hit < 0.1ms)
+        MemCache-->>RbacFilter: Lista de permisos en memoria RAM
     else Permisos No en Caché (Miss)
         RbacFilter->>DB: Consultar permisos del usuario vía RolePermissions
         DB-->>RbacFilter: Permisos reales desde PostgreSQL
-        RbacFilter->>Redis: SETEX rbac:perm:{userId} (TTL: 600s)
+        RbacFilter->>MemCache: Set("rbac_permissions_{userId}", permisos, TTL: 5min)
     end
 
     alt Usuario Tiene el Permiso Requerido
@@ -382,31 +377,20 @@ En `QAMS.Infrastructure.Persistence.Configurations.QamsDbContext`, se implementa
 
 ---
 
-## 4. Arquitectura de Caché y Colas con Redis 7
+## 4. Estrategia de Caché de Alto Rendimiento (IMemoryCache)
 
-### 4.1 Rol Arquitectónico de Redis 7
+### 4.1 Diseño y Rendimiento en Memoria RAM
 
-El contenedor **`qams-redis`** (Redis 7 Alpine, puerto `6379`) cumple tres funciones determinantes para garantizar la escalabilidad horizontal y el rendimiento extremo de la API:
+Para optimizar el uso de recursos y garantizar tiempos de validación de seguridad ultra veloces sin sobrecarga de saltos de red (*network hops*), la versión actual del backend implementa **`IMemoryCache` de ASP.NET Core**:
 
-1. **Caché Distribuida de Permisos RBAC (*Cache-Aside*)**: Elimina la sobrecarga de consultar las tablas `user_roles` y `role_permissions` en cada petición HTTP, reduciendo el tiempo de validación de seguridad de ~25ms a < 1ms.
-2. **Caché en RAM de Catálogos Inmutables**: Almacena estructuras estáticas (estados de ejecución, tipos de plataforma, prioridades) con expiración programada (TTL).
-3. **Colas de Mensajería Asíncrona en Background**: Desacopla tareas que consumen tiempo (envío de correos SMTP de bienvenida, alertas de asignación de tareas Kanban y generación de reportes PDF).
-
----
-
-### 4.2 Estructuras de Datos y Espacios de Claves (Key Namespaces)
-
-| Namespace de Clave | Estructura Redis | Formato del Valor / Payload | TTL (Tiempo de Vida) | Propósito y Uso |
-|---|---|---|---|---|
-| `rbac:perm:{userId}` | **Set / JSON String** | `["PROJECTS_VIEW", "TESTS_CREATE", "DEFECTS_VIEW"]` | 600 segundos (10 min) | Permisos calculados del usuario para validación instantánea en `[HasPermission]`. |
-| `cat:{catalogType}` | **JSON String** | `[{"id": 1, "code": "PASSED", "name": "Aprobado"}, ...]` | 3600 segundos (1 hora) | Catálogos normalizados del sistema para combos y listados. |
-| `ratelimit:ip:{ipAddress}` | **String (Atomic Int)** | Entero escalar (`INCR` atómico) | 60 segundos | Conteo de peticiones por minuto para mitigar ataques de fuerza bruta y DDoS. |
-| `token:blacklist:{jti}` | **String** | `"revoked"` | Equivalente al TTL del JWT | Invalidación instantánea de tokens tras un cierre de sesión forzado. |
-| `queue:email:alerts` | **List / Redis Stream** | `{"to": "user@qams.io", "template": "DefectAlert", "payload": {...}}` | Persistente hasta consumo | Cola de notificaciones de correo para el despachador SMTP asíncrono. |
+* **Ubicación de Memoria**: Reside directamente en el espacio de memoria RAM del proceso de Kestrel.
+* **Latencia de Acceso**: **< 0.1 milisegundos** por verificación de permisos RBAC.
+* **Patrón Implementado**: **Cache-Aside** con expiración absoluta de **5 minutos** (`TimeSpan.FromMinutes(5)`).
+* **Clave de Caché**: `rbac_permissions_{userId}` (identificador único por usuario autenticado).
 
 ---
 
-### 4.3 Diagrama de Secuencia: Patrón Cache-Aside RBAC
+### 4.2 Diagrama de Secuencia: Patrón Cache-Aside RBAC
 
 ```mermaid
 sequenceDiagram
@@ -414,18 +398,18 @@ sequenceDiagram
     actor Tester as Usuario / Evaluador
     participant API as Controlador API (.NET 9)
     participant Filter as HasPermissionFilter
-    participant Redis as Redis 7 (Memoria RAM)
+    participant Cache as IMemoryCache (RAM Local)
     participant DB as PostgreSQL 16 (Disco)
 
     Tester->>API: Invoca endpoint protegido (ej: POST /api/TestCases)
     API->>Filter: Evalúa permiso requerido "TESTS_CREATE"
-    Filter->>Redis: GET rbac:perm:usr_78a9c2...
-    alt Hit en Caché Redis
-        Redis-->>Filter: ["TESTS_VIEW", "TESTS_CREATE", "TESTS_EXECUTE"]
-    else Miss en Caché Redis
+    Filter->>Cache: TryGetValue("rbac_permissions_usr_78a9c2...")
+    alt Hit en Memoria RAM (<0.1ms)
+        Cache-->>Filter: ["TESTS_VIEW", "TESTS_CREATE", "TESTS_EXECUTE"]
+    else Miss en Memoria RAM
         Filter->>DB: SELECT p.code FROM permissions p JOIN role_permissions ...
         DB-->>Filter: ["TESTS_VIEW", "TESTS_CREATE", "TESTS_EXECUTE"]
-        Filter->>Redis: SETEX rbac:perm:usr_78a9c2... 600 ["TESTS_VIEW", ...]
+        Filter->>Cache: Set("rbac_permissions_usr_78a9c2...", permisos, TTL: 5min)
     end
     Filter->>Filter: ¿"TESTS_CREATE" está en la lista? -> SÍ
     Filter->>API: Continúa ejecución de la acción
@@ -473,7 +457,7 @@ El backend de QAMS expone **21 controladores RESTful** fuertemente tipados:
 | **A03: Injection (SQL / NoSQL)** | Consultas 100% parametrizadas a través de **Entity Framework Core 9**, anulando cualquier vector de inyección SQL. |
 | **A04: Insecure Design** | Arquitectura desacoplada en Clean Architecture con validación estricta de DTOs en el pipeline de ASP.NET Core antes de llegar al dominio. |
 | **A05: Security Misconfiguration** | Configuración de Kestrel con cabeceras estrictas, políticas CORS restrictivas y exclusión de stack traces en respuestas de producción. |
-| **A07: Identification and Authentication Failures** | Expiración estricta de tokens JWT, control de rate limiting en endpoints de autenticación mediante Redis y bloqueo progresivo tras intentos fallidos. |
+| **A07: Identification and Authentication Failures** | Expiración estricta de tokens JWT y bloqueo progresivo tras intentos fallidos. |
 
 ---
 
@@ -505,7 +489,7 @@ QAMS/
 │   │   └── Program.cs                   # Configuración del Host, DI y Middlewares
 │   └── QAMS.Tests/                      # Pruebas Unitarias y de Integración (xUnit)
 ├── Dockerfile                           # Construcción multi-stage de producción en .NET 9
-└── docker-compose.yml                   # Orquestación de dependencias (PostgreSQL, Redis, API)
+└── docker-compose.yml                   # Orquestación de dependencias (PostgreSQL, API)
 ```
 
 ---
@@ -518,7 +502,7 @@ QAMS/
 | **Lenguaje** | C# | `13.0` | Lenguaje orientado a objetos fuertemente tipado |
 | **ORM / Data Access** | Entity Framework Core (Npgsql) | `9.0.x` | Mapeo Objeto-Relacional y migraciones para PostgreSQL |
 | **Base de Datos** | PostgreSQL Alpine | `16.x` | Base de datos relacional transaccional ACID |
-| **Caché y Colas** | Redis Alpine / StackExchange.Redis | `7.x` | Caché en memoria y cola de mensajería asíncrona |
+| **Caché de Proceso** | Microsoft.Extensions.Caching.Memory | `9.0.x` | Caché en RAM para permisos RBAC (<0.1ms) |
 | **Mapeo de DTOs** | AutoMapper | `13.0.x` | Transformación declarativa entre Entidades y DTOs |
 | **Autenticación** | Microsoft.AspNetCore.Authentication.JwtBearer | `9.0.x` | Validación de tokens de autorización JWT |
 | **Seguridad / Hashing** | BCrypt.Net-Next | `4.0.3` | Hashing unidireccional de contraseñas con salt dinámico |
@@ -531,7 +515,7 @@ QAMS/
 
 ### Requisitos del Entorno
 * **.NET 9 SDK** instalado ([Descargar .NET 9](https://dotnet.microsoft.com/download/dotnet/9.0))
-* **Docker Desktop** (para PostgreSQL 16 y Redis 7)
+* **Docker Desktop** (para PostgreSQL 16)
 
 ### 1. Ejecución Local con .NET CLI
 
@@ -551,11 +535,11 @@ dotnet run --project src/QAMS.Api
 ```
 > La API estará escuchando en `http://localhost:5000` y Swagger UI en `http://localhost:5000/swagger`.
 
-### 2. Despliegue con Docker Compose (Ecosistema Completo)
+### 2. Despliegue con Docker Compose
 
 ```bash
-# Construir la imagen y desplegar Backend, PostgreSQL y Redis
-docker compose up -d --build backend postgres redis
+# Construir la imagen y desplegar Backend y PostgreSQL
+docker compose up -d --build backend postgres
 
 # Verificar el estado y salud de los contenedores
 docker ps --filter "name=qams"
