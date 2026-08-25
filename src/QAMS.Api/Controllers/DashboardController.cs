@@ -8,9 +8,9 @@ using Microsoft.Extensions.Logging;
 using QAMS.Application.DTOs.Dashboard;
 using QAMS.Application.Interfaces;
 
-namespace QAMS.Api.Controllers
-{
-    [ApiController]
+namespace QAMS.Api.Controllers;
+
+[ApiController]
     [Route("api/[controller]")]
     [Authorize]
     public class DashboardController(IDashboardService dashboardService, ILogger<DashboardController> logger) : ControllerBase
@@ -22,6 +22,8 @@ namespace QAMS.Api.Controllers
         /// Obtiene un resumen general de estadísticas para un usuario. Requiere permiso DASHBOARD_VIEW.
         /// </summary>
         /// <param name="userId">Opcional. ID del usuario para filtrar el resumen. Si no se provee, usa el usuario actual.</param>
+        /// <param name="sutId">Opcional. ID del SUT a filtrar.</param>
+        /// <param name="testerUserId">Opcional. ID del tester a filtrar.</param>
         /// <returns>Objeto con contadores de proyectos, casos de prueba y ejecuciones.</returns>
         [HttpGet]
         [HasPermission("DASHBOARD_VIEW")]
@@ -152,4 +154,3 @@ namespace QAMS.Api.Controllers
         int MaxOpenDefects,
         bool RequireSutLinked
     );
-}

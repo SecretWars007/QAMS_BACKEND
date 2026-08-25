@@ -8,9 +8,9 @@ using QAMS.Domain.Exceptions;
 using QAMS.Domain.Ports.Repositories;
 using System.Linq;
 
-namespace QAMS.Application.Services
-{
-    public class ProjectService(
+namespace QAMS.Application.Services;
+
+public class ProjectService(
         IProjectRepository projectRepo,
         IUserRepository userRepo,
         ICurrentUserService currentUserService,
@@ -55,7 +55,7 @@ namespace QAMS.Application.Services
             logger.LogInformation("Creando proyecto '{Name}'. UserID: {UserId}", dto.Name, currentUserService.UserId);
 
             var existing = await projectRepo.FindAsync(p => p.Name.ToLower() == dto.Name.Trim().ToLower() && !p.IsDeleted && p.IsActive);
-            if (existing.Any())
+            if (existing.Count > 0)
                 throw new DomainException($"El proyecto '{dto.Name}' ya existe.");
 
             var project = new Project
@@ -109,12 +109,12 @@ namespace QAMS.Application.Services
             if (dto.Name != null)
             {
                 var existing = await projectRepo.FindAsync(p => p.Name.ToLower() == dto.Name.Trim().ToLower() && p.Id != id);
-                if (existing.Any())
+                if (existing.Count > 0)
                     throw new DomainException($"El proyecto '{dto.Name}' ya existe.");
             }
 
-            project.Name = dto.Name;
-            project.Description = dto.Description;
+            project.Name = dto.Name ?? project.Name;
+            project.Description = dto.Description ?? project.Description;
             project.StartDate = dto.StartDate;
             project.EndDate = dto.EndDate;
             project.ProjectPriorityId = dto.ProjectPriorityId;
@@ -130,18 +130,15 @@ namespace QAMS.Application.Services
             {
                 // Sincronizar testers evitando conflictos de tracking en EF
                 var currentTesters = project.ProjectTesters.ToList();
-                foreach (var current in currentTesters)
+                foreach (var current in currentTesters.Where(c => !dto.TesterIds.Contains(c.UserId)))
                 {
-                    if (!dto.TesterIds.Contains(current.UserId))
-                    {
-                        project.ProjectTesters.Remove(current);
-                    }
+                    project.ProjectTesters.Remove(current);
                 }
 
                 var currentTesterIds = project.ProjectTesters.Select(pt => pt.UserId).ToList();
                 var newTesterIds = dto.TesterIds.Where(id => !currentTesterIds.Contains(id)).ToList();
                 
-                if (newTesterIds.Any())
+                if (newTesterIds.Count > 0)
                 {
                     await AssignTestersAsync(project, newTesterIds);
                 }
@@ -342,5 +339,4 @@ namespace QAMS.Application.Services
                 logger.LogWarning(ex, "Failed to send project notification emails for Project {ProjectId}", project.Id);
             }
         }
-    }
 }
