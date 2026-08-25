@@ -426,6 +426,27 @@ using (var scope = app.Services.CreateScope())
                     }
                 }
             }
+            
+            // HACK: Si EnsureCreated se usó en el pasado, las migraciones fallarán. 
+            // Agregamos manualmente las columnas faltantes reportadas para evitar errores 500 en Render.
+            try
+            {
+                app.Logger.LogInformation("Verificando/Agregando columnas faltantes (is_bdd, bdd_scenario, parent_test_case_id) en test_cases...");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS is_bdd boolean NOT NULL DEFAULT false;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS bdd_scenario text NULL;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS parent_test_case_id uuid NULL;");
+                
+                app.Logger.LogInformation("Verificando columnas faltantes en projects, kanban_tasks y kanban_columns...");
+                db.Database.ExecuteSqlRaw("ALTER TABLE projects ADD COLUMN IF NOT EXISTS \"ShareToken\" uuid NULL;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE kanban_tasks ADD COLUMN IF NOT EXISTS \"ColumnEnteredAt\" timestamp with time zone NOT NULL DEFAULT '0001-01-01 00:00:00+00';");
+                db.Database.ExecuteSqlRaw("ALTER TABLE kanban_columns ADD COLUMN IF NOT EXISTS \"WipLimit\" integer NOT NULL DEFAULT 0;");
+                
+                app.Logger.LogInformation("Todas las columnas faltantes verificadas exitosamente.");
+            }
+            catch (Exception ex)
+            {
+                app.Logger.LogError(ex, "ERROR CRÍTICO: No se pudieron alterar las tablas para agregar columnas faltantes.");
+            }
         }
         else
         {
