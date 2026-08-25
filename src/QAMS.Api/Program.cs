@@ -19,9 +19,9 @@ using QAMS.Application;
 using QAMS.Application.DTOs.Roles;
 using QAMS.Application.DTOs.Users;
 using QAMS.Application.Interfaces;
+using QAMS.Application.Interfaces.Services;
 using QAMS.Application.Mappings;
 using QAMS.Application.Services;
-using QAMS.Application.Interfaces.Services;
 using QAMS.Domain.Entities;
 using QAMS.Infrastructure;
 using QAMS.Infrastructure.Persistence.Configurations;
@@ -255,21 +255,21 @@ builder.Services.AddCors(o =>
                 try
                 {
                     var host = new Uri(origin).Host;
-                    
+
                     // SEC-B04: En desarrollo y pruebas se permite localhost/127.0.0.1
                     if (builder.Environment.IsDevelopment() || builder.Environment.EnvironmentName == "Testing")
                     {
                         return host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
                                host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
                     }
-                    
+
                     // En producción, solo se permite coincidencia exacta con FRONTEND_URL configurado
                     if (!string.IsNullOrEmpty(frontendUrl))
                     {
                         var allowedHost = new Uri(frontendUrl).Host;
                         return host.Equals(allowedHost, StringComparison.OrdinalIgnoreCase);
                     }
-                    
+
                     return false;
                 }
                 catch { return false; }
@@ -308,7 +308,7 @@ app.Use(async (context, next) =>
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
     context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-    
+
     var path = context.Request.Path.Value ?? "";
     if (path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase))
     {
@@ -321,7 +321,7 @@ app.Use(async (context, next) =>
         context.Response.Headers.Append("Content-Security-Policy",
             "default-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'");
     }
-    
+
     if (!app.Environment.IsDevelopment() && app.Environment.EnvironmentName != "Testing")
     {
         context.Response.Headers.Append("Strict-Transport-Security",
@@ -426,7 +426,7 @@ using (var scope = app.Services.CreateScope())
                     }
                 }
             }
-            
+
             // HACK: Si EnsureCreated se usó en el pasado, las migraciones fallarán. 
             // Agregamos manualmente las columnas faltantes reportadas para evitar errores 500 en Render.
             try
@@ -435,12 +435,12 @@ using (var scope = app.Services.CreateScope())
                 db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS is_bdd boolean NOT NULL DEFAULT false;");
                 db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS bdd_scenario text NULL;");
                 db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS parent_test_case_id uuid NULL;");
-                
+
                 app.Logger.LogInformation("Verificando columnas faltantes en projects, kanban_tasks y kanban_columns...");
                 db.Database.ExecuteSqlRaw("ALTER TABLE projects ADD COLUMN IF NOT EXISTS \"ShareToken\" uuid NULL;");
                 db.Database.ExecuteSqlRaw("ALTER TABLE kanban_tasks ADD COLUMN IF NOT EXISTS \"ColumnEnteredAt\" timestamp with time zone NOT NULL DEFAULT '0001-01-01 00:00:00+00';");
                 db.Database.ExecuteSqlRaw("ALTER TABLE kanban_columns ADD COLUMN IF NOT EXISTS \"WipLimit\" integer NOT NULL DEFAULT 0;");
-                
+
                 app.Logger.LogInformation("Todas las columnas faltantes verificadas exitosamente.");
             }
             catch (Exception ex)
