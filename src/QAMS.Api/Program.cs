@@ -427,25 +427,64 @@ using (var scope = app.Services.CreateScope())
                 }
             }
 
-            // HACK: Si EnsureCreated se usó en el pasado, las migraciones fallarán. 
-            // Agregamos manualmente las columnas faltantes reportadas para evitar errores 500 en Render.
+            // HACK: La BD de Render fue creada con EnsureCreated() y le faltan todas las columnas
+            // agregadas en migraciones posteriores. Se aplican manualmente con ALTER TABLE IF NOT EXISTS.
             try
             {
-                app.Logger.LogInformation("Verificando/Agregando columnas faltantes (is_bdd, bdd_scenario, parent_test_case_id) en test_cases...");
+                app.Logger.LogInformation("=== INICIO: Verificando y agregando columnas faltantes en BD de Render ===");
+
+                // ── test_cases: columnas de CompleteIstqbGaps (20260801012232) ──────────────
                 db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS is_bdd boolean NOT NULL DEFAULT false;");
                 db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS bdd_scenario text NULL;");
                 db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS parent_test_case_id uuid NULL;");
 
-                app.Logger.LogInformation("Verificando columnas faltantes en projects, kanban_tasks y kanban_columns...");
+                // ── test_cases: columnas de AddPostconditionsToTestCase (20260805235819) ────
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS postconditions character varying(1000) NULL;");
+
+                // ── test_cases: columnas de ISTQBImprovements (20260806143531) ───────────────
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS design_technique_id integer NULL;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS estimated_time_hours numeric(6,2) NOT NULL DEFAULT 0;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS test_type_id integer NOT NULL DEFAULT 1;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS impact_level integer NOT NULL DEFAULT 3;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS likelihood_level integer NOT NULL DEFAULT 3;");
+
+                // ── test_cases: columnas de AddDefectSeverityEnvironmentAndCycles (20260806223520)
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS last_cycle_number integer NULL;");
+
+                // ── projects: columnas de CompleteIstqbGaps ───────────────────────────────────
                 db.Database.ExecuteSqlRaw("ALTER TABLE projects ADD COLUMN IF NOT EXISTS \"ShareToken\" uuid NULL;");
+
+                // ── kanban_tasks / kanban_columns: columnas de CompleteIstqbGaps ────────────
                 db.Database.ExecuteSqlRaw("ALTER TABLE kanban_tasks ADD COLUMN IF NOT EXISTS \"ColumnEnteredAt\" timestamp with time zone NOT NULL DEFAULT '0001-01-01 00:00:00+00';");
                 db.Database.ExecuteSqlRaw("ALTER TABLE kanban_columns ADD COLUMN IF NOT EXISTS \"WipLimit\" integer NOT NULL DEFAULT 0;");
 
-                app.Logger.LogInformation("Todas las columnas faltantes verificadas exitosamente.");
+                // ── test_executions: columnas de AddTestPlanToTestExecution (20260806003118) ─
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_executions ADD COLUMN IF NOT EXISTS test_plan_id uuid NULL;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_executions ADD COLUMN IF NOT EXISTS cycle_number integer NOT NULL DEFAULT 1;");
+
+                // ── defects: columnas de AddDefectSeverityEnvironmentAndCycles (20260806223520)
+                db.Database.ExecuteSqlRaw("ALTER TABLE defects ADD COLUMN IF NOT EXISTS severity_id integer NULL;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE defects ADD COLUMN IF NOT EXISTS environment_id uuid NULL;");
+
+                // ── test_suites: columnas de AddISTQBTestSuitesFields (20260806151105) ───────
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_suites ADD COLUMN IF NOT EXISTS \"TestSuiteTypeId\" integer NULL;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_suites ADD COLUMN IF NOT EXISTS \"RiskLevelId\" integer NULL;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_suites ADD COLUMN IF NOT EXISTS \"AutomationCoverage\" numeric(5,2) NOT NULL DEFAULT 0;");
+
+                // ── test_plans: columnas de ISTQBImprovements (20260806143531) ───────────────
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS \"TestLevelId\" integer NULL;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS \"TestManagerId\" uuid NULL;");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_plans ADD COLUMN IF NOT EXISTS \"TestPlanTypeId\" integer NULL;");
+
+                // ── test_plan_criteria: columnas de ISTQBImprovements ─────────────────────────
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_plan_criteria ADD COLUMN IF NOT EXISTS \"Category\" text NOT NULL DEFAULT '';");
+                db.Database.ExecuteSqlRaw("ALTER TABLE test_plan_criteria ADD COLUMN IF NOT EXISTS \"Priority\" text NOT NULL DEFAULT '';");
+
+                app.Logger.LogInformation("=== FIN: Todas las columnas verificadas y agregadas exitosamente ===");
             }
             catch (Exception ex)
             {
-                app.Logger.LogError(ex, "ERROR CRÍTICO: No se pudieron alterar las tablas para agregar columnas faltantes.");
+                app.Logger.LogError(ex, "ERROR al agregar columnas faltantes. Detalles: {Msg}", ex.Message);
             }
         }
         else
