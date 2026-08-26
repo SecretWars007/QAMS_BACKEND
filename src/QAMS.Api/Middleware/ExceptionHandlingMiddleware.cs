@@ -50,13 +50,10 @@ namespace QAMS.Api.Middleware
 
                 string detail = "Ha ocurrido un error interno en el servidor.";
 
-                // Mostrar detalles sólo en desarrollo o pruebas
-                if (Microsoft.Extensions.Hosting.HostEnvironmentEnvExtensions.IsDevelopment(env) || env.EnvironmentName == "Testing")
-                {
-                    detail = ex.ToString();
-                    if (ex.InnerException != null)
-                        detail += " | INNER: " + ex.InnerException.ToString();
-                }
+                // Temporalmente enviamos el error completo siempre para depurar en Render
+                detail = ex.ToString();
+                if (ex.InnerException != null)
+                    detail += " | INNER: " + ex.InnerException.ToString();
 
                 await WriteResponse(context, HttpStatusCode.InternalServerError, detail);
             }
