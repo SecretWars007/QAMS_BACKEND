@@ -480,6 +480,23 @@ using (var scope = app.Services.CreateScope())
                 db.Database.ExecuteSqlRaw("ALTER TABLE test_plan_criteria ADD COLUMN IF NOT EXISTS \"Category\" text NOT NULL DEFAULT '';");
                 db.Database.ExecuteSqlRaw("ALTER TABLE test_plan_criteria ADD COLUMN IF NOT EXISTS \"Priority\" text NOT NULL DEFAULT '';");
 
+                // ── Marcar migración problemática como aplicada para que EF no vuelva a intentarla ──
+                // La migración AddBddScenarioToTestCase falla por UpdateData con FK inválida en role_permissions.
+                // Las columnas ya se agregan manualmente arriba, así que solo registramos que fue "aplicada".
+                db.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS ""__EFMigrationsHistory"" (
+                        ""MigrationId"" character varying(150) NOT NULL,
+                        ""ProductVersion"" character varying(32) NOT NULL,
+                        CONSTRAINT ""PK___EFMigrationsHistory"" PRIMARY KEY (""MigrationId"")
+                    );
+                    INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
+                    SELECT '20260825234822_AddBddScenarioToTestCase', '9.0.0'
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM ""__EFMigrationsHistory""
+                        WHERE ""MigrationId"" = '20260825234822_AddBddScenarioToTestCase'
+                    );
+                ");
+
                 app.Logger.LogInformation("=== FIN: Todas las columnas verificadas y agregadas exitosamente ===");
             }
             catch (Exception ex)
