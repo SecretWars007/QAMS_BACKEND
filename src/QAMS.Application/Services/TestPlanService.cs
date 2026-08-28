@@ -57,7 +57,7 @@ public class TestPlanService(
 
     public async Task<TestPlanDto> CreateAsync(CreateTestPlanDto dto)
     {
-        var project = await _projectRepository.GetByIdAsync(dto.ProjectId) 
+        var _ = await _projectRepository.GetByIdAsync(dto.ProjectId) 
             ?? throw new EntityNotFoundException(nameof(Project), dto.ProjectId);
 
         var plan = _mapper.Map<TestPlan>(dto);
@@ -239,36 +239,35 @@ public class TestPlanService(
 
     private static void UpdateMilestones(TestPlan plan, List<TestPlanMilestoneDto>? milestonesDto)
     {
-        if (milestonesDto != null)
-        {
-            var incomingIds = milestonesDto.Where(m => m != null && m.Id.HasValue && m.Id.Value != Guid.Empty).Select(m => (Guid)m.Id!).ToList();
-            var toRemove = plan.Milestones.Where(m => !incomingIds.Contains(m.Id)).ToList();
-            foreach (var item in toRemove) plan.Milestones.Remove(item);
+        if (milestonesDto == null) return;
 
-            foreach (var mDto in milestonesDto)
+        var incomingIds = milestonesDto.Where(m => m != null && m.Id.HasValue && m.Id.Value != Guid.Empty).Select(m => (Guid)m.Id!).ToList();
+        var toRemove = plan.Milestones.Where(m => !incomingIds.Contains(m.Id)).ToList();
+        foreach (var item in toRemove) plan.Milestones.Remove(item);
+
+        foreach (var mDto in milestonesDto.Where(m => m != null))
+        {
+            if (mDto.Id.HasValue && mDto.Id.Value != Guid.Empty)
             {
-                if (mDto.Id.HasValue && mDto.Id.Value != Guid.Empty)
+                var existing = plan.Milestones.FirstOrDefault(m => m.Id == mDto.Id.Value);
+                if (existing != null)
                 {
-                    var existing = plan.Milestones.FirstOrDefault(m => m.Id == mDto.Id.Value);
-                    if (existing != null)
-                    {
-                        existing.Name = mDto.Name;
-                        existing.Description = mDto.Description;
-                        existing.DueDate = mDto.DueDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(mDto.DueDate, DateTimeKind.Utc) : mDto.DueDate.ToUniversalTime();
-                        existing.IsCompleted = mDto.IsCompleted;
-                    }
+                    existing.Name = mDto.Name;
+                    existing.Description = mDto.Description;
+                    existing.DueDate = mDto.DueDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(mDto.DueDate, DateTimeKind.Utc) : mDto.DueDate.ToUniversalTime();
+                    existing.IsCompleted = mDto.IsCompleted;
                 }
-                else
+            }
+            else
+            {
+                plan.Milestones.Add(new TestPlanMilestone
                 {
-                    plan.Milestones.Add(new TestPlanMilestone
-                    {
-                        TestPlanId = plan.Id,
-                        Name = mDto.Name,
-                        Description = mDto.Description,
-                        DueDate = mDto.DueDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(mDto.DueDate, DateTimeKind.Utc) : mDto.DueDate.ToUniversalTime(),
-                        IsCompleted = mDto.IsCompleted
-                    });
-                }
+                    TestPlanId = plan.Id,
+                    Name = mDto.Name,
+                    Description = mDto.Description,
+                    DueDate = mDto.DueDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(mDto.DueDate, DateTimeKind.Utc) : mDto.DueDate.ToUniversalTime(),
+                    IsCompleted = mDto.IsCompleted
+                });
             }
         }
     }

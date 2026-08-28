@@ -1,10 +1,10 @@
 // src/QAMS.Infrastructure/Persistence/QamsDbContext.cs
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using QAMS.Application.Interfaces;
 using QAMS.Domain.Common;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Entities.Catalogs;
-using System.Linq.Expressions;
 
 namespace QAMS.Infrastructure.Persistence.Configurations
 {
@@ -78,7 +78,6 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         public DbSet<ReviewSession> ReviewSessions => Set<ReviewSession>();
         public DbSet<ReviewFinding> ReviewFindings => Set<ReviewFinding>();
         public DbSet<ReviewParticipant> ReviewParticipants => Set<ReviewParticipant>();
-        
         public DbSet<ExploratorySession> ExploratorySessions => Set<ExploratorySession>();
         public DbSet<ExploratoryFinding> ExploratoryFindings => Set<ExploratoryFinding>();
 
@@ -287,10 +286,12 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         // =======================================================================
 
         /// <summary>
+        /// <para>
         /// Método que EF Core invoca para configurar el modelo de datos.
         /// Aplica TODAS las configuraciones Fluent API definidas en clases
         /// que implementan IEntityTypeConfiguration en el assembly de Infrastructure.
-        ///
+        /// </para>
+        /// <para>
         /// Configuraciones aplicadas automáticamente:
         /// - ExecutionStatusConfiguration (catálogo + seed data)
         /// - EvidenceTypeConfiguration (catálogo + seed data)
@@ -313,6 +314,7 @@ namespace QAMS.Infrastructure.Persistence.Configurations
         /// - KanbanBoardConfiguration (relación con Project)
         /// - KanbanColumnConfiguration (relación con KanbanBoard)
         /// - KanbanTaskConfiguration (FK a catálogo TaskPriority)
+        /// </para>
         /// </summary>
         /// <param name="modelBuilder">Constructor del modelo de EF Core</param>
         protected override void OnModelCreating(ModelBuilder modelBuilder)

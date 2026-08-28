@@ -54,7 +54,7 @@ public class ProjectService(
         {
             logger.LogInformation("Creando proyecto '{Name}'. UserID: {UserId}", dto.Name, currentUserService.UserId);
 
-            var existing = await projectRepo.FindAsync(p => p.Name.ToLower() == dto.Name.Trim().ToLower() && !p.IsDeleted && p.IsActive);
+            var existing = await projectRepo.FindAsync(p => string.Equals(p.Name, dto.Name.Trim(), StringComparison.OrdinalIgnoreCase) && !p.IsDeleted && p.IsActive);
             if (existing.Count > 0)
                 throw new DomainException($"El proyecto '{dto.Name}' ya existe.");
 
@@ -108,7 +108,7 @@ public class ProjectService(
 
             if (dto.Name != null)
             {
-                var existing = await projectRepo.FindAsync(p => p.Name.ToLower() == dto.Name.Trim().ToLower() && p.Id != id);
+                var existing = await projectRepo.FindAsync(p => string.Equals(p.Name, dto.Name.Trim(), StringComparison.OrdinalIgnoreCase) && p.Id != id);
                 if (existing.Count > 0)
                     throw new DomainException($"El proyecto '{dto.Name}' ya existe.");
             }
