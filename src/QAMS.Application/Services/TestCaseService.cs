@@ -8,21 +8,20 @@ using QAMS.Domain.Entities.Catalogs;
 using QAMS.Domain.Exceptions;
 using QAMS.Domain.Ports.Repositories;
 
-namespace QAMS.Application.Services
-{
-    public class TestCaseService(
-        ITestCaseRepository testCaseRepo,
-        ICatalogRepository<TestCasePriority> priorityRepo,
-        ICurrentUserService currentUserService,
-        IKanbanService kanbanService,
-        ITestExecutionService execService,
-        IKanbanBoardRepository kanbanBoardRepo,
-        IUnitOfWork uow,
-        IMapper mapper,
-        ILogger<TestCaseService> logger
-    ) : ITestCaseService
-    {
+namespace QAMS.Application.Services;
 
+public class TestCaseService(
+    ITestCaseRepository testCaseRepo,
+    ICatalogRepository<TestCasePriority> priorityRepo,
+    ICurrentUserService currentUserService,
+    IKanbanService kanbanService,
+    ITestExecutionService execService,
+    IKanbanBoardRepository kanbanBoardRepo,
+    IUnitOfWork uow,
+    IMapper mapper,
+    ILogger<TestCaseService> logger
+) : ITestCaseService
+{
         public async Task<TestCaseDto> GetByIdAsync(Guid id)
         {
             logger.LogInformation("Obteniendo caso de prueba {Id}.", id);
@@ -100,8 +99,6 @@ namespace QAMS.Application.Services
                     }
                 );
             }
-
-
 
             // Asociar Requisitos (trazabilidad)
             if (dto.RequirementIds != null)
@@ -220,7 +217,7 @@ namespace QAMS.Application.Services
             };
 
             // Asociar Requisitos (trazabilidad)
-            var reqIdsToUse = dto.RequirementIds != null && dto.RequirementIds.Count > 0
+            var reqIdsToUse = dto.RequirementIds is { Count: > 0 }
                 ? dto.RequirementIds
                 : oldTestCase.RequirementTestCases?.Select(rtc => rtc.RequirementId).ToList() ?? [];
 
@@ -248,8 +245,6 @@ namespace QAMS.Application.Services
                     }
                 );
             }
-
-
 
             await testCaseRepo.AddAsync(newTestCase);
             await uow.SaveChangesAsync();
@@ -316,8 +311,9 @@ namespace QAMS.Application.Services
                 await testCaseRepo.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException(nameof(TestCase), id);
 
+            testCase.IsActive = false;
             testCaseRepo.Delete(testCase);
             await uow.SaveChangesAsync();
         }
     }
-}
+

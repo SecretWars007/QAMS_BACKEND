@@ -9,19 +9,19 @@ using QAMS.Domain.Exceptions;
 using QAMS.Domain.Ports.Repositories;
 using QAMS.Domain.Ports.Services;
 
-namespace QAMS.Application.Services
+namespace QAMS.Application.Services;
+
+/// <summary>
+/// Servicio de autenticación: login, registro, refresh, logout,
+/// recuperación y cambio de contraseña.
+/// SRP: solo autenticación. DIP: todas las dependencias son interfaces.
+/// </summary>
+public class AuthService(
+    IUserRepository userRepo, IRbacService rbacService,
+    IPasswordHasher hasher, IJwtTokenGenerator jwt,
+    IUnitOfWork uow, IEmailService emailService,
+    ILogger<AuthService> logger) : IAuthService
 {
-    /// <summary>
-    /// Servicio de autenticación: login, registro, refresh, logout,
-    /// recuperación y cambio de contraseña.
-    /// SRP: solo autenticación. DIP: todas las dependencias son interfaces.
-    /// </summary>
-    public class AuthService(
-        IUserRepository userRepo, IRbacService rbacService,
-        IPasswordHasher hasher, IJwtTokenGenerator jwt,
-        IUnitOfWork uow, IEmailService emailService,
-        ILogger<AuthService> logger) : IAuthService
-    {
         private readonly IUserRepository _userRepo = userRepo;
         private readonly IRbacService _rbacService = rbacService;
         private readonly IPasswordHasher _hasher = hasher;
@@ -45,7 +45,7 @@ namespace QAMS.Application.Services
                 throw new UnauthorizedException($"La cuenta está bloqueada temporalmente. Intente de nuevo en {(int)Math.Ceiling(remaining.TotalMinutes)} minutos.");
             }
 
-            if (user?.IsActive != true)
+            if (user?.IsActive is not true)
             {
                 _logger.LogWarning("Login fallido para '{Username}' (Inexistante o inactivo).", request.Username);
                 throw new UnauthorizedException("Credenciales inválidas.");
@@ -103,9 +103,11 @@ namespace QAMS.Application.Services
             _logger.LogInformation("Intento de registro: '{Username}' con email '{MaskedEmail}'.", request.Username, maskedEmail);
 
             // 1. Validar conflictos ACTIVOS primero (para arrojar 400 Bad Request)
+            var emailLower = request.Email?.Trim().ToLower();
+            var usernameLower = request.Username?.Trim().ToLower();
             var activeConflicts = await _userRepo.FindAsync(u =>
-                (u.Email != null && u.Email.ToLower() == request.Email.ToLower()) ||
-                (u.Username != null && u.Username.ToLower() == request.Username.ToLower()) ||
+                (u.Email != null && emailLower != null && u.Email.ToLower() == emailLower) ||
+                (u.Username != null && usernameLower != null && u.Username.ToLower() == usernameLower) ||
                 (u.DocumentoIdentidad == request.DocumentoIdentidad && u.FechaNacimiento == request.FechaNacimiento));
 
             if (activeConflicts.Count > 0)
@@ -119,7 +121,7 @@ namespace QAMS.Application.Services
             }
 
             // 2. Buscar TODOS los conflictos físicos (incluyendo borrados) para limpieza total
-            var physicalConflicts = await _userRepo.GetPhysicalConflictsAsync(request.Email, request.Username, request.DocumentoIdentidad);
+            var physicalConflicts = await _userRepo.GetPhysicalConflictsAsync(request.Email ?? string.Empty, request.Username ?? string.Empty, request.DocumentoIdentidad ?? string.Empty);
 
             if (physicalConflicts.Count > 0)
             {
@@ -169,11 +171,11 @@ namespace QAMS.Application.Services
             var user = new User
             {
                 Id = Guid.NewGuid(),
-                Username = request.Username,
-                Email = request.Email,
-                PasswordHash = _hasher.HashPassword(request.Password),
-                FullName = request.FullName,
-                DocumentoIdentidad = request.DocumentoIdentidad,
+                Username = request.Username ?? string.Empty,
+                Email = request.Email ?? string.Empty,
+                PasswordHash = _hasher.HashPassword(request.Password ?? string.Empty),
+                FullName = request.FullName ?? string.Empty,
+                DocumentoIdentidad = request.DocumentoIdentidad ?? string.Empty,
                 FechaNacimiento = request.FechaNacimiento,
                 Telefono = request.Telefono,
                 IsActive = true,
@@ -197,7 +199,7 @@ namespace QAMS.Application.Services
             {
                 _logger.LogWarning(emailEx, "No se pudo enviar el correo de bienvenida a '{Email}'. El registro fue exitoso.", user.Email);
             }
-            return await LoginAsync(new LoginRequestDto { Username = request.Username, Password = request.Password });
+            return await LoginAsync(new LoginRequestDto { Username = request.Username ?? string.Empty, Password = request.Password ?? string.Empty });
         }
 
         public async Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto request)
@@ -258,7 +260,7 @@ namespace QAMS.Application.Services
             var user = await _userRepo.GetByEmailAsync(request.Email);
 
             // Por seguridad no se revela si el email existe o no
-            if (user?.IsActive != true)
+            if (user?.IsActive is not true)
             {
                 // SEC-B02: Enmascarar email en logs para cumplir GDPR/LGPD
                 _logger.LogWarning("Email '{MaskedEmail}' no encontrado en forgot-password.", MaskEmail(request.Email));
@@ -404,4 +406,4 @@ namespace QAMS.Application.Services
             return $"{name}@{parts[1]}";
         }
     }
-}
+

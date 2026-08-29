@@ -37,7 +37,7 @@ public class ProjectService(
             logger.LogInformation("Obteniendo todos los proyectos activos con detalles. SutId: {SutId}, TesterUserId: {TesterUserId}", sutId, testerUserId);
             try
             {
-                var projects = await projectRepo.FindWithDetailsAsync(p => p.IsActive 
+                var projects = await projectRepo.FindWithDetailsAsync(p => p.IsActive
                     && (!sutId.HasValue || p.SystemUnderTestId == sutId.Value)
                     && (!testerUserId.HasValue || p.ProjectTesters.Any(pt => pt.UserId == testerUserId.Value))
                 );
@@ -54,7 +54,8 @@ public class ProjectService(
         {
             logger.LogInformation("Creando proyecto '{Name}'. UserID: {UserId}", dto.Name, currentUserService.UserId);
 
-            var existing = await projectRepo.FindAsync(p => string.Equals(p.Name, dto.Name.Trim(), StringComparison.OrdinalIgnoreCase) && !p.IsDeleted && p.IsActive);
+            var nameLower = dto.Name.Trim().ToLower();
+            var existing = await projectRepo.FindAsync(p => p.Name.ToLower() == nameLower && !p.IsDeleted && p.IsActive);
             if (existing.Count > 0)
                 throw new DomainException($"El proyecto '{dto.Name}' ya existe.");
 
@@ -108,7 +109,8 @@ public class ProjectService(
 
             if (dto.Name != null)
             {
-                var existing = await projectRepo.FindAsync(p => string.Equals(p.Name, dto.Name.Trim(), StringComparison.OrdinalIgnoreCase) && p.Id != id);
+                var nameLower = dto.Name.Trim().ToLower();
+                var existing = await projectRepo.FindAsync(p => p.Name.ToLower() == nameLower && p.Id != id && !p.IsDeleted && p.IsActive);
                 if (existing.Count > 0)
                     throw new DomainException($"El proyecto '{dto.Name}' ya existe.");
             }
@@ -137,7 +139,7 @@ public class ProjectService(
 
                 var currentTesterIds = project.ProjectTesters.Select(pt => pt.UserId).ToList();
                 var newTesterIds = dto.TesterIds.Where(id => !currentTesterIds.Contains(id)).ToList();
-                
+
                 if (newTesterIds.Count > 0)
                 {
                     await AssignTestersAsync(project, newTesterIds);

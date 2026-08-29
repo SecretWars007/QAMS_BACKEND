@@ -6,10 +6,10 @@ using QAMS.Domain.Common;
 using QAMS.Domain.Entities;
 using QAMS.Domain.Entities.Catalogs;
 
-namespace QAMS.Infrastructure.Persistence.Configurations
+namespace QAMS.Infrastructure.Persistence.Configurations;
+
+public class QamsDbContext(DbContextOptions<QamsDbContext> options, ICurrentUserService currentUserService) : DbContext(options)
 {
-    public class QamsDbContext(DbContextOptions<QamsDbContext> options, ICurrentUserService currentUserService) : DbContext(options)
-    {
         private readonly ICurrentUserService _currentUserService = currentUserService;
 
         public DbSet<ExecutionStatus> ExecutionStatuses => Set<ExecutionStatus>();
@@ -419,4 +419,4 @@ namespace QAMS.Infrastructure.Persistence.Configurations
             return base.SaveChangesAsync(cancellationToken);
         }
     }
-}
+
